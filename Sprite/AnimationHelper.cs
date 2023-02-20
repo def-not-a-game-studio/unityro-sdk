@@ -1,8 +1,4 @@
-﻿using System;
-using Assets.Scripts.Renderer.Sprite;
-using static UnityEngine.EventSystems.EventTrigger;
-
-public class AnimationHelper {
+﻿public class AnimationHelper {
 	public static bool IsLoopingMotion(SpriteMotion motion) {
 		switch (motion) {
 			case SpriteMotion.Walk:

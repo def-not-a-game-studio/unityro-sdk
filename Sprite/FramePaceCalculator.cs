@@ -1,4 +1,3 @@
-using Assets.Scripts.Renderer.Sprite;
 using ROIO.Models.FileTypes;
 using System.Collections;
 using UnityEngine;
@@ -10,7 +9,7 @@ public class FramePaceCalculator {
 	private const int AVERAGE_ATTACKED_SPEED = 288;
 	private const int MAX_ATTACK_SPEED = AVERAGE_ATTACKED_SPEED * 2;
 
-	[SerializeField] private GameEntity Entity;
+	[SerializeField] private IGameEntity Entity;
 	[SerializeField] private ViewerType ViewerType;
 	[SerializeField] private int CurrentFrame = 0;
 	[SerializeField] private long AnimationStart = GameManager.Tick;
@@ -23,7 +22,7 @@ public class FramePaceCalculator {
 
 	private Coroutine MotionQueueCoroutine;
 
-	public FramePaceCalculator(GameEntity entity, ViewerType viewerType, ACT currentACT) {
+	public FramePaceCalculator(IGameEntity entity, ViewerType viewerType, ACT currentACT) {
 		Entity = entity;
 		ViewerType = viewerType;
 		CurrentACT = currentACT;
@@ -31,7 +30,7 @@ public class FramePaceCalculator {
 
 	public int GetActionIndex() {
 		var cameraDirection = 0;
-		var entityDirection = (int)Entity.Direction + 8;
+		var entityDirection = Entity.Direction + 8;
 
 		return (ActionId + (cameraDirection + entityDirection) % 8) % CurrentACT.actions.Length;
 	}
@@ -39,7 +38,7 @@ public class FramePaceCalculator {
 	public int GetCurrentFrame() {
 		CurrentAction = CurrentACT.actions[GetActionIndex()];
 
-		var isIdle = (!Entity.IsMonster && (CurrentMotion.Motion == SpriteMotion.Idle || CurrentMotion.Motion == SpriteMotion.Sit));
+		var isIdle = (!Entity.IsMonster && CurrentMotion.Motion is SpriteMotion.Idle or SpriteMotion.Sit);
 		int frameCount = CurrentAction.frames.Length;
 		long deltaSinceMotionStart = GameManager.Tick - AnimationStart;
 

@@ -11,8 +11,8 @@ namespace UnityRO.core.Effects {
         public int otherAID; // target/source AID
         public Vector3 otherPosition;
 
-        public GameEntity owner;
-        public GameEntity other;
+        public CoreGameEntity owner;
+        public CoreGameEntity other;
     }
 
     public struct EffectInstanceParam {

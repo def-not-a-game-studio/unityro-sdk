@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Assets.Scripts.Renderer.Sprite;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Effect/3D Effect")]
