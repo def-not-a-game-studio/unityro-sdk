@@ -12,9 +12,7 @@ public class NodeProperties : MonoBehaviour {
 
     private MeshRenderer MeshRenderer;
 
-    internal bool isChild {
-        get { return !string.IsNullOrEmpty(parentName) && !parentName.Equals(mainName); }
-    }
+    internal bool isChild => !string.IsNullOrEmpty(parentName) && !parentName.Equals(mainName);
 
     public void SetTextureName(string textureName) {
         this.textureName = textureName;
