@@ -1,21 +1,9 @@
 using System.Collections;
 using UnityEngine;
 
-public partial class CoreGameEntity : MonoBehaviour, IGameEntity {
-    public int Direction { get; }
-    public int HeadDir { get; }
-    public bool IsMonster { get; }
-    public GameEntityBaseStatus Status { get; }
+public abstract class CoreGameEntity : MonoBehaviour {
     
-    public void ChangeMotion(MotionRequest request) {
-        throw new System.NotImplementedException();
-    }
+    public GameEntityBaseStatus Status { get; }
 
-    public void StopCoroutine(Coroutine coroutine) {
-        throw new System.NotImplementedException();
-    }
-
-    public Coroutine StartCoroutine(IEnumerator coroutine) {
-        throw new System.NotImplementedException();
-    }
+    public abstract void ChangeMotion(MotionRequest request);
 }

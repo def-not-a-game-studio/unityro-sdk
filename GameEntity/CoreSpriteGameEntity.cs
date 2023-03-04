@@ -1,4 +1,4 @@
-public abstract class SpriteGameEntity : CoreGameEntity {
+public abstract class CoreSpriteGameEntity : CoreGameEntity {
     
     public abstract int Direction { get; }
     public abstract int HeadDirection { get; }

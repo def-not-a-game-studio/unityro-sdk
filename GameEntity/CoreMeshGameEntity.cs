@@ -1,3 +1,3 @@
-public abstract class MeshGameEntity : CoreGameEntity {
+public abstract class CoreMeshGameEntity : CoreGameEntity {
     
 }

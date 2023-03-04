@@ -5,7 +5,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
 public class SpriteViewer : MonoBehaviour {
-    [field: SerializeField] public IGameEntity Entity { get; private set; }
+    [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
     [field: SerializeField] public ViewerType ViewerType { get; private set; }
     [field: SerializeField] public SpriteState State { get; private set; }
 
@@ -85,7 +85,7 @@ public class SpriteViewer : MonoBehaviour {
         MeshRenderer = GetComponent<MeshRenderer>();
         MeshFilter = GetComponent<MeshFilter>();
         MeshCollider = GetComponent<MeshCollider>();
-        Entity ??= GetComponentInParent<CoreGameEntity>();
+        Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
 
         Sprites = SpriteData.sprites;
         FramePaceCalculator = new FramePaceCalculator(Entity, ViewerType, SpriteData.act);

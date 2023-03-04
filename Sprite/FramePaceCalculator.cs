@@ -9,7 +9,7 @@ public class FramePaceCalculator {
 	private const int AVERAGE_ATTACKED_SPEED = 288;
 	private const int MAX_ATTACK_SPEED = AVERAGE_ATTACKED_SPEED * 2;
 
-	[SerializeField] private IGameEntity Entity;
+	[SerializeField] private CoreSpriteGameEntity Entity;
 	[SerializeField] private ViewerType ViewerType;
 	[SerializeField] private int CurrentFrame = 0;
 	[SerializeField] private long AnimationStart = GameManager.Tick;
@@ -22,7 +22,7 @@ public class FramePaceCalculator {
 
 	private Coroutine MotionQueueCoroutine;
 
-	public FramePaceCalculator(IGameEntity entity, ViewerType viewerType, ACT currentACT) {
+	public FramePaceCalculator(CoreSpriteGameEntity entity, ViewerType viewerType, ACT currentACT) {
 		Entity = entity;
 		ViewerType = viewerType;
 		CurrentACT = currentACT;
@@ -45,7 +45,7 @@ public class FramePaceCalculator {
 		var maxFrame = frameCount - 1;
 
 		if (isIdle) {
-			CurrentFrame = Entity.HeadDir;
+			CurrentFrame = Entity.HeadDirection;
 		}
 
 		CurrentDelay = GetDelay();
