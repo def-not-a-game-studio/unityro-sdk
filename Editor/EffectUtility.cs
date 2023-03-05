@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ROIO.Models.FileTypes;
 using UnityEditor;
 using UnityEngine;
 
@@ -32,6 +33,46 @@ public class EffectUtility {
 
                 try {
                     ExtractStr(descriptors[i]);
+                } catch (Exception e) {
+                    Debug.LogException(e);
+                }
+            }
+        } finally {
+            EditorUtility.ClearProgressBar();
+            AssetDatabase.Refresh();
+        }
+    }
+
+    [MenuItem("UnityRO/Utils/Extract/Effects/SPR")]
+    static void ExtractSPREffects() {
+        FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        //FileManager.LoadGRF("../../ragnarok/", new List<string> { "data.grf" });
+
+        try {
+            var descriptors = DataUtility
+                .FilterDescriptors(FileManager.GetFileDescriptors(), "data/sprite/ÀÌÆÑÆ®")
+                .Where(it => Path.GetExtension(it) is ".str" or ".act" or ".spr")
+                .ToList();
+
+            for (var i = 0; i < descriptors.Count; i++) {
+                var progress = i * 1f / descriptors.Count;
+                if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
+                        $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
+                        progress)) {
+                    break;
+                }
+
+                try
+                {
+                    var descriptor = descriptors[i];
+                    switch (Path.GetExtension(descriptor)) {
+                        case ".spr":
+                            ExtractSpr(descriptor);
+                            break;
+                        case ".str":
+                            ExtractStr(descriptors[i]);
+                            break;
+                    }
                 } catch (Exception e) {
                     Debug.LogException(e);
                 }
@@ -118,5 +159,60 @@ public class EffectUtility {
 
         var completePath = Path.Combine(assetPath, filenameWithoutExtension + ".asset");
         AssetDatabase.CreateAsset(strEffect, completePath);
+    }
+
+    private static void ExtractSpr(string descriptor) {
+        var baseFileName = descriptor.Replace(".spr", "");
+
+        var sprPath = baseFileName + ".spr";
+        var actPath = baseFileName + ".act";
+
+        var sprBytes = FileManager.ReadSync(sprPath).ToArray();
+        var act = FileManager.Load(actPath) as ACT;
+
+        var spriteLoader = new CustomSpriteLoader();
+        var filename = Path.GetFileNameWithoutExtension(descriptor);
+        
+        var dir = Path.GetDirectoryName(descriptor.Replace('/', Path.DirectorySeparatorChar).Replace("data\\sprite\\ÀÌÆÑÆ®\\", ""));
+        var assetPath = Path.Combine(GENERATED_RESOURCES_PATH, "SPR", dir);
+        var spriteDataPath = Path.Combine(assetPath, filename);
+        Directory.CreateDirectory(assetPath);
+        
+        var spriteData = ScriptableObject.CreateInstance<SpriteData>();
+        spriteData.act = act;
+        
+        spriteLoader.Load(sprBytes, filename, false);
+
+        var atlas = spriteLoader.Atlas;
+        var bytes = atlas.EncodeToPNG();
+        var atlasPath = spriteDataPath + ".png";
+        File.WriteAllBytes(atlasPath, bytes);
+        
+        AssetDatabase.ImportAsset(spriteDataPath + ".png");
+        
+        // transform texture into multiple sprites texture
+        var importer = AssetImporter.GetAtPath(spriteDataPath + ".png") as TextureImporter;
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Multiple;
+        var textureSettings = new TextureImporterSettings();
+        importer.ReadTextureSettings(textureSettings);
+        textureSettings.spriteMeshType = SpriteMeshType.FullRect;
+        textureSettings.spritePixelsPerUnit = SPR.PIXELS_PER_UNIT;
+
+        var sheetMetaData = spriteLoader.Sprites.Select(it => new SpriteMetaData {
+            rect = it.rect,
+            name = it.name
+        }).ToArray();
+
+        importer.spritesheet = sheetMetaData;
+        importer.SetTextureSettings(textureSettings);
+        importer.SaveAndReimport();
+
+        AssetDatabase.ImportAsset(spriteDataPath + ".png");
+        
+        spriteData.sprites = AssetDatabase.LoadAllAssetsAtPath(spriteDataPath + ".png").OfType<Sprite>().ToArray();
+
+        var fullAssetPath = spriteDataPath + ".asset";
+        AssetDatabase.CreateAsset(spriteData, fullAssetPath);
     }
 }
