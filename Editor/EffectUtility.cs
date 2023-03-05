@@ -51,7 +51,7 @@ public class EffectUtility {
             AssetDatabase.StartAssetEditing();
             var descriptors = DataUtility
                               .FilterDescriptors(FileManager.GetFileDescriptors(), "data/texture/effect")
-                              .Where(it => Path.GetExtension(it) != ".str")
+                              .Where(it => Path.GetDirectoryName(it) == Path.Combine("data", "texture", "effect") && Path.GetExtension(it) != ".str")
                               .ToList();
 
             for (var i = 0; i < descriptors.Count; i++) {
@@ -81,7 +81,7 @@ public class EffectUtility {
         
         var filenameWithoutExtension =
             Path.GetFileNameWithoutExtension(descriptor).SanitizeForAddressables();
-        var dir = Path.GetDirectoryName(descriptor.Replace(DEFAULT_EFFECT_DIR, ""));
+        var dir = Path.GetDirectoryName(descriptor.Replace('/', Path.DirectorySeparatorChar).Replace(DEFAULT_EFFECT_DIR, ""));
 
         var assetPath = Path.Combine(GENERATED_RESOURCES_PATH, "Textures", dir);
         Directory.CreateDirectory(assetPath);
@@ -101,7 +101,7 @@ public class EffectUtility {
         var filenameWithoutExtension =
             Path.GetFileNameWithoutExtension(descriptor).SanitizeForAddressables();
         strEffect.name = filenameWithoutExtension;
-        var dir = Path.GetDirectoryName(descriptor.Replace(DEFAULT_EFFECT_DIR, ""));
+        var dir = Path.GetDirectoryName(descriptor.Replace('/', Path.DirectorySeparatorChar).Replace(DEFAULT_EFFECT_DIR, ""));
 
         var assetPath = Path.Combine(GENERATED_RESOURCES_PATH, "STR", dir);
         Directory.CreateDirectory(assetPath);
