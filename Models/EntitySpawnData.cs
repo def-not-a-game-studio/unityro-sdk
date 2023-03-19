@@ -1,5 +1,5 @@
 ﻿public class EntitySpawnData {
-	public EntityType objecttype;
+	public int objecttype;
 
 	public uint AID;
 	public uint GID;
