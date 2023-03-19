@@ -73,11 +73,11 @@ public class FramePaceCalculator {
 
 	public float GetDelay() {
 		if (ViewerType == ViewerType.Body && CurrentMotion.Motion == SpriteMotion.Walk) {
-			return CurrentAction.delay / 150 * Entity.Status.walkSpeed;
+			return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
 		}
 
 		if (CurrentMotion.Motion is SpriteMotion.Attack or SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
-			return (float)Entity.Status.attackSpeed / CurrentAction.frames.Length;
+			return (float)Entity.Status.AttackSpeed / CurrentAction.frames.Length;
 		}
 		return CurrentAction.delay;
 	}
