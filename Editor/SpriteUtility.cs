@@ -22,6 +22,7 @@ public class SpriteUtility {
     private static string GENERATED_BODY_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Body");
     private static string GENERATED_WEAPON_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Weapon");
     private static string GENERATED_SHIELD_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Shield");
+    private static string GENERATED_HEADGEAR_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Headgear");
 
     private static string DEFAULT_HEAD_DIR =
         Path.Combine("data", "sprite", "ÀÎ°£Á·", "¸Ó¸®Åë") + Path.DirectorySeparatorChar;
@@ -31,6 +32,10 @@ public class SpriteUtility {
 
     private static string DEFAULT_WEAPON_DIR = Path.Combine("data", "sprite", "ÀÎ°£Á·") + Path.DirectorySeparatorChar;
     private static string DEFAULT_SHIELD_DIR = Path.Combine("data", "sprite", "¹æÆÐ") + Path.DirectorySeparatorChar;
+    private static string DEFAULT_HEADGEAR_DIR = Path.Combine("data", "sprite", "¾Ç¼¼»ç¸®") + Path.DirectorySeparatorChar;
+    private static string DEFAULT_ITEM_DROP_IMAGE_DIR = Path.Combine("data", "sprite", "¾ÆÀÌÅÛ") + Path.DirectorySeparatorChar;
+    private static string DEFAULT_ITEM_COLLECTION_DIR = Path.Combine("data", "sprite", "À¯ÀúÀÎÅÍÆäÀÌ½º", "collection") + Path.DirectorySeparatorChar;
+    private static string DEFAULT_ITEM_INVENTORY_DIR = Path.Combine("data", "sprite", "À¯ÀúÀÎÅÍÆäÀÌ½º", "item") + Path.DirectorySeparatorChar;
 
     private static string DEFAULT_HEAD_PALETTE_DIR =
         Path.Combine("data", "palette", "¸Ó¸®") + Path.DirectorySeparatorChar;
@@ -72,7 +77,7 @@ public class SpriteUtility {
         }
     }
     
-    [MenuItem("UnityRO/Utils/Extract/Sprites/Body")]
+    [MenuItem("UnityRO/Utils/Extract/Sprites/Head")]
     static void ExtractHeadSprites() {
         FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
         var Environment = InitUtilLua();
@@ -104,6 +109,11 @@ public class SpriteUtility {
             EditorUtility.ClearProgressBar();
             AssetDatabase.Refresh();
         }
+    }
+
+    [MenuItem("UnityRO/Utils/Extract/Sprite/Headgear")]
+    static void ExtractHeadgearSprites() {
+        
     }
 
     private static void ExtractSprite(string descriptor, Script luaEnvironment, string destinationDir, string sourceDir, string paletteDir) {
