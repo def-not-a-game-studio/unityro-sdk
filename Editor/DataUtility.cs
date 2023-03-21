@@ -13,8 +13,8 @@ public class DataUtility {
             .ToArray();
     }
 
-    public static List<string> FilterDescriptors(Hashtable descriptors, string filter) {
-        return (from DictionaryEntry entry in descriptors select (entry.Key as string).Trim() into path where path.StartsWith(filter) select path).ToList();
+    public static List<string> FilterDescriptors(Hashtable descriptors, params string[] filters) {
+        return (from object path in descriptors.Keys from filter in filters where (path as string).StartsWith(filter.Replace(Path.DirectorySeparatorChar, '/')) select path as string).ToList();
     }
 }
 #endif
