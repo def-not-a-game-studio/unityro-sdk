@@ -17,7 +17,9 @@ public class SpriteUtility {
     private const string MALE = "³²";
     private const string FEMALE = "¿©";
 
-    private static string GENERATED_RESOURCES_PATH = Path.Combine("Assets", "Resources", "Sprites");
+    private static string GENERATED_RESOURCES_PATH =
+        Path.Combine("Assets", "3rdparty", "unityro-resources", "Resources");
+
     private static string GENERATED_HEAD_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Head");
     private static string GENERATED_BODY_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Body");
     private static string GENERATED_NPC_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Npc");
@@ -41,10 +43,10 @@ public class SpriteUtility {
         Path.Combine("data", "sprite", "¾ÆÀÌÅÛ") + Path.DirectorySeparatorChar;
 
     private static string DEFAULT_ITEM_COLLECTION_DIR =
-        Path.Combine("data", "sprite", "À¯ÀúÀÎÅÍÆäÀÌ½º", "collection") + Path.DirectorySeparatorChar;
+        Path.Combine("data", "texture", "À¯ÀúÀÎÅÍÆäÀÌ½º", "collection") + Path.DirectorySeparatorChar;
 
     private static string DEFAULT_ITEM_INVENTORY_DIR =
-        Path.Combine("data", "sprite", "À¯ÀúÀÎÅÍÆäÀÌ½º", "item") + Path.DirectorySeparatorChar;
+        Path.Combine("data", "texture", "À¯ÀúÀÎÅÍÆäÀÌ½º", "item") + Path.DirectorySeparatorChar;
 
     private static string DEFAULT_NPC_DIR = Path.Combine("data", "sprite", "npc") + Path.DirectorySeparatorChar;
     private static string DEFAULT_MONSTER_DIR = Path.Combine("data", "sprite", "¸ó½ºÅÍ") + Path.DirectorySeparatorChar;
@@ -62,22 +64,22 @@ public class SpriteUtility {
 
         try {
             var bodySpriteDescriptors = DataUtility
-                .FilterDescriptors(FileManager.GetFileDescriptors(),
-                    DEFAULT_BODY_DIR)
-                .Where(it => Path.GetExtension(it) == ".spr")
-                .ToList();
+                                        .FilterDescriptors(FileManager.GetFileDescriptors(),
+                                                           DEFAULT_BODY_DIR)
+                                        .Where(it => Path.GetExtension(it) == ".spr")
+                                        .ToList();
 
             for (var i = 0; i < bodySpriteDescriptors.Count; i++) {
                 var progress = i * 1f / bodySpriteDescriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
-                        $"Extracting effects {i} of {bodySpriteDescriptors.Count}\t\t{progress * 100}%",
-                        progress)) {
+                                                               $"Extracting effects {i} of {bodySpriteDescriptors.Count}\t\t{progress * 100}%",
+                                                               progress)) {
                     break;
                 }
 
                 try {
                     ExtractPCSprite(bodySpriteDescriptors[i], Environment, GENERATED_BODY_PATH, DEFAULT_BODY_DIR,
-                        DEFAULT_BODY_PALETTE_DIR);
+                                    DEFAULT_BODY_PALETTE_DIR);
                 } catch (Exception e) {
                     Debug.LogException(e);
                 }
@@ -97,23 +99,23 @@ public class SpriteUtility {
 
         try {
             var descriptors = DataUtility
-                .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_HEAD_DIR)
-                .Where(it => Path.GetExtension(it) == ".spr")
-                .ToList();
+                              .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_HEAD_DIR)
+                              .Where(it => Path.GetExtension(it) == ".spr")
+                              .ToList();
 
             for (var i = 0; i < descriptors.Count; i++) {
                 var progress = i * 1f / descriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
-                        $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
-                        progress)) {
+                                                               $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
+                                                               progress)) {
                     break;
                 }
 
                 try {
                     ExtractPCSprite(descriptors[i], Environment,
-                        GENERATED_HEAD_PATH,
-                        DEFAULT_HEAD_DIR,
-                        DEFAULT_HEAD_PALETTE_DIR);
+                                    GENERATED_HEAD_PATH,
+                                    DEFAULT_HEAD_DIR,
+                                    DEFAULT_HEAD_PALETTE_DIR);
                 } catch (Exception e) {
                     Debug.LogException(e);
                 }
@@ -127,7 +129,90 @@ public class SpriteUtility {
     }
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Headgear")]
-    static void ExtractHeadgearSprites() { }
+    static void ExtractHeadgearSprites() {
+        //FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        FileManager.LoadGRF("/Users/dms11/Documents/Personal/ragnarok/", new List<string> { "data.grf" });
+
+        try {
+            var descriptors = DataUtility
+                              .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_HEADGEAR_DIR)
+                              .Where(it => Path.GetExtension(it) == ".spr")
+                              .ToList();
+
+            for (var i = 0; i < descriptors.Count; i++) {
+                var progress = i * 1f / descriptors.Count;
+                if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
+                                                               $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
+                                                               progress)) {
+                    break;
+                }
+
+                try {
+                    var descriptor = descriptors[i];
+
+                    var filename = Path.GetFileNameWithoutExtension(descriptor);
+                    var spritePath = descriptor;
+
+                    var genderlessFilename = filename
+                                             .Replace(FEMALE + "_", "")
+                                             .Replace(MALE + "_", "");
+
+                    var inventoryPath = Path.Combine(DEFAULT_ITEM_INVENTORY_DIR, genderlessFilename)
+                                            .Replace(Path.DirectorySeparatorChar, '/');
+                    var collectionPath = Path.Combine(DEFAULT_ITEM_COLLECTION_DIR, genderlessFilename)
+                                             .Replace(Path.DirectorySeparatorChar, '/');
+
+                    var destinationDir = Path.Combine(GENERATED_HEADGEAR_PATH, genderlessFilename);
+
+                    if (!Directory.Exists(destinationDir)) {
+                        Directory.CreateDirectory(destinationDir);
+                    }
+
+                    try {
+                        ExtractHeadgearSprite(spritePath, destinationDir, genderlessFilename + "_view");
+                        ExtractHeadgearTexture(collectionPath, destinationDir, genderlessFilename + "_collection");
+                        ExtractHeadgearTexture(inventoryPath, destinationDir, genderlessFilename + "_inventory");
+                        ProcessInventoryImage(destinationDir, genderlessFilename + "_inventory");
+                    } catch (Exception e) {
+                        Debug.LogException(e);
+                    }
+                } catch (Exception e) {
+                    Debug.LogException(e);
+                }
+            }
+        } catch (Exception e) {
+            EditorUtility.ClearProgressBar();
+        } finally {
+            EditorUtility.ClearProgressBar();
+            AssetDatabase.Refresh();
+        }
+    }
+
+    private static void ProcessInventoryImage(string destinationDir, string genderlessFilename) {
+        var importer =
+            AssetImporter.GetAtPath(Path.Combine(destinationDir,genderlessFilename + ".png")) as TextureImporter;
+        importer.textureType = TextureImporterType.Sprite;
+        importer.wrapMode = TextureWrapMode.Clamp;
+        importer.filterMode = FilterMode.Point;
+        importer.mipmapEnabled = false;
+        var textureSettings = new TextureImporterSettings();
+        importer.ReadTextureSettings(textureSettings);
+        importer.SetTextureSettings(textureSettings);
+        importer.SaveAndReimport();
+    }
+
+    private static void ExtractHeadgearTexture(string path, string assetPath, string genderlessFilename) {
+        var texture = FileManager.Load(path + ".bmp") as Texture2D;
+        if (texture == null) {
+            Debug.LogError($"Couldnt load texture from {path}");
+            return;
+        }
+
+        var bytes = texture.EncodeToPNG();
+        var texturePath = Path.Combine(assetPath, genderlessFilename + ".png");
+        File.WriteAllBytes(texturePath, bytes);
+        AssetDatabase.ImportAsset(texturePath);
+    }
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/NPC and Monster")]
     static void ExtractNPCAndMonstersSprites() {
@@ -136,15 +221,15 @@ public class SpriteUtility {
 
         try {
             var monsterDescriptors = DataUtility
-                .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_MONSTER_DIR)
-                .Where(it => Path.GetExtension(it) == ".spr")
-                .ToList();
+                                     .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_MONSTER_DIR)
+                                     .Where(it => Path.GetExtension(it) == ".spr")
+                                     .ToList();
 
             for (var i = 0; i < monsterDescriptors.Count; i++) {
                 var progress = i * 1f / monsterDescriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
-                        $"Extracting effects {i} of {monsterDescriptors.Count}\t\t{progress * 100}%",
-                        progress)) {
+                                                               $"Extracting effects {i} of {monsterDescriptors.Count}\t\t{progress * 100}%",
+                                                               progress)) {
                     break;
                 }
 
@@ -154,17 +239,17 @@ public class SpriteUtility {
                     Debug.LogException(e);
                 }
             }
-            
+
             var npcDescriptors = DataUtility
-                .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_NPC_DIR)
-                .Where(it => Path.GetExtension(it) == ".spr")
-                .ToList();
+                                 .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_NPC_DIR)
+                                 .Where(it => Path.GetExtension(it) == ".spr")
+                                 .ToList();
 
             for (var i = 0; i < npcDescriptors.Count; i++) {
                 var progress = i * 1f / npcDescriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
-                        $"Extracting effects {i} of {npcDescriptors.Count}\t\t{progress * 100}%",
-                        progress)) {
+                                                               $"Extracting effects {i} of {npcDescriptors.Count}\t\t{progress * 100}%",
+                                                               progress)) {
                     break;
                 }
 
@@ -182,9 +267,44 @@ public class SpriteUtility {
         }
     }
 
-    private static void ExtractNPCSprite(string descriptor,
+    private static void ExtractHeadgearSprite(string descriptor, string destinationDir, string filename) {
+        var baseFileDir = descriptor.Replace(".spr", "");
+
+        var spriteDataPath = Path.Combine(destinationDir, filename);
+        var fullAssetPath = spriteDataPath + ".asset";
+        if (File.Exists(fullAssetPath)) {
+            return;
+        }
+
+        var sprPath = baseFileDir + ".spr";
+        var actPath = baseFileDir + ".act";
+
+        var sprBytes = FileManager.ReadSync(sprPath).ToArray();
+        var act = FileManager.Load(actPath) as ACT;
+
+        var spriteLoader = new CustomSpriteLoader();
+        spriteLoader.Load(sprBytes, filename, false);
+
+        var atlas = spriteLoader.Atlas;
+        var bytes = atlas.EncodeToPNG();
+        var atlasPath = spriteDataPath + ".png";
+        File.WriteAllBytes(atlasPath, bytes);
+        AssetDatabase.ImportAsset(atlasPath);
+        ProcessAtlas(atlasPath, false);
+
+        var spriteData = ScriptableObject.CreateInstance<SpriteData>();
+        spriteData.act = act;
+        spriteData.atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(atlasPath);
+        spriteData.rects = spriteLoader.SpriteRects;
+
+        AssetDatabase.CreateAsset(spriteData, fullAssetPath);
+    }
+
+    private static void ExtractNPCSprite(
+        string descriptor,
         Script luaEnvironment,
-        string destinationDir) {
+        string destinationDir
+    ) {
         var filename = Path.GetFileNameWithoutExtension(descriptor);
         var baseFileDir = descriptor.Replace(".spr", "");
 
@@ -203,8 +323,9 @@ public class SpriteUtility {
             bodyPathKey = pair.Value.CastToString();
             break;
         }
+
         #endregion
-        
+
         var spriteDataPath = Path.Combine(destinationDir, bodyPathKey);
         Directory.CreateDirectory(destinationDir);
         var fullAssetPath = spriteDataPath + ".asset";
@@ -220,7 +341,7 @@ public class SpriteUtility {
 
         var spriteLoader = new CustomSpriteLoader();
         spriteLoader.Load(sprBytes, filename, false);
-        
+
         var atlas = spriteLoader.Atlas;
         var bytes = atlas.EncodeToPNG();
         var atlasPath = spriteDataPath + ".png";
@@ -237,13 +358,15 @@ public class SpriteUtility {
         AssetDatabase.CreateAsset(spriteData, fullAssetPath);
     }
 
-    private static void ExtractPCSprite(string descriptor,
+    private static void ExtractPCSprite(
+        string descriptor,
         Script luaEnvironment,
         string destinationDir,
         string sourceDir,
-        string paletteDir) {
+        string paletteDir
+    ) {
         var filename = Path.GetFileNameWithoutExtension(descriptor)
-            .Split("_")[0];
+                           .Split("_")[0];
         var baseFileDir = descriptor.Replace(".spr", "");
         var pathsTable = luaEnvironment.Globals["PCPaths"] as Table;
         var idsTable = luaEnvironment.Globals["PCIds"] as Table;
@@ -282,7 +405,7 @@ public class SpriteUtility {
 
         var dir = Path
             .GetDirectoryName(descriptor.Replace('/', Path.DirectorySeparatorChar)
-                .Replace(sourceDir, ""));
+                                        .Replace(sourceDir, ""));
 
         var isCostume = dir.Contains("costume_");
         var isFemale = dir.Contains(FEMALE);
@@ -322,9 +445,9 @@ public class SpriteUtility {
         var paletteFilter = Path.Combine(paletteDir, filename + $"_{(isFemale ? FEMALE : MALE)}")
             ;
         var paletteDescriptors = DataUtility
-            .FilterDescriptors(FileManager.GetFileDescriptors(), paletteFilter)
-            .Where(it => Path.GetExtension(it) == ".pal")
-            .ToList();
+                                 .FilterDescriptors(FileManager.GetFileDescriptors(), paletteFilter)
+                                 .Where(it => Path.GetExtension(it) == ".pal")
+                                 .ToList();
 
         foreach (var paletteDescriptor in paletteDescriptors) {
             var memoryReader = FileManager.ReadSync(paletteDescriptor);
@@ -374,7 +497,7 @@ public class SpriteUtility {
         importer.mipmapEnabled = false;
         var textureSettings = new TextureImporterSettings();
         importer.ReadTextureSettings(textureSettings);
-        
+
         if (isSingleChannel) {
             textureSettings.singleChannelComponent = TextureImporterSingleChannelComponent.Red;
             textureSettings.textureFormat = TextureImporterFormat.R8;
@@ -392,10 +515,10 @@ public class SpriteUtility {
         var pcNames = File.ReadAllText(Path.Combine(UTILS_DIR, "PCNames.lub"), Encoding.GetEncoding("windows-1252"));
         var pcPals = File.ReadAllText(Path.Combine(UTILS_DIR, "PCPals.lub"), Encoding.GetEncoding("windows-1252"));
         var shieldTable = File.ReadAllText(Path.Combine(UTILS_DIR, "ShieldTable.lub"),
-            Encoding.GetEncoding("windows-1252"));
+                                           Encoding.GetEncoding("windows-1252"));
         var pcHands = File.ReadAllText(Path.Combine(UTILS_DIR, "PCHands.lub"), Encoding.GetEncoding("windows-1252"));
         var npcIdentity = File.ReadAllText(Path.Combine(UTILS_DIR, "npcidentity.lub"),
-            Encoding.GetEncoding("windows-1252"));
+                                           Encoding.GetEncoding("windows-1252"));
         var jobName = File.ReadAllText(Path.Combine(UTILS_DIR, "jobname.lub"), Encoding.GetEncoding("windows-1252"));
 
         luaEnv.DoString(pcIds);

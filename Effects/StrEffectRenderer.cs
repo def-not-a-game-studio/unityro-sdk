@@ -262,7 +262,7 @@ public class StrEffectRenderer : MonoBehaviour {
         );
     }
 
-    internal void Replay() {
+    public void Replay() {
         if(Anim != null)
             Initialize(Anim);
     }
