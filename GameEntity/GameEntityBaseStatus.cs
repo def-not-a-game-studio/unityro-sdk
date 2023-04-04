@@ -1,3 +1,6 @@
+using System;
+
+[Serializable]
 public class GameEntityBaseStatus {
     
     #region Style
@@ -6,8 +9,6 @@ public class GameEntityBaseStatus {
     public int HairStyle;
     public int Job;
     public bool IsMale;
-    public int Eye;
-    public int EyeColor;
     #endregion
 
     public EntityType EntityType;
