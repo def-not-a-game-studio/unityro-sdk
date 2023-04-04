@@ -277,7 +277,9 @@ namespace ROIO.Loaders {
                 ReadPalette();
 
             Palette = new Texture2D(256, 1, TextureFormat.RGBA32, false, true) {
+#if UNITY_EDITOR
                 alphaIsTransparency = false,
+#endif
                 filterMode = FilterMode.Point
             };
             Palette.LoadRawTextureData(paletteData);
