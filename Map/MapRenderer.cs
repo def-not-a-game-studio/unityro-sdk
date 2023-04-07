@@ -1,5 +1,4 @@
-﻿using Assets.Scripts.Renderer.Map;
-using ROIO;
+﻿using ROIO;
 using ROIO.Loaders;
 using ROIO.Models.FileTypes;
 using System;

@@ -1,8 +1,6 @@
-﻿using ROIO.Loaders;
-using ROIO.Models.FileTypes;
+﻿using ROIO.Models.FileTypes;
 using ROIO.Utils;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 /// <summary>
 /// Altiture renderer
