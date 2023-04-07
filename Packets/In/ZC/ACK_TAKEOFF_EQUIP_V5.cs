@@ -1,5 +1,5 @@
 ﻿using ROIO.Utils;
-using System;
+
 public partial class ZC {
 
     [PacketHandler(HEADER, "ZC_ACK_TAKEOFF_EQUIP_V5", SIZE)]

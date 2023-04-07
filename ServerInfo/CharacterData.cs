@@ -1,5 +1,4 @@
 ﻿using ROIO.Utils;
-using System.IO;
 
 public class CharacterData {
     public const int BLOCK_SIZE = 175;

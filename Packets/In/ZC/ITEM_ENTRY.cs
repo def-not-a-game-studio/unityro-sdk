@@ -1,5 +1,4 @@
 ﻿using ROIO.Utils;
-using System;
 
 public partial class ZC {
     [PacketHandler(HEADER, "ZC_ITEM_ENTRY", SIZE)]

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-
-public partial class CH {
+﻿public partial class CH {
 
     public class SELECT_CHAR : OutPacket {
 
