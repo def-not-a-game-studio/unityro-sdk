@@ -61,7 +61,7 @@ namespace UnityRO.core.Effects {
             var red = 0f;
             var green = 0f;
             var blue = 0f;
-            
+
             if (effect.red > 0) red = effect.red;
             else red = 1;
             if (effect.green > 0) green = effect.green;
@@ -275,13 +275,15 @@ namespace UnityRO.core.Effects {
 
             if (effect.sizeRandX > 0) {
                 var sizeRandXMiddle = effect.sizeRandXMiddle > 0 ? effect.sizeRandXMiddle : 100;
-                RendererParams.sizeStart.x = RandBetween(sizeRandXMiddle - effect.sizeRandX, sizeRandXMiddle + effect.sizeRandX);
+                RendererParams.sizeStart.x =
+                    RandBetween(sizeRandXMiddle - effect.sizeRandX, sizeRandXMiddle + effect.sizeRandX);
                 RendererParams.sizeEnd.x = RendererParams.sizeStart.x;
             }
 
             if (effect.sizeRandY > 0) {
                 var sizeRandYMiddle = effect.sizeRandYMiddle > 0 ? effect.sizeRandYMiddle : 100;
-                RendererParams.sizeStart.y = RandBetween(sizeRandYMiddle - effect.sizeRandY, sizeRandYMiddle + effect.sizeRandY);
+                RendererParams.sizeStart.y =
+                    RandBetween(sizeRandYMiddle - effect.sizeRandY, sizeRandYMiddle + effect.sizeRandY);
                 RendererParams.sizeEnd.y = RendererParams.sizeStart.y;
             }
 
@@ -323,6 +325,139 @@ namespace UnityRO.core.Effects {
             var steps = start / end * 100;
 
             if (steps > 100) steps = 100;
+
+            // todo
+            // if (!this.spriteResource)...
+            // if (this.spriteResource)...
+            // if (this.textureList.length > 0) ...
+            // SpriteRenderer.image.texture = this.texture;
+            // SpriteRenderer.zIndex = this.zindex;
+
+
+            var x = CalculatePosition(steps, RendererParams.rotatePos.x, RendererParams.isRotationClockwise,
+                RendererParams.posXSmooth, RendererParams.positionStart.x, RendererParams.positionEnd.x);
+            var y = CalculatePosition(steps, RendererParams.rotatePos.y, false, RendererParams.posYSmooth,
+                RendererParams.positionStart.y, RendererParams.positionEnd.y);
+            var z = CalculatePosition(steps, 0f, false, RendererParams.posZSmooth,
+                RendererParams.positionStart.z, RendererParams.positionEnd.z);
+
+            var positionDelta = new Vector3(x, y, z);
+            // spriterenderer.position += positionDelta;
+
+            // this is probably the wrong var name
+            // it seems that it is checking to see whether this instance of the renderer is a shadow or not
+            if (RendererParams.useShadow) {
+                // SpriteRenderer.position[2] = Altitude.getCellHeight(SpriteRenderer.position[0], SpriteRenderer.position[0]);
+            }
+
+            var alpha = RendererParams.alphaMax;
+            if (RendererParams.fadeIn && start < end / 4) {
+                alpha = start * RendererParams.alphaMax / (end / 4);
+            } else if (RendererParams.fadeOut && start > end / 2 + end / 4) {
+                alpha = (end - start) * RendererParams.alphaMax / (end / 4);
+            } else if (RendererParams.hasSparkling) {
+                alpha = RendererParams.alphaMax *
+                        ((Mathf.Cos(steps * 11 * RendererParams.sparkNumber * Mathf.PI / 180) + 1) / 2);
+            }
+
+            alpha = alpha switch {
+                < 0 => 0.0f,
+                > 1 => 1.0f,
+                _ => alpha
+            };
+            RendererParams.color.a = alpha;
+            //SpriteRenderer.color = RendererParams.color;
+
+            var size = CalculateSize(steps);
+            // SpriteRenderer.size[0] = sizeX;
+            // SpriteRenderer.size[1] = sizeY;
+            
+            if (RendererParams.rotate) {
+                var angleStep = (RendererParams.targetAngle - RendererParams.angle) / 100;
+                var startAngle = RendererParams.angle;
+                var angle = steps * angleStep + startAngle;
+                //SpriteRenderer.angle = RendererParams.rotateWithCamera ? angle + Camera.angle[1] : angle;
+            } else {
+                //SpriteRenderer.angle = RendererParams.rotateWithCamera ? this.angle + Camera.angle[1] : this.angle;
+            }
+            
+            // todo
+            // if (this.shadowTexture && 0)
+        }
+
+        private Vector2 CalculateSize(long steps) {
+            float sizeX;
+            float sizeY;
+            if (RendererParams.sizeSmooth) {
+                if (RendererParams.sizeEnd.x != RendererParams.sizeStart.x) {
+                    var csJ = steps * 0.09f + 1;
+                    var csK = Mathf.Log10(csJ);
+                    var csL = RendererParams.sizeEnd.x - RendererParams.sizeStart.x;
+                    var csM = RendererParams.sizeStart.x;
+                    var csN = csK * csL + csM;
+                    sizeX = csN;
+                } else sizeX = RendererParams.sizeStart.x;
+
+                if (RendererParams.sizeEnd.y != RendererParams.sizeStart.y) {
+                    var ctf = steps * 0.09f + 1;
+                    var ctg = Mathf.Log10(ctf);
+                    var cth = RendererParams.sizeEnd.y - RendererParams.sizeStart.y;
+                    var cti = RendererParams.sizeStart.y;
+                    var ctj = ctg * cth + cti;
+                    sizeY = ctj;
+                } else sizeY = RendererParams.sizeStart.y;
+            } else {
+                if (RendererParams.sizeEnd.x != RendererParams.sizeStart.x) {
+                    var csL = (RendererParams.sizeEnd.x - RendererParams.sizeStart.x) / 100;
+                    var csM = RendererParams.sizeStart.x;
+                    var csN = steps * csL + csM;
+                    sizeX = csN;
+                } else sizeX = RendererParams.sizeStart.x;
+
+                if (RendererParams.sizeEnd.y != RendererParams.sizeStart.y) {
+                    var cth = (RendererParams.sizeEnd.y - RendererParams.sizeStart.y) / 100;
+                    var cti = RendererParams.sizeStart.y;
+                    var ctj = steps * cth + cti;
+                    sizeY = ctj;
+                } else sizeY = RendererParams.sizeStart.y;
+            }
+
+            return new Vector2(sizeX, sizeY);
+        }
+
+        private float CalculatePosition(long steps,
+            float rotateAxis,
+            bool isRotationClockwise,
+            bool positionAxisSmooth,
+            float positionStartAxis,
+            float positionEndAxis) {
+            float posDelta;
+            if (rotateAxis > 0f) {
+                posDelta = rotateAxis * Mathf.Cos(steps * 3.5f * RendererParams.numberOfRotations * Mathf.PI / 180 -
+                                                  RendererParams.rotateLate * Mathf.PI / 2);
+                if (isRotationClockwise)
+                    posDelta = -1 * posDelta;
+            } else {
+                if (positionAxisSmooth) {
+                    if (positionStartAxis != positionEndAxis) {
+                        var csJ = steps * 0.09f + 1;
+                        var csK = Mathf.Log10(csJ);
+                        var csL = positionEndAxis - positionStartAxis;
+                        var csM = positionStartAxis;
+                        var csN = csK * csL + csM;
+                        posDelta = csN;
+                    } else posDelta = positionStartAxis;
+                } else {
+                    if (positionStartAxis != positionEndAxis) {
+                        var csL = (positionEndAxis - positionStartAxis) / 100;
+                        var csM = positionStartAxis;
+                        var csN = steps * csL + csM;
+                        posDelta = csN;
+                    } else posDelta = positionStartAxis;
+                }
+            }
+
+            return posDelta;
         }
 
         private static float RandBetween(float minimum, float maximum) {
