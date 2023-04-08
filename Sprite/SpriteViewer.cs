@@ -87,10 +87,11 @@ public class SpriteViewer : MonoBehaviour {
         MeshCollider = GetComponent<MeshCollider>();
         Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
 
-        Sprites = SpriteData.sprites;
+        Sprites = SpriteData.GetSprites();
         FramePaceCalculator = new FramePaceCalculator(Entity, ViewerType, SpriteData.act);
         MeshRenderer.material = new Material(Shader.Find("Shaders/SpriteShaderGraph"));
         MeshRenderer.material.SetTexture("_MainTex", Atlas);
+        MeshRenderer.material.SetTexture("");
     }
 
     private void UpdateLocalPosition() {
