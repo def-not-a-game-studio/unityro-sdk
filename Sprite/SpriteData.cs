@@ -18,11 +18,11 @@ public class SpriteData : ScriptableObject {
         return GetSprites(atlas);
     }
     
-    public Sprite[] GetSprites(Texture2D Atlas) {
+    public Sprite[] GetSprites(Texture2D atlas) {
         return rects
             .Select(t =>
-                new Rect(t.x * Atlas.width, t.y * Atlas.height, t.width * Atlas.width, t.height * Atlas.height)).Select(
-                texrect => UnityEngine.Sprite.Create(Atlas, texrect, new Vector2(0.5f, 0.5f), SPR.PIXELS_PER_UNIT, 0,
+                new Rect(t.x * atlas.width, t.y * atlas.height, t.width * atlas.width, t.height * atlas.height)).Select(
+                texrect => UnityEngine.Sprite.Create(atlas, texrect, new Vector2(0.5f, 0.5f), SPR.PIXELS_PER_UNIT, 0,
                     SpriteMeshType.FullRect)).ToArray();
     }
 }

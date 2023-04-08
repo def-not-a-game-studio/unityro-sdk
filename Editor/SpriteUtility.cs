@@ -18,7 +18,7 @@ public class SpriteUtility {
     private const string FEMALE = "¿©";
 
     private static string GENERATED_RESOURCES_PATH =
-        Path.Combine("Assets", "3rdparty", "unityro-resources", "Resources");
+        Path.Combine("Assets", "3rdparty", "unityro-resources", "Resources", "Sprites");
 
     private static string GENERATED_HEAD_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Head");
     private static string GENERATED_BODY_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Body");
@@ -433,7 +433,7 @@ public class SpriteUtility {
         var paletteList = new List<Texture2D>();
         var palette = spriteLoader.Palette;
         var paletteBytes = palette.EncodeToPNG();
-        var palettePath = spriteDataPath + "_pal.png";
+        var palettePath = spriteDataPath + "_pal_0.png";
         File.WriteAllBytes(palettePath, paletteBytes);
         AssetDatabase.ImportAsset(palettePath);
 
@@ -456,7 +456,7 @@ public class SpriteUtility {
             paletteTexture.filterMode = FilterMode.Point;
             paletteTexture.LoadRawTextureData(memoryReader.ToArray());
             paletteTexture.Apply();
-            var pNumber = paletteDescriptor.Split("_").Last().Split(".").First();
+            var pNumber = int.Parse(paletteDescriptor.Split("_").Last().Split(".").First()) + 1;
 
             var pBytes = paletteTexture.EncodeToPNG();
             var pPath = spriteDataPath + $"_pal_{pNumber}.png";
@@ -467,7 +467,7 @@ public class SpriteUtility {
             paletteList.Add(diskPalette);
         }
 
-        spriteData.palettes = paletteList.ToArray();
+        spriteData.palettes = paletteList.OrderBy(it => it.name).ToArray();
 
         var fullAssetPath = spriteDataPath + ".asset";
         AssetDatabase.CreateAsset(spriteData, fullAssetPath);
