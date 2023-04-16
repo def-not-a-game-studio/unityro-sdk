@@ -1,22 +1,31 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.Scripts.Renderer.Map.Effects.EffectTypes;
 using UnityEngine;
 
 namespace UnityRO.core.Effects {
     public class CylinderEffectRenderer : MonoBehaviour {
+        public CylinderEffectPart Part;
+
         private void Start() {
             var meshRenderer = gameObject.AddComponent<MeshRenderer>();
             var meshFilter = gameObject.AddComponent<MeshFilter>();
 
-            var totalCircleSides = 20;
-            var circleSides = 20;
-            var repeatTextureX = 1;
-            
-            var mesh = GenerateCylinder(totalCircleSides, circleSides, repeatTextureX);
+            var mesh = GenerateCylinder(Part.totalCircleSides, Part.circleSides, Part.repeatTextureX);
             mesh.uv = UvCalculator.CalculateUVs(mesh.vertices, 1f);
             meshFilter.mesh = mesh;
             meshRenderer.material = new Material(Shader.Find("Custom/Cylinder"));
+
+            meshRenderer.material.SetTexture("_MainTex", Part.texture);
+            meshRenderer.material.SetFloat("_TopSize", Part.topSize);
+            meshRenderer.material.SetFloat("_BottomSize", Part.bottomSize);
+            meshRenderer.material.SetFloat("_Height", Part.height);
+
+            transform.Rotate(Vector3.up, Part.angleY);
+            transform.position += Part.position;
+
+            //meshRenderer.material.SetVector("_Position", Part.position);
         }
 
         private Mesh GenerateCylinder(int totalCircleSides, int circleSides, int repeatTextureX) {
