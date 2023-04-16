@@ -1,12 +1,14 @@
+using System;
 using UnityEngine;
 
 namespace Assets.Scripts.Renderer.Map.Effects.EffectTypes
 {
-    [CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Effect/Cylinder Effect")]
-    public class CylinderEffect : Effect
+    //[CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Effect/Cylinder Effect")]
+    [Serializable]
+    public class CylinderEffectPart
     {
         // name of texture from data/texture/effect/*.tga
-        public string textureName;
+        public Texture2D texture;
         [Range(0f, 1f)] public float red;
         [Range(0f, 1f)] public float green;
         [Range(0f, 1f)] public float blue;
