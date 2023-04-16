@@ -1,5 +1,4 @@
-﻿
-using ROIO;
+﻿using ROIO;
 using ROIO.Models.FileTypes;
 using System;
 using System.Collections.Generic;
@@ -39,7 +38,7 @@ public class Ground {
     public void Render() {
         GameObject ground = new GameObject("_Ground");
         ground.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
-        var material = new Material(Shader.Find("Shader Graphs/GroundShader"));
+        var material = new Material(Shader.Find("Standard"));
 
         for (int i = 0; i < meshes.Length; i++) {
             Mesh mesh = meshes[i];
@@ -68,12 +67,12 @@ public class Ground {
     }
 
     public void InitTextures(GND.Mesh compiledMesh) {
-        var material = new Material(Shader.Find("Shader Graphs/GroundShader"));
+        var material = new Material(Shader.Find("Standard"));
         var textures = compiledMesh.textures;
         var count = textures.Length;
         var _width = Math.Round(Math.Sqrt(count));
-        int width = (int) Math.Pow(2, Math.Ceiling(Math.Log(_width * 258) / Math.Log(2)));
-        int height = (int) Math.Pow(2, Math.Ceiling(Math.Log(Math.Ceiling(Math.Sqrt(count)) * 258) / Math.Log(2)));
+        int width = (int)Math.Pow(2, Math.Ceiling(Math.Log(_width * 258) / Math.Log(2)));
+        int height = (int)Math.Pow(2, Math.Ceiling(Math.Log(Math.Ceiling(Math.Sqrt(count)) * 258) / Math.Log(2)));
 
         RenderTexture renderTexture = RenderTexture.GetTemporary(width, height);
 
@@ -90,8 +89,8 @@ public class Ground {
             // Why tho? Can't remember now (16/09/2022)
             // Could be because this is only called when building the map using the grf so we can save as prefab
             var texture = FileManager.Load(textures[i]) as Texture2D;
-            var x = (float) (i % _width) * 258;
-            var y = (float) Math.Floor(i / _width) * 258;
+            var x = (float)(i % _width) * 258;
+            var y = (float)Math.Floor(i / _width) * 258;
 
             Graphics.DrawTexture(new Rect(x, y, 264, 264), texture);
             Graphics.DrawTexture(new Rect(x + 1, y + 1, 256, 256), texture);
@@ -115,7 +114,7 @@ public class Ground {
     }
 
     public void BuildMesh(GND.Mesh compiledMesh) {
-        meshes = new Mesh[(int) Math.Ceiling(compiledMesh.meshVertCount / (float) int.MaxValue)];
+        meshes = new Mesh[(int)Math.Ceiling(compiledMesh.meshVertCount / (float)int.MaxValue)];
 
         for (int nMesh = 0; nMesh < meshes.Length; nMesh++) {
             List<Vector3> vertices = new List<Vector3>();
@@ -137,7 +136,8 @@ public class Ground {
                         break;
                     }
 
-                    Array.ConstrainedCopy(compiledMesh.mesh, vIndex * vertexData.Length, vertexData, 0, vertexData.Length);
+                    Array.ConstrainedCopy(compiledMesh.mesh, vIndex * vertexData.Length, vertexData, 0,
+                        vertexData.Length);
                     Vertex vertex = BuildVertex(vertexData);
                     vs[j] = vertex;
                     vertices.Add(vertex.position);
