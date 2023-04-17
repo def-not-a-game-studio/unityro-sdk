@@ -1,9 +1,12 @@
 using UnityEngine;
 
 namespace UnityRO.core.Effects {
-    
     public class UvCalculator {
-        private enum Facing { Up, Forward, Right };
+        private enum Facing {
+            Up,
+            Forward,
+            Right
+        };
 
         public static Vector2[] CalculateUVs(Vector3[] v /*vertices*/, float scale) {
             var uvs = new Vector2[v.Length];
@@ -12,6 +15,16 @@ namespace UnityRO.core.Effects {
                 int i0 = i;
                 int i1 = i + 1;
                 int i2 = i + 2;
+                
+                //Special handling if vertex count isn't a multiple of 3
+                if (i == uvs.Length - 1) {
+                    i1 = 0;
+                    i2 = 1;
+                }
+
+                if (i == uvs.Length - 2) {
+                    i2 = 0;
+                }
 
                 Vector3 v0 = v[i0];
                 Vector3 v1 = v[i1];
@@ -43,7 +56,10 @@ namespace UnityRO.core.Effects {
             return uvs;
         }
 
-        private static bool FacesThisWay(Vector3 v, Vector3 dir, Facing p, ref float maxDot, ref Facing ret) {
+        private static bool FacesThisWay(
+            Vector3 v, Vector3 dir, Facing p,
+            ref float maxDot, ref Facing ret
+        ) {
             float t = Vector3.Dot(v, dir);
             if (t > maxDot) {
                 ret = p;
