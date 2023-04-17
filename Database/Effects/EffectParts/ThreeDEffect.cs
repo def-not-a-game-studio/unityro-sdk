@@ -1,8 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Assets.Scripts.Renderer.Map.Effects.EffectParts;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Effect/3D Effect")]
-public class ThreeDEffect : Effect {
+//[CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Effect/3D Effect")]
+[Serializable]
+public class ThreeDEffect : EffectPart {
+    public long duration;
+    public int duplicates;
+    public float timeBetweenDuplication;
+    public AudioClip wav;
+    public bool attachedEntity;
+    
     /// type = 3D
     ///
     /// - file:

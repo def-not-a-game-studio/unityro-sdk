@@ -1,7 +1,16 @@
+using System;
 using UnityEngine;
 
-namespace Assets.Scripts.Renderer.Map.Effects.EffectTypes {
-    public class TwoDEffect : Effect {
+namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
+    [Serializable]
+    public class TwoDEffect : EffectPart {
+        
+        public long duration;
+        public int duplicates;
+        public float timeBetweenDuplication;
+        public AudioClip wav;
+        public bool attachedEntity;
+        
         /// type = 2D
         ///
         /// - file:

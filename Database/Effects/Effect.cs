@@ -1,11 +1,16 @@
-﻿using UnityEngine;
+﻿using System;
+using Assets.Scripts.Renderer.Map.Effects.EffectParts;
+using UnityEngine;
 
-public abstract class Effect : ScriptableObject {
+[CreateAssetMenu(menuName = "UnityRO/Database Entry/Effect")]
+[Serializable]
+public class Effect : ScriptableObject {
+    
     public int EffectId;
     
-    public long duration;
-    public int duplicates;
-    public float timeBetweenDuplication;
-    public AudioClip wav;
-    public bool attachedEntity;
+    public CylinderEffectPart[] CylinderParts;
+    public SprEffect[] SPRParts;
+    public StrEffect[] STRParts;
+    public ThreeDEffect[] ThreeDParts;
+    public TwoDEffect[] TwoDParts;
 }
