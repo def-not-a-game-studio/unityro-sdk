@@ -4,13 +4,12 @@ using UnityEngine;
 
 namespace UnityRO.core.Effects {
     public class CylinderEffectRenderer : MonoBehaviour {
-        
         public CylinderEffectPart Part;
         public long DelayToStart = 0;
 
         [SerializeField] private float RotationSpeed = 40f;
-        
-        
+
+
         private MeshRenderer _meshRenderer;
 
         private long startTick;
@@ -21,8 +20,6 @@ namespace UnityRO.core.Effects {
             var meshFilter = gameObject.AddComponent<MeshFilter>();
 
             var mesh = GenerateCylinder(Part.totalCircleSides, Part.circleSides, Part.repeatTextureX);
-            mesh.uv = UvCalculator.CalculateUVs(mesh.vertices, 1f);
-            mesh.RecalculateNormals();
             meshFilter.mesh = mesh;
             _meshRenderer.material = new Material(Shader.Find("Custom/Cylinder"));
 
@@ -172,6 +169,7 @@ namespace UnityRO.core.Effects {
         private Mesh GenerateCylinder(int totalCircleSides, int circleSides, int repeatTextureX) {
             Vector3[] vertices = new Vector3[(circleSides + 1) * 2];
             int[] triangles = new int[circleSides * 6];
+            Vector2[] uvs = new Vector2[vertices.Length];
 
             int vertexIndex = 0;
             int triangleIndex = 0;
@@ -186,8 +184,14 @@ namespace UnityRO.core.Effects {
                 float bottomRadius = (float)Math.Cos(a * Math.PI * 2);
                 float topRadius = (float)Math.Cos(b * Math.PI * 2);
 
-                vertices[vertexIndex++] = new Vector3(bottomRadius, bottomY, 0f);
-                vertices[vertexIndex++] = new Vector3(topRadius, topY, 1f);
+                var bottomIndex = vertexIndex++;
+                var topIndex = vertexIndex++;
+                
+                vertices[bottomIndex] = new Vector3(bottomRadius, bottomY, 0f);
+                vertices[topIndex] = new Vector3(topRadius, topY, 1f);
+                
+                uvs[topIndex] = new Vector2(a * totalCircleSides / circleSides, 1);
+                uvs[bottomIndex] = new Vector2(b * totalCircleSides / circleSides, 0);
 
                 if (i < circleSides) {
                     triangles[triangleIndex++] = i * 2;
@@ -203,6 +207,8 @@ namespace UnityRO.core.Effects {
             var mesh = new Mesh();
             mesh.vertices = vertices;
             mesh.triangles = triangles;
+            mesh.uv = uvs;
+            mesh.RecalculateNormals();
 
             return mesh;
         }
