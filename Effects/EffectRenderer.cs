@@ -8,10 +8,14 @@ namespace UnityRO.core.Effects {
         [SerializeField] private Effect Effect;
 
         private void Start() {
+            InitEffects();
+        }
+
+        public void InitEffects() {
             if (Effect.CylinderParts.Length > 0) {
                 for (int i = 0; i < Effect.CylinderParts.Length; i++) {
                     var param = Effect.CylinderParts[i];
-                    
+
                     var cylinderRenderer = new GameObject($"Cylinder{i}").AddComponent<CylinderEffectRenderer>();
                     cylinderRenderer.transform.SetParent(transform, false);
                     cylinderRenderer.Part = param;

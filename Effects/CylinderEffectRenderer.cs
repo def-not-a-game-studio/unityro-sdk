@@ -1,13 +1,16 @@
 using System;
 using Assets.Scripts.Renderer.Map.Effects.EffectParts;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace UnityRO.core.Effects {
     public class CylinderEffectRenderer : MonoBehaviour {
+        
         public CylinderEffectPart Part;
         public long DelayToStart = 0;
 
+        [SerializeField] private float RotationSpeed = 40f;
+        
+        
         private MeshRenderer _meshRenderer;
 
         private long startTick;
@@ -60,6 +63,7 @@ namespace UnityRO.core.Effects {
             endTick = startTick + Part.duration;
         }
 
+
         public void Update() {
             var duration = endTick - startTick;
             if (startTick > GameManager.Tick) return;
@@ -70,22 +74,35 @@ namespace UnityRO.core.Effects {
                 if (Part.repeat) {
                     DelayToStart = 0;
                     ResetTimers();
+                } else {
+                    Destroy(gameObject);
                 }
             }
 
+            HandleFade(renderCount, duration);
+            HandleAnimation(duration, renderCount);
+
+            if (Part.rotate) {
+                transform.Rotate(Vector3.up, Time.deltaTime * RotationSpeed);
+            }
+        }
+
+        private void HandleFade(float renderCount, long duration) {
             Part.Color.a = Part.alphaMax;
 
             if (Part.fade) {
                 if (renderCount < duration / 4) {
-                    Part.Color.a = renderCount * Part.alphaMax / (Part.duration / 4);
+                    Part.Color.a = renderCount * Part.alphaMax / (duration / 4);
                 } else if (renderCount > duration / 2 + duration / 4) {
                     Part.Color.a = (duration - renderCount) * Part.alphaMax / (duration / 4);
                 }
-
-                _meshRenderer.material.SetColor("_Color", Part.Color);
             }
 
-            float height = 0, topSize = 0, bottomSize = 0;
+            _meshRenderer.material.SetColor("_Color", Part.Color);
+        }
+
+        private void HandleAnimation(long duration, float renderCount) {
+            float height = Part.height, topSize = Part.topSize, bottomSize = Part.bottomSize;
 
             switch (Part.animation) {
                 case 1:
@@ -130,6 +147,7 @@ namespace UnityRO.core.Effects {
                     if (bottomSize < 0) bottomSize = 0;
                     topSize = renderCount / duration * Part.topSize;
                     if (topSize < 0) topSize = 0;
+
                     break;
                 case 5:
                     if (renderCount < duration / 2) {
