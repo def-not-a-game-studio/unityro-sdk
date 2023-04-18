@@ -31,8 +31,7 @@ namespace UnityRO.core.Effects {
         }
 
         private void Init() {
-            startTick = GameManager.Tick + DelayToStart;
-            endTick = startTick + Part.duration;
+            ResetTimers();
 
             _meshRenderer.material.SetFloat("_TopSize", Part.topSize);
             _meshRenderer.material.SetFloat("_BottomSize", Part.bottomSize);
@@ -49,14 +48,20 @@ namespace UnityRO.core.Effects {
             }
 
             if (Part.fade) {
-                Part.Color.a = Part.alphaMax;
+                Part.Color.a = 0f;
                 _meshRenderer.material.SetColor("_Color", Part.Color);
             }
 
             _meshRenderer.material.SetFloat("_DstBlend", Part.blendMode - 1);
         }
 
+        private void ResetTimers() {
+            startTick = GameManager.Tick + DelayToStart;
+            endTick = startTick + Part.duration;
+        }
+
         public void Update() {
+            var duration = endTick - startTick;
             if (startTick > GameManager.Tick) return;
 
             var renderCount = (GameManager.Tick - startTick) * 1f;
@@ -64,17 +69,19 @@ namespace UnityRO.core.Effects {
             if (GameManager.Tick > endTick) {
                 if (Part.repeat) {
                     DelayToStart = 0;
-                    Init();
+                    ResetTimers();
                 }
             }
 
+            Part.Color.a = Part.alphaMax;
+
             if (Part.fade) {
-                if (renderCount < Part.duration / 4f) {
-                    Part.Color.a = renderCount * Part.alphaMax / (Part.duration / 4f);
-                } else if (renderCount > Part.duration / 2f + Part.duration / 4f) {
-                    Part.Color.a = (Part.duration - renderCount) * Part.alphaMax / (Part.duration / 4f);
+                if (renderCount < duration / 4) {
+                    Part.Color.a = renderCount * Part.alphaMax / (Part.duration / 4);
+                } else if (renderCount > duration / 2 + duration / 4) {
+                    Part.Color.a = (duration - renderCount) * Part.alphaMax / (duration / 4);
                 }
-                
+
                 _meshRenderer.material.SetColor("_Color", Part.Color);
             }
 
@@ -82,53 +89,53 @@ namespace UnityRO.core.Effects {
 
             switch (Part.animation) {
                 case 1:
-                    if (Part.duration > 1000) {
+                    if (duration > 1000) {
                         if (renderCount <= 1000) {
-                            height = renderCount / 1000f * Part.height;
+                            height = renderCount / 1000 * Part.height;
                         } else {
                             height = Part.height;
                         }
                     } else {
-                        height = renderCount / Part.duration * Part.height;
+                        height = renderCount / duration * Part.height;
                     }
 
                     topSize = Part.topSize;
                     break;
                 case 2:
-                    if (Part.duration > 1000) {
+                    if (duration > 1000) {
                         if (renderCount <= 1000) {
                             topSize = renderCount / 1000 * Part.topSize;
                         } else {
                             topSize = Part.topSize;
                         }
                     } else {
-                        topSize = renderCount / Part.duration * Part.topSize;
+                        topSize = renderCount / duration * Part.topSize;
                     }
 
                     break;
                 case 3:
                     height = Part.height;
-                    bottomSize = (1 - renderCount / Part.duration) * Part.bottomSize;
-                    topSize = (1 - renderCount / Part.duration) * Part.topSize;
-                    if (renderCount < Part.duration / 2f) {
-                        height = renderCount * Part.height / (Part.duration / 2f);
-                    } else if (renderCount > Part.duration / 2f) {
-                        height = (Part.duration - renderCount) * Part.height / (Part.duration / 2f);
+                    bottomSize = (1 - renderCount / duration) * Part.bottomSize;
+                    topSize = (1 - renderCount / duration) * Part.topSize;
+                    if (renderCount < duration / 2) {
+                        height = renderCount * Part.height / (duration / 2);
+                    } else if (renderCount > duration / 2) {
+                        height = (duration - renderCount) * Part.height / (duration / 2);
                     }
 
                     break;
                 case 4:
                     height = Part.height;
-                    bottomSize = renderCount / Part.duration * Part.bottomSize;
+                    bottomSize = renderCount / duration * bottomSize;
                     if (bottomSize < 0) bottomSize = 0;
-                    topSize = renderCount / Part.duration * Part.topSize;
+                    topSize = renderCount / duration * Part.topSize;
                     if (topSize < 0) topSize = 0;
                     break;
                 case 5:
-                    if (renderCount < Part.duration / 2f) {
-                        height = renderCount * 2 / Part.duration * Part.height;
+                    if (renderCount < duration / 2) {
+                        height = renderCount * 2 / duration * Part.height;
                     } else {
-                        height = (Part.duration - renderCount) * Part.height / (Part.duration / 2f);
+                        height = (duration - renderCount) * Part.height / (duration / 2);
                     }
 
                     topSize = Part.topSize;
