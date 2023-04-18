@@ -52,16 +52,29 @@ namespace UnityRO.core.Effects {
                 _meshRenderer.material.SetColor("_Color", Part.Color);
             }
 
-            _meshRenderer.material.SetFloat("_DstBlend", Part.blendMode - 1);
+            _meshRenderer.material.SetFloat("_DstBlend", (int)Part.blendMode);
         }
 
         private void ResetTimers() {
             startTick = GameManager.Tick + DelayToStart;
             endTick = startTick + Part.duration;
         }
+        
+        public float updateRate = 30f;
+        private float nextUpdate = 0f;
 
+        public void LateUpdate() {
+            var timeInterval = Time.time - nextUpdate;
+            if (timeInterval <= 1f / updateRate)
+            {
+                return;
+            }
 
-        public void Update() {
+            nextUpdate = Time.time;
+            Render();
+        }
+
+        private void Render() {
             var duration = endTick - startTick;
             if (startTick > GameManager.Tick) return;
 

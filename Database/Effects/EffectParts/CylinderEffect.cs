@@ -1,6 +1,7 @@
 using System;
 using Assets.Scripts.Renderer.Map.Effects.EffectParts;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
     
@@ -47,7 +48,7 @@ namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
         ///	 - 13: CONSTANT_ALPHA
         ///	 - 14: ONE_MINUS_CONSTANT_ALPHA
         ///	 - 15: SRC_ALPHA_SATURATE
-        public int blendMode;
+        public BlendMode blendMode = BlendMode.OneMinusSrcAlpha;
 
         public bool repeat;
         public long duration;
