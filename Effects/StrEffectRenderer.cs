@@ -34,50 +34,7 @@ public class StrEffectRenderer : MonoBehaviour {
     private Transform LayersParent;
 
     public UnityAction OnEnd;
-
-    private void Start() {
-        BlendModes[1] = BlendMode.Zero;
-        BlendModes[2] = BlendMode.One;
-        BlendModes[3] = BlendMode.SrcColor;
-        BlendModes[4] = BlendMode.OneMinusSrcColor;
-        BlendModes[5] = BlendMode.SrcAlpha;
-        BlendModes[6] = BlendMode.OneMinusSrcAlpha;
-        BlendModes[7] = BlendMode.DstAlpha;
-        BlendModes[8] = BlendMode.OneMinusDstAlpha;
-        BlendModes[9] = BlendMode.DstColor;
-        BlendModes[10] = BlendMode.OneMinusDstAlpha;
-        BlendModes[11] = BlendMode.SrcAlphaSaturate;
-        BlendModes[12] = BlendMode.SrcAlphaSaturate;
-        BlendModes[13] = BlendMode.Zero;
-        BlendModes[14] = BlendMode.Zero;
-        BlendModes[15] = BlendMode.Zero;
-    }
-
-    private Material GetEffectMaterial(int layer, int srcBlend, int destBlend) {
-        var hash = $"{Anim.name}-{layer}-{srcBlend.ToString()}-{destBlend.ToString()}";
-        if (materials.TryGetValue(hash, out var val))
-            return val;
-
-        var mat = new Material(Shader.Find("Ragnarok/EffectShader"));
-
-        this.srcBlend = BlendModes[srcBlend];
-        this.dstBlend = BlendModes[destBlend];
-
-        if (this.srcBlend == BlendMode.SrcAlpha && this.dstBlend == BlendMode.DstAlpha) {
-            this.dstBlend = BlendMode.One;
-        }
-
-        mat.SetFloat("_SrcBlend", (float)this.srcBlend);
-        mat.SetFloat("_DstBlend", (float)this.dstBlend);
-        mat.SetFloat("_ZWrite", 0);
-        mat.SetFloat("_Cull", 0);
-
-        mat.SetTexture("_MainTex", Anim.Atlas);
-        mat.SetColor("_Color", Color.white);
-
-        return mat;
-    }
-
+    
     public void Initialize(STR animation) {
         Anim = animation;
 
@@ -107,6 +64,24 @@ public class StrEffectRenderer : MonoBehaviour {
         isInit = true;
     }
 
+    private void Start() {
+        BlendModes[1] = BlendMode.Zero;
+        BlendModes[2] = BlendMode.One;
+        BlendModes[3] = BlendMode.SrcColor;
+        BlendModes[4] = BlendMode.OneMinusSrcColor;
+        BlendModes[5] = BlendMode.SrcAlpha;
+        BlendModes[6] = BlendMode.OneMinusSrcAlpha;
+        BlendModes[7] = BlendMode.DstAlpha;
+        BlendModes[8] = BlendMode.OneMinusDstAlpha;
+        BlendModes[9] = BlendMode.DstColor;
+        BlendModes[10] = BlendMode.OneMinusDstColor;
+        BlendModes[11] = BlendMode.One;
+        BlendModes[12] = BlendMode.One;
+        BlendModes[13] = BlendMode.Zero;
+        BlendModes[14] = BlendMode.Zero;
+        BlendModes[15] = BlendMode.Zero;
+    }
+    
     // Use this for initialization
     private void Awake() {
         LayersParent = new GameObject("Layers").transform;
@@ -114,10 +89,75 @@ public class StrEffectRenderer : MonoBehaviour {
         if (Anim != null)
             Initialize(Anim);
     }
+    
+    private void Update() {
+        if (!isInit)
+            return;
+
+        time += Time.deltaTime;
+        var newFrame = Mathf.FloorToInt(time * Anim.fps);
+        if (newFrame == frame)
+            return;
+
+        //Debug.Log(frame);
+
+        frame = newFrame;
+
+        if (frame > Anim.maxKey) {
+            isInit = false;
+
+            LayersParent.GetChildren().ForEach(it => Destroy(it.gameObject));
+
+            layerObjects.Clear();
+            layerRenderers.Clear();
+            layerFilters.Clear();
+            layerMeshes.Clear();
+
+            if (Loop) {
+                Initialize(Anim);
+            }
+
+            OnEnd?.Invoke();
+
+            return;
+        }
+
+        UpdateAnimationFrame();
+    }
+
+    
+    private Material GetEffectMaterial(int layer, int srcBlend, int destBlend) {
+        var hash = $"{Anim.name}-{layer}-{srcBlend.ToString()}-{destBlend.ToString()}";
+        if (materials.TryGetValue(hash, out var val))
+            return val;
+
+        var mat = new Material(Shader.Find("Ragnarok/EffectShader"));
+
+        this.srcBlend = BlendModes[srcBlend];
+        this.dstBlend = BlendModes[destBlend];
+
+        if (this.srcBlend == BlendMode.SrcAlpha && this.dstBlend == BlendMode.DstAlpha) {
+            this.dstBlend = BlendMode.One;
+        }
+
+        mat.SetFloat("_SrcBlend", (float)this.srcBlend);
+        mat.SetFloat("_DstBlend", (float)this.dstBlend);
+        mat.SetFloat("_ZWrite", 0);
+        mat.SetFloat("_Cull", 0);
+
+        mat.SetTexture("_MainTex", Anim.Atlas);
+        mat.SetColor("_Color", Color.white);
+
+        return mat;
+    }
 
     private void UpdateMesh(
-        MeshFilter mf, Mesh mesh, Vector2[] pos,
-        Vector2[] uvs, float angle, int imageId
+        MeshFilter mf,
+        Mesh mesh,
+        Vector2[] pos,
+        Vector2[] uvs,
+        float angle,
+        int imageId
     ) {
         if (pos.Length > 4 || uvs.Length > 4)
             Debug.LogError("WHOA! Animation " + Anim.name + " has more than 4 verticies!");
@@ -141,9 +181,9 @@ public class StrEffectRenderer : MonoBehaviour {
         tempUvs[1] = new Vector2(bounds.xMax, bounds.yMax);
 
         tempTris = new int[] {
-                                 0, 1, 2,
-                                 1, 3, 2
-                             };
+            0, 1, 2,
+            1, 3, 2
+        };
 
         mesh.vertices = tempPositions;
         mesh.uv = tempUvs;
@@ -154,10 +194,13 @@ public class StrEffectRenderer : MonoBehaviour {
     }
 
     private void UpdateLayerData(
-        GameObject go, Material mat, Vector2 pos,
-        Color color
+        GameObject go,
+        Material mat,
+        Vector2 pos,
+        Color color,
+        int layerNum
     ) {
-        go.transform.localPosition = new Vector3((pos.x - 320f) / 35f, -(pos.y - 360f) / 35f, 0);
+        go.transform.localPosition = new Vector3((pos.x - 320f) / 35f, -(pos.y - 360f) / 35f, -(layerNum / 10f));
         go.transform.localScale = Vector3.one;
         mat.SetColor("_Color", color);
     }
@@ -209,7 +252,7 @@ public class StrEffectRenderer : MonoBehaviour {
 
             var fixedFrame = layer.texturesIds[(int)from.animFrame];
             UpdateMesh(mf, mesh, from.xy, from.uv, from.angle, fixedFrame);
-            UpdateLayerData(go, mat, from.position, from.color);
+            UpdateLayerData(go, mat, from.position, from.color, layerNum);
             return true;
         }
 
@@ -247,7 +290,7 @@ public class StrEffectRenderer : MonoBehaviour {
         var texIndex = layer.texturesIds[frameId];
 
         UpdateMesh(mf, mesh, tempPositions2, tempUvs2, angle, texIndex);
-        UpdateLayerData(go, mat, pos, color);
+        UpdateLayerData(go, mat, pos, color, layerNum);
 
         return true;
     }
@@ -262,47 +305,11 @@ public class StrEffectRenderer : MonoBehaviour {
         }
     }
 
-    // Update is called once per frame
-    private void Update() {
-        if (!isInit)
-            return;
-
-        time += Time.deltaTime;
-        var newFrame = Mathf.FloorToInt(time * Anim.fps);
-        if (newFrame == frame)
-            return;
-
-        //Debug.Log(frame);
-
-        frame = newFrame;
-
-        if (frame > Anim.maxKey) {
-            isInit = false;
-
-            LayersParent.GetChildren().ForEach(it => Destroy(it.gameObject));
-
-            layerObjects.Clear();
-            layerRenderers.Clear();
-            layerFilters.Clear();
-            layerMeshes.Clear();
-
-            if (Loop) {
-                Initialize(Anim);
-            }
-            
-            OnEnd?.Invoke();
-
-            return;
-        }
-
-        UpdateAnimationFrame();
-    }
-
     private Vector2 Rotate(Vector2 v, float delta) {
         return new Vector2(
-                           v.x * Mathf.Cos(delta) - v.y * Mathf.Sin(delta),
-                           v.x * Mathf.Sin(delta) + v.y * Mathf.Cos(delta)
-                          );
+            v.x * Mathf.Cos(delta) - v.y * Mathf.Sin(delta),
+            v.x * Mathf.Sin(delta) + v.y * Mathf.Cos(delta)
+        );
     }
 
     public void Replay() {
