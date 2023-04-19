@@ -1,6 +1,7 @@
 ﻿using ROIO.Models.FileTypes;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Rendering;
 
 public class StrEffectRenderer : MonoBehaviour {
@@ -31,6 +32,8 @@ public class StrEffectRenderer : MonoBehaviour {
     private int frame;
 
     private Transform LayersParent;
+
+    public UnityAction OnEnd;
 
     private void Start() {
         BlendModes[1] = BlendMode.Zero;
@@ -217,7 +220,7 @@ public class StrEffectRenderer : MonoBehaviour {
 
         //Debug.Log("from: " + from.Position + " to: " + to.Position + " delta:" + delta);
         var pos = from.position + to.position * delta;
-        var angle = from.animFrame + to.angle * delta;
+        var angle = from.angle + to.angle * delta;
         var color = from.color + to.color * delta;
         //color.a *= 0.5f;
         //Debug.Log(color);
@@ -284,6 +287,8 @@ public class StrEffectRenderer : MonoBehaviour {
             if (Loop) {
                 Initialize(Anim);
             }
+            
+            OnEnd?.Invoke();
 
             return;
         }
