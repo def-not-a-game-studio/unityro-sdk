@@ -47,6 +47,8 @@ public class StrEffectRenderer : MonoBehaviour {
         BlendModes[9] = BlendMode.DstColor;
         BlendModes[10] = BlendMode.OneMinusDstAlpha;
         BlendModes[11] = BlendMode.SrcAlphaSaturate;
+        BlendModes[12] = BlendMode.SrcAlphaSaturate;
+        BlendModes[13] = BlendMode.Zero;
         BlendModes[14] = BlendMode.Zero;
         BlendModes[15] = BlendMode.Zero;
     }
