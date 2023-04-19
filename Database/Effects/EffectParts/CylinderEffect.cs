@@ -7,6 +7,7 @@ namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
     
     [Serializable]
     public class CylinderEffectPart : EffectPart {
+        
         // name of texture from data/texture/effect/*.tga
         public Texture2D texture;
         public Color Color = Color.white;
@@ -57,5 +58,16 @@ namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
         public AudioClip wav;
         public bool attachedEntity;
         public float alphaMax = 1f;
+        public long delay;
+
+
+        public CylinderEffectPart() {
+            this.circleSides = 20;
+            this.totalCircleSides = 20;
+            this.Color = Color.white;
+            this.blendMode = BlendMode.OneMinusSrcAlpha;
+            this.alphaMax = 1f;
+        }
+        
     }
 }

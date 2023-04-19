@@ -5,11 +5,9 @@ using UnityEngine;
 namespace UnityRO.core.Effects {
     public class CylinderEffectRenderer : MonoBehaviour {
         public CylinderEffectPart Part;
-        public long DelayToStart = 0;
 
         [SerializeField] private float RotationSpeed = 40f;
-
-
+        
         private MeshRenderer _meshRenderer;
 
         private long startTick;
@@ -56,7 +54,7 @@ namespace UnityRO.core.Effects {
         }
 
         private void ResetTimers() {
-            startTick = GameManager.Tick + DelayToStart;
+            startTick = GameManager.Tick + Part.delay;
             endTick = startTick + Part.duration;
         }
         
@@ -82,7 +80,7 @@ namespace UnityRO.core.Effects {
 
             if (GameManager.Tick > endTick) {
                 if (Part.repeat) {
-                    DelayToStart = 0;
+                    Part.delay = 0;
                     ResetTimers();
                 } else {
                     Destroy(gameObject);

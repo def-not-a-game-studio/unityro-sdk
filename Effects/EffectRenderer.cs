@@ -6,9 +6,11 @@ namespace UnityRO.core.Effects {
     public class EffectRenderer : MonoBehaviour {
 
         [SerializeField] private Effect Effect;
+        [SerializeField] private bool autoStart = false;
 
         private void Start() {
-            InitEffects();
+            if (autoStart)
+                InitEffects();
         }
 
         public void InitEffects() {
@@ -24,8 +26,31 @@ namespace UnityRO.core.Effects {
                         var cylinderJ = new GameObject($"Cylinder{i}-{j}").AddComponent<CylinderEffectRenderer>();
                         cylinderJ.transform.SetParent(transform, false);
                         cylinderJ.Part = param;
-                        cylinderJ.DelayToStart = j * param.timeBetweenDuplication;
+                        param.delay = j * param.timeBetweenDuplication;
                     }
+                }
+            }
+
+            if (Effect.ThreeDParts.Length > 0) {
+                for (int i = 0; i < Effect.ThreeDParts.Length; i++) {
+                    var param = Effect.ThreeDParts[i];
+
+                    var threeDRenderer = new GameObject($"3D{i}").AddComponent<ThreeDEffectRenderer>();
+                    threeDRenderer.transform.SetParent(transform, false);
+                    
+                    var time = GameManager.Tick;
+                    var instanceParam = new EffectInstanceParam {
+                        position = transform.position,
+                        otherPosition = transform.position + Vector3.left * 5,
+                        startTick = time,
+                        endTick = time + param.duration
+                    };
+
+                    var initParam = new EffectInitParam {
+                        ownerAID = 0
+                    };
+
+                    threeDRenderer.Init(param, instanceParam, initParam);
                 }
             }
         }

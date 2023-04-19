@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace UnityRO.core.Effects {
     [Serializable]
-    public class ThreeDEffectRendererParams {
+    public class ThreeDEffectPart {
         public int AID;
 
         public Texture2D texture; //textureName
