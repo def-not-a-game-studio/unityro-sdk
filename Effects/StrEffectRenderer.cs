@@ -4,8 +4,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 public class StrEffectRenderer : MonoBehaviour {
-
-    private STR Anim;
+    [SerializeField] private STR Anim;
+    [SerializeField] private BlendMode srcBlend;
+    [SerializeField] private BlendMode dstBlend;
+    [SerializeField] private bool Loop;
 
     private bool isInit;
 
@@ -23,20 +25,45 @@ public class StrEffectRenderer : MonoBehaviour {
     private float[] angles;
 
     private Dictionary<string, Material> materials = new Dictionary<string, Material>(8);
+    private Dictionary<float, BlendMode> BlendModes = new();
 
     private float time;
     private int frame;
 
     private Transform LayersParent;
 
+    private void Start() {
+        BlendModes[1] = BlendMode.Zero;
+        BlendModes[2] = BlendMode.One;
+        BlendModes[3] = BlendMode.SrcColor;
+        BlendModes[4] = BlendMode.OneMinusSrcColor;
+        BlendModes[5] = BlendMode.SrcAlpha;
+        BlendModes[6] = BlendMode.OneMinusSrcAlpha;
+        BlendModes[7] = BlendMode.DstAlpha;
+        BlendModes[8] = BlendMode.OneMinusDstAlpha;
+        BlendModes[9] = BlendMode.DstColor;
+        BlendModes[10] = BlendMode.OneMinusDstAlpha;
+        BlendModes[11] = BlendMode.SrcAlphaSaturate;
+        BlendModes[14] = BlendMode.Zero;
+        BlendModes[15] = BlendMode.Zero;
+    }
+
     private Material GetEffectMaterial(int layer, int srcBlend, int destBlend) {
         var hash = $"{Anim.name}-{layer}-{srcBlend.ToString()}-{destBlend.ToString()}";
-        if(materials.TryGetValue(hash, out var val))
+        if (materials.TryGetValue(hash, out var val))
             return val;
 
         var mat = new Material(Shader.Find("Ragnarok/EffectShader"));
-        mat.SetFloat("_SrcBlend", (float) BlendMode.One);
-        mat.SetFloat("_DstBlend", (float) BlendMode.One);
+
+        this.srcBlend = BlendModes[srcBlend];
+        this.dstBlend = BlendModes[destBlend];
+
+        if (this.srcBlend == BlendMode.SrcAlpha && this.dstBlend == BlendMode.DstAlpha) {
+            this.dstBlend = BlendMode.One;
+        }
+
+        mat.SetFloat("_SrcBlend", (float)this.srcBlend);
+        mat.SetFloat("_DstBlend", (float)this.dstBlend);
         mat.SetFloat("_ZWrite", 0);
         mat.SetFloat("_Cull", 0);
 
@@ -55,7 +82,7 @@ public class StrEffectRenderer : MonoBehaviour {
         layerFilters = new List<MeshFilter>(Anim.layers.Length);
         angles = new float[Anim.layers.Length];
 
-        for(var i = 0; i < Anim.layers.Length; i++) {
+        for (var i = 0; i < Anim.layers.Length; i++) {
             var go = new GameObject("Layer " + i);
             var mr = go.AddComponent<MeshRenderer>();
             var mf = go.AddComponent<MeshFilter>();
@@ -79,17 +106,20 @@ public class StrEffectRenderer : MonoBehaviour {
     private void Awake() {
         LayersParent = new GameObject("Layers").transform;
         LayersParent.SetParent(transform, false);
-        if(Anim != null)
+        if (Anim != null)
             Initialize(Anim);
     }
 
-    private void UpdateMesh(MeshFilter mf, Mesh mesh, Vector2[] pos, Vector2[] uvs, float angle, int imageId) {
-        if(pos.Length > 4 || uvs.Length > 4)
+    private void UpdateMesh(
+        MeshFilter mf, Mesh mesh, Vector2[] pos,
+        Vector2[] uvs, float angle, int imageId
+    ) {
+        if (pos.Length > 4 || uvs.Length > 4)
             Debug.LogError("WHOA! Animation " + Anim.name + " has more than 4 verticies!");
 
         var bounds = Anim.AtlasRects[imageId];
 
-        for(var i = 0; i < 4; i++) {
+        for (var i = 0; i < 4; i++) {
             var p = Rotate(pos[i], -angle * Mathf.Deg2Rad);
             tempPositions[i] = new Vector3(p.x, p.y, 0) / 35f;
 
@@ -106,9 +136,9 @@ public class StrEffectRenderer : MonoBehaviour {
         tempUvs[1] = new Vector2(bounds.xMax, bounds.yMax);
 
         tempTris = new int[] {
-            0, 1, 2,
-            1, 3, 2
-        };
+                                 0, 1, 2,
+                                 1, 3, 2
+                             };
 
         mesh.vertices = tempPositions;
         mesh.uv = tempUvs;
@@ -118,7 +148,10 @@ public class StrEffectRenderer : MonoBehaviour {
         mf.sharedMesh = mesh;
     }
 
-    private void UpdateLayerData(GameObject go, Material mat, Vector2 pos, Color color) {
+    private void UpdateLayerData(
+        GameObject go, Material mat, Vector2 pos,
+        Color color
+    ) {
         go.transform.localPosition = new Vector3((pos.x - 320f) / 35f, -(pos.y - 360f) / 35f, 0);
         go.transform.localScale = Vector3.one;
         mat.SetColor("_Color", color);
@@ -132,31 +165,31 @@ public class StrEffectRenderer : MonoBehaviour {
         var startAnim = -1;
         var nextAnim = -1;
 
-        for(var i = 0; i < layer.animations.Length; i++) {
+        for (var i = 0; i < layer.animations.Length; i++) {
             var a = layer.animations[i];
-            if(a.frame < frame) {
-                if(a.type == 0)
+            if (a.frame < frame) {
+                if (a.type == 0)
                     startAnim = i;
-                if(a.type == 1)
+                if (a.type == 1)
                     nextAnim = i;
             }
 
             lastFrame = Mathf.Max(lastFrame, a.frame);
-            if(a.type == 0)
+            if (a.type == 0)
                 lastSource = Mathf.Max(lastSource, a.frame);
         }
 
-        if(startAnim < 0 || (nextAnim < 0 && lastFrame < frame))
+        if (startAnim < 0 || (nextAnim < 0 && lastFrame < frame))
             return false;
 
         var from = layer.animations[startAnim];
         STR.Animation to = null;
 
-        if(nextAnim >= 0)
+        if (nextAnim >= 0)
             to = layer.animations[nextAnim];
         var delta = frame - from.frame;
-        var blendSrc = (int) from.srcAlpha;
-        var blendDest = (int) from.destAlpha;
+        var blendSrc = (int)from.srcAlpha;
+        var blendDest = (int)from.destAlpha;
 
         var mat = GetEffectMaterial(layerNum, blendSrc, blendDest);
         var go = layerObjects[layerNum];
@@ -165,11 +198,11 @@ public class StrEffectRenderer : MonoBehaviour {
         var mesh = layerMeshes[layerNum];
         mr.material = mat;
 
-        if(nextAnim != startAnim + 1 || to?.frame != from.frame) {
-            if(to != null && lastSource <= from.frame)
+        if (nextAnim != startAnim + 1 || to?.frame != from.frame) {
+            if (to != null && lastSource <= from.frame)
                 return false;
 
-            var fixedFrame = layer.texturesIds[(int) from.animFrame];
+            var fixedFrame = layer.texturesIds[(int)from.animFrame];
             UpdateMesh(mf, mesh, from.xy, from.uv, from.angle, fixedFrame);
             UpdateLayerData(go, mat, from.position, from.color);
             return true;
@@ -177,7 +210,7 @@ public class StrEffectRenderer : MonoBehaviour {
 
         var prog = Mathf.InverseLerp(from.frame, to.frame, frame);
 
-        for(var i = 0; i < 4; i++) {
+        for (var i = 0; i < 4; i++) {
             tempPositions2[i] = from.xy[i] + to.xy[i] * delta;
             tempUvs2[i] = from.uv[i] + to.uv[i] * delta;
         }
@@ -191,7 +224,7 @@ public class StrEffectRenderer : MonoBehaviour {
 
         var frameId = 0;
 
-        switch(to.animType) {
+        switch (to.animType) {
             case 1:
                 frameId = Mathf.FloorToInt(from.animFrame + to.animFrame * delta);
                 break;
@@ -215,8 +248,8 @@ public class StrEffectRenderer : MonoBehaviour {
     }
 
     private void UpdateAnimationFrame() {
-        for(var i = 0; i < Anim.layers.Length; i++) {
-            if(Anim.layers[i].animations.Length == 0)
+        for (var i = 0; i < Anim.layers.Length; i++) {
+            if (Anim.layers[i].animations.Length == 0)
                 continue;
 
             var res = UpdateAnimationLayer(i);
@@ -226,19 +259,19 @@ public class StrEffectRenderer : MonoBehaviour {
 
     // Update is called once per frame
     private void Update() {
-        if(!isInit)
+        if (!isInit)
             return;
 
         time += Time.deltaTime;
         var newFrame = Mathf.FloorToInt(time * Anim.fps);
-        if(newFrame == frame)
+        if (newFrame == frame)
             return;
 
         //Debug.Log(frame);
 
         frame = newFrame;
 
-        if(frame > Anim.maxKey) {
+        if (frame > Anim.maxKey) {
             isInit = false;
 
             LayersParent.GetChildren().ForEach(it => Destroy(it.gameObject));
@@ -248,6 +281,10 @@ public class StrEffectRenderer : MonoBehaviour {
             layerFilters.Clear();
             layerMeshes.Clear();
 
+            if (Loop) {
+                Initialize(Anim);
+            }
+
             return;
         }
 
@@ -256,13 +293,13 @@ public class StrEffectRenderer : MonoBehaviour {
 
     private Vector2 Rotate(Vector2 v, float delta) {
         return new Vector2(
-            v.x * Mathf.Cos(delta) - v.y * Mathf.Sin(delta),
-            v.x * Mathf.Sin(delta) + v.y * Mathf.Cos(delta)
-        );
+                           v.x * Mathf.Cos(delta) - v.y * Mathf.Sin(delta),
+                           v.x * Mathf.Sin(delta) + v.y * Mathf.Cos(delta)
+                          );
     }
 
     public void Replay() {
-        if(Anim != null)
+        if (Anim != null)
             Initialize(Anim);
     }
 }
