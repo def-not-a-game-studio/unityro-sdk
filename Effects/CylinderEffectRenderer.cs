@@ -13,6 +13,11 @@ namespace UnityRO.core.Effects {
         private long startTick;
         private long endTick;
 
+        public void SetPart(CylinderEffectPart part, long delayToStart) {
+            Part = part;
+            Part.delay = delayToStart;
+        }
+        
         private void Start() {
             _meshRenderer = gameObject.AddComponent<MeshRenderer>();
             var meshFilter = gameObject.AddComponent<MeshFilter>();

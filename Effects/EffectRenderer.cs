@@ -25,8 +25,7 @@ namespace UnityRO.core.Effects {
                     for (int j = 1; j <= param.duplicates; j++) {
                         var cylinderJ = new GameObject($"Cylinder{i}-{j}").AddComponent<CylinderEffectRenderer>();
                         cylinderJ.transform.SetParent(transform, false);
-                        cylinderJ.Part = param;
-                        param.delay = j * param.timeBetweenDuplication;
+                        cylinderJ.SetPart(param, j * param.timeBetweenDuplication);
                     }
                 }
             }
