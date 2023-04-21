@@ -7,6 +7,7 @@ namespace UnityRO.core.Effects {
         public CylinderEffectPart Part;
 
         [SerializeField] private float RotationSpeed = 40f;
+        private long DelayToStart = 0;
         
         private MeshRenderer _meshRenderer;
 
@@ -15,7 +16,7 @@ namespace UnityRO.core.Effects {
 
         public void SetPart(CylinderEffectPart part, long delayToStart) {
             Part = part;
-            Part.delay = delayToStart;
+            DelayToStart = delayToStart;
         }
         
         private void Start() {
@@ -59,7 +60,7 @@ namespace UnityRO.core.Effects {
         }
 
         private void ResetTimers() {
-            startTick = GameManager.Tick + Part.delay;
+            startTick = GameManager.Tick + DelayToStart;
             endTick = startTick + Part.duration;
         }
         
@@ -72,7 +73,7 @@ namespace UnityRO.core.Effects {
             {
                 return;
             }
-
+        
             nextUpdate = Time.time;
             Render();
         }
@@ -85,7 +86,7 @@ namespace UnityRO.core.Effects {
 
             if (GameManager.Tick > endTick) {
                 if (Part.repeat) {
-                    Part.delay = 0;
+                    DelayToStart = 0;
                     ResetTimers();
                 } else {
                     Destroy(gameObject);
