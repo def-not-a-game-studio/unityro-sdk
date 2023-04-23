@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 public class Ground {
+    public const int MAX_VERTICES = 65532;
     public Mesh[] meshes { get; private set; }
     private Texture2D atlas;
     private Texture2D lightmap;
@@ -38,7 +39,7 @@ public class Ground {
     public void Render() {
         GameObject ground = new GameObject("_Ground");
         ground.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
-        var material = new Material(Shader.Find("Custom/GroundShader"));
+        var material = Resources.Load<Material>("Materials/GroundMaterial");
 
         for (int i = 0; i < meshes.Length; i++) {
             Mesh mesh = meshes[i];
@@ -67,7 +68,7 @@ public class Ground {
     }
 
     public void InitTextures(GND.Mesh compiledMesh) {
-        var material = new Material(Shader.Find("Custom/GroundShader"));
+        var material = Resources.Load<Material>("Materials/GroundMaterial");
         var textures = compiledMesh.textures;
         var count = textures.Length;
         var _width = Math.Round(Math.Sqrt(count));
@@ -114,7 +115,7 @@ public class Ground {
     }
 
     public void BuildMesh(GND.Mesh compiledMesh) {
-        meshes = new Mesh[(int)Math.Ceiling(compiledMesh.meshVertCount / (float)int.MaxValue)];
+        meshes = new Mesh[(int)Math.Ceiling(compiledMesh.meshVertCount / (float)MAX_VERTICES)];
 
         for (int nMesh = 0; nMesh < meshes.Length; nMesh++) {
             List<Vector3> vertices = new List<Vector3>();
@@ -126,10 +127,10 @@ public class Ground {
 
             float[] vertexData = new float[12];
             int v = 0, h = 0;
-            for (int i = 0, ended = 0; vertices.Count < int.MaxValue && ended == 0; i++) {
+            for (int i = 0, ended = 0; vertices.Count < MAX_VERTICES && ended == 0; i++) {
                 Vertex[] vs = new Vertex[4];
                 for (int j = 0; j < 4; j++) {
-                    var vIndex = i * 4 + j + nMesh * int.MaxValue;
+                    var vIndex = i * 4 + j + nMesh * MAX_VERTICES;
 
                     if (vIndex * vertexData.Length >= compiledMesh.mesh.Length) {
                         ended = 1;
