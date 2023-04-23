@@ -38,7 +38,7 @@ public class Ground {
     public void Render() {
         GameObject ground = new GameObject("_Ground");
         ground.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
-        var material = new Material(Shader.Find("Standard"));
+        var material = new Material(Shader.Find("Custom/GroundShader"));
 
         for (int i = 0; i < meshes.Length; i++) {
             Mesh mesh = meshes[i];
@@ -49,8 +49,8 @@ public class Ground {
             var mr = gameObject.AddComponent<MeshRenderer>();
             mr.sharedMaterial = material;
             mr.sharedMaterial.mainTexture = atlas;
-            //mr.sharedMaterial.SetTexture("_Tintmap", tintmap);
-            //mr.sharedMaterial.SetTexture("_Lightmap", lightmap);
+            mr.sharedMaterial.SetTexture("_Tintmap", tintmap);
+            mr.sharedMaterial.SetTexture("_Lightmap", lightmap);
 
             Vector3 scale = gameObject.transform.localScale;
             scale.Set(1f, -1f, 1f);
@@ -67,7 +67,7 @@ public class Ground {
     }
 
     public void InitTextures(GND.Mesh compiledMesh) {
-        var material = new Material(Shader.Find("Standard"));
+        var material = new Material(Shader.Find("Custom/GroundShader"));
         var textures = compiledMesh.textures;
         var count = textures.Length;
         var _width = Math.Round(Math.Sqrt(count));

@@ -1,24 +1,19 @@
 ﻿using ROIO.Models.FileTypes;
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 [Serializable]
 public class GameMap : MonoBehaviour {
-
-    [SerializeField]
-    private Vector2Int _size;
+    [SerializeField] private Vector2Int _size;
     public Vector2Int Size => _size;
+    
+    [SerializeField] [HideInInspector] private Light DirectionalLight;
 
-    [SerializeField]
-    [HideInInspector]
-    private RSW.LightInfo LightInfo;
-
-    [HideInInspector]
-    [SerializeField]
-    private Altitude Altitude;
-
-    private Light WorldLight;
+    [SerializeField] [HideInInspector] private RSW.LightInfo LightInfo;
+    [HideInInspector] [SerializeField] private Altitude Altitude;
+    
     private PathFinder PathFinder;
 
     private void Awake() {
@@ -32,38 +27,38 @@ public class GameMap : MonoBehaviour {
     }
 
     private void InitWorldLight() {
-        if(WorldLight != null)
+        if (DirectionalLight != null)
             return;
 
         var worldLightGameObject = new GameObject("Light");
         worldLightGameObject.transform.SetParent(gameObject.transform);
-        WorldLight = worldLightGameObject.GetOrAddComponent<Light>();
+        DirectionalLight = worldLightGameObject.GetOrAddComponent<Light>();
         SetupWorldLight();
     }
 
     private void SetupWorldLight() {
-        if(LightInfo == null) {
+        if (LightInfo == null) {
             return;
         }
 
-        WorldLight.type = LightType.Directional;
-        WorldLight.shadows = LightShadows.Soft;
-        WorldLight.shadowStrength = 0.6f;
-        WorldLight.intensity = LightInfo.intensity;
+        DirectionalLight.type = LightType.Directional;
+        DirectionalLight.shadows = LightShadows.Soft;
+        DirectionalLight.shadowStrength = 0.6f;
+        DirectionalLight.intensity = 1;
 
-        Vector3 lightRotation = new Vector3(LightInfo.longitude, LightInfo.latitude, 0);
-        WorldLight.transform.rotation = Quaternion.identity;
-        WorldLight.transform.Rotate(lightRotation);
-        
-        if(LightInfo.ambient.Length > 0) {
-            Color ambient = new Color(LightInfo.ambient[0], LightInfo.ambient[1], LightInfo.ambient[2]);
+        var rotation = Quaternion.Euler(90 - LightInfo.longitude, LightInfo.latitude, 0);
+        DirectionalLight.transform.rotation = rotation;
+
+        if (LightInfo.ambient.Length > 0) {
+            var ambient = new Color(LightInfo.ambient[0], LightInfo.ambient[1], LightInfo.ambient[2]);
             RenderSettings.ambientLight = ambient * LightInfo.intensity;
+            RenderSettings.ambientIntensity = LightInfo.intensity;
         }
 
-        if(LightInfo.diffuse.Length > 0) {
-            Color diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
+        if (LightInfo.diffuse.Length > 0) {
+            var diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            WorldLight.color = diffuse;
+            DirectionalLight.color = diffuse;
         }
     }
 
@@ -74,7 +69,7 @@ public class GameMap : MonoBehaviour {
     public void SetMapLightInfo(RSW.LightInfo lightInfo) {
         LightInfo = lightInfo;
 
-        if(WorldLight == null) {
+        if (DirectionalLight == null) {
             InitWorldLight();
         }
 
@@ -87,7 +82,7 @@ public class GameMap : MonoBehaviour {
     }
 
     public PathFinder GetPathFinder() {
-        if(PathFinder == null) {
+        if (PathFinder == null) {
             InitPathFinder();
         }
 

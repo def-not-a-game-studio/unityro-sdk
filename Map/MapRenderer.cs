@@ -14,7 +14,6 @@ using UnityEngine.Audio;
 /// Based on ROBrowser by Vincent Thibault (robrowser.com)
 /// </summary>
 public class MapRenderer {
-
     internal static Action<float> OnProgress;
 
     public static AudioMixerGroup SoundsMixerGroup;
@@ -33,54 +32,7 @@ public class MapRenderer {
         get { return worldCompleted && altitudeCompleted && groundCompleted && modelsCompleted; }
     }
 
-    public async static Task<GameMap> RenderMap(AsyncMapLoader.GameMapData gameMapData, string mapName) {
-        var gameMap = new GameObject(mapName).AddComponent<GameMap>();
-        gameMap.tag = "Map";
-        gameMap.SetMapSize((int) gameMapData.Ground.width, (int) gameMapData.Ground.height);
-        gameMap.SetMapAltitude(new Altitude(gameMapData.Altitude));
-
-        var ground = new Ground(gameMapData.CompiledGround, gameMapData.World.water);
-
-        for(int i = 0; i < gameMapData.World.sounds.Count; i++) {
-            gameMapData.World.sounds[i].pos[0] += gameMap.Size.x;
-            gameMapData.World.sounds[i].pos[1] *= -1;
-            gameMapData.World.sounds[i].pos[2] += gameMap.Size.y;
-            //world.sounds[i].pos[2] = tmp;
-            gameMapData.World.sounds[i].range *= 0.3f;
-            gameMapData.World.sounds[i].tick = 0;
-        }
-
-        await new Models(gameMapData.CompiledModels.ToList()).BuildMeshesAsync(null, true, gameMap.Size);
-
-        Sounds sounds = new Sounds();
-        foreach(var sound in gameMapData.World.sounds) {
-            sounds.Add(sound, null);
-        }
-
-        Sky sky;
-        if(WeatherEffect.HasMap(mapName)) {
-            //create sky
-            var skyObject = new GameObject("_sky");
-            skyObject.transform.SetParent(GameObject.FindObjectOfType<GameMap>().transform);
-            sky = skyObject.AddComponent<Sky>();
-            sky.Initialize(mapName);
-        } else {
-            //no weather effects, set sky color to blueish
-            //Camera.main.backgroundColor = new Color(0.4f, 0.6f, 0.8f, 1.0f);
-        }
-
-        GameObject lightsParent = new GameObject("_lights");
-        lightsParent.transform.parent = gameMap.transform;
-
-        foreach(var light in gameMapData.World.lights) {
-            var lightObj = new GameObject(light.name);
-            var lightContainer = lightObj.AddComponent<LightContainer>();
-            lightObj.transform.SetParent(lightsParent.transform);
-            lightContainer.SetLightProps(light, (uint) gameMap.Size.y, (uint) gameMap.Size.x);
-        }
-
-        return gameMap;
-    }
+    public MapRenderer() { }
 
     public MapRenderer(AudioMixerGroup audioMixerGroup, Light worldLight) {
         SoundsMixerGroup = audioMixerGroup;
@@ -100,18 +52,45 @@ public class MapRenderer {
 
     public Fog fog = new Fog(false);*/
 
-    private void InitializeSounds() {
+    public async Task<GameMap> RenderMap(AsyncMapLoader.GameMapData gameMapData, string mapName) {
+        var gameMap = new GameObject(mapName).AddComponent<GameMap>();
+        gameMap.tag = "Map";
+        gameMap.SetMapLightInfo(gameMapData.World.light);
+        gameMap.SetMapSize((int)gameMapData.Ground.width, (int)gameMapData.Ground.height);
+        gameMap.SetMapAltitude(new Altitude(gameMapData.Altitude));
+
+        var ground = new Ground(gameMapData.CompiledGround, gameMapData.World.water);
+
+        for (int i = 0; i < gameMapData.World.sounds.Count; i++) {
+            gameMapData.World.sounds[i].pos[0] += gameMap.Size.x;
+            gameMapData.World.sounds[i].pos[1] *= -1;
+            gameMapData.World.sounds[i].pos[2] += gameMap.Size.y;
+            //world.sounds[i].pos[2] = tmp;
+            gameMapData.World.sounds[i].range *= 0.3f;
+            gameMapData.World.sounds[i].tick = 0;
+        }
+
+        await new Models(gameMapData.CompiledModels.ToList()).BuildMeshesAsync(null, true, gameMap.Size);
+
+        InitializeSounds(gameMapData.World);
+        MaybeInitSky(gameMap.transform, mapName);
+        CreateLightPoints(gameMap.transform, gameMapData.World, gameMap.Size);
+
+        return gameMap;
+    }
+
+    private void InitializeSounds(RSW world) {
         //add sounds to playlist (and cache)
         foreach (var sound in world.sounds) {
             sounds.Add(sound, null);
         }
     }
 
-    private void MaybeInitSky(string mapname) {
+    private void MaybeInitSky(Transform parent, string mapname) {
         if (WeatherEffect.HasMap(mapname)) {
             //create sky
             var skyObject = new GameObject("_sky");
-            skyObject.transform.SetParent(GameObject.FindObjectOfType<GameMap>().transform);
+            skyObject.transform.SetParent(parent, false);
             sky = skyObject.AddComponent<Sky>();
             sky.Initialize(mapname);
         } else {
@@ -120,16 +99,21 @@ public class MapRenderer {
         }
     }
 
-    private void CreateLightPoints(Vector2Int mapSize) {
+    private void CreateLightPoints(Transform parent, RSW world, Vector2Int mapSize) {
         //add lights
         GameObject lightsParent = new GameObject("_lights");
-        lightsParent.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
+        lightsParent.transform.SetParent(parent, false);
 
         foreach (var light in world.lights) {
-            var lightObj = new GameObject(light.name);
-            var lightContainer = lightObj.AddComponent<LightContainer>();
-            lightObj.transform.SetParent(lightsParent.transform);
-            lightContainer.SetLightProps(light, (uint)mapSize.y, (uint)mapSize.x);
+            var lightObj = new GameObject(light.name).AddComponent<Light>();
+            Transform transform;
+            (transform = lightObj.transform).SetParent(lightsParent.transform, false);
+            lightObj.color = new Color(light.color[0], light.color[1], light.color[2]);
+            lightObj.range = light.range / 5;
+            lightObj.intensity = 5f;
+            lightObj.shadows = LightShadows.Soft;
+            var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1], light.pos[2] + mapSize.y);
+            transform.position = position;
         }
     }
 
@@ -140,9 +124,10 @@ public class MapRenderer {
             mapParent.tag = "Map";
             mapParent.AddComponent<GameMap>();
         }
+
         var GameMapManager = mapParent.GetComponent<GameMap>();
         GameMapManager.SetMapLightInfo(gameMap.World.light);
-        GameMapManager.SetMapSize((int) gameMap.Ground.width, (int) gameMap.Ground.height);
+        GameMapManager.SetMapSize((int)gameMap.Ground.width, (int)gameMap.Ground.height);
         GameMapManager.SetMapAltitude(new Altitude(gameMap.Altitude));
 
         FileCache.ClearAll();
@@ -152,9 +137,9 @@ public class MapRenderer {
         OnAltitudeComplete(gameMap.Altitude);
         await OnModelsComplete(gameMap.CompiledModels, GameMapManager.Size);
 
-        InitializeSounds();
-        MaybeInitSky(gameMap.Name);
-        CreateLightPoints(GameMapManager.Size);
+        InitializeSounds(gameMap.World);
+        MaybeInitSky(mapParent.transform, gameMap.Name);
+        CreateLightPoints(mapParent.transform, gameMap.World, GameMapManager.Size);
 
         return GameMapManager;
     }

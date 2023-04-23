@@ -11,10 +11,10 @@ using UnityEngine;
 
 [InitializeOnLoad]
 public class ROMapExtractor : EditorWindow {
-    private string mapName = "prontera";
+    [SerializeField] private string grfRootPath = "C:/foo";
+    [SerializeField] private List<string> grfPaths = new List<string>();
+    [SerializeField] private string mapName = "prontera";
 
-    private string grfRootPath = "C:/foo";
-    private List<string> grfPaths = new List<string>();
     private ReorderableList GrfReordableList;
 
     private GameMap CurrentGameMap;
@@ -26,7 +26,7 @@ public class ROMapExtractor : EditorWindow {
 
     async void LoadMap() {
         AsyncMapLoader.GameMapData gameMapData = await new AsyncMapLoader().Load($"{mapName}.rsw");
-        CurrentGameMap = await MapRenderer.RenderMap(gameMapData, mapName);
+        CurrentGameMap = await new MapRenderer().RenderMap(gameMapData, mapName);
     }
 
     public static string GetBasePath() {
@@ -364,6 +364,10 @@ public class ROMapExtractor : EditorWindow {
     }
 
     private void OnEnable() {
+        var data = EditorPrefs.GetString("ROMapExtractorWindow", JsonUtility.ToJson(this, false));
+        // Then we apply them to this window
+        JsonUtility.FromJsonOverwrite(data, this);
+
         GrfReordableList = new ReorderableList(grfPaths, typeof(string));
         GrfReordableList.drawHeaderCallback = (rect) => EditorGUI.LabelField(rect, "GRF List");
         GrfReordableList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) => {
@@ -372,6 +376,12 @@ public class ROMapExtractor : EditorWindow {
 
             GrfReordableList.list[index] = EditorGUI.TextField(rect, (string)GrfReordableList.list[index]);
         };
+    }
+
+    private void OnDisable() {
+        var data = JsonUtility.ToJson(this, false);
+        // And we save it
+        EditorPrefs.SetString("ROMapExtractorWindow", data);
     }
 
     private void OnGUI() {
