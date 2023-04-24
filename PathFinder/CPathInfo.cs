@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace Core.Path {
     public class CPathInfo {
@@ -171,7 +172,14 @@ namespace Core.Path {
             lastCellTime = PathData[PathData.Count - 1].Time;
         }
 
-        public int GetPrevCellInfo(long currentTime, ref long time, ref float x, ref float y, ref int direction) {
+        public int GetPrevCellInfo(long currentTime,
+            ref long time,
+            ref Vector3 position,
+            ref int direction,
+            Func<Vector2, float> getCellHeight) {
+            var x = 0;
+            var y = 0;
+            
             if (PathData.Count == 0) {
                 direction = 0;
                 return -1;
@@ -186,6 +194,7 @@ namespace Core.Path {
                 time = PathData[0].Time;
                 x = PathData[0].X;
                 y = PathData[0].Y;
+                position = new Vector3(x, getCellHeight(new Vector2(x, y)), y);
                 direction = PathData[0].Direction;
                 return 0;
             }
@@ -197,6 +206,7 @@ namespace Core.Path {
                     time = PathData[index].Time;
                     x = PathData[index].X;
                     y = PathData[index].Y;
+                    position = new Vector3(x, getCellHeight(new Vector2(x, y)), y);
                     direction = PathData[0].Direction;
                     return index;
                 }
@@ -205,12 +215,20 @@ namespace Core.Path {
             time = PathData[index].Time;
             x = PathData[index].X;
             y = PathData[index].Y;
+            position = new Vector3(x, getCellHeight(new Vector2(x, y)), y);
             direction = PathData[index].Direction;
             //	Trace(" currentTime:%d, index3:%d, xPos:%d, yPos:%d",currentTime,index+1,x,y);
             return -1;
         }
 
-        public int GetNextCellInfo(long currentTime, ref long time, ref float x, ref float y, ref int direction) {
+        public int GetNextCellInfo(long currentTime,
+            ref long time,
+            ref Vector3 position,
+            ref int direction,
+            Func<Vector2, float> getCellHeight) {
+            var x = 0;
+            var y = 0;
+
             if (PathData.Count == 0) {
                 direction = 0;
                 return -1;
@@ -222,9 +240,10 @@ namespace Core.Path {
             }
 
             if (PathData[0].Time > currentTime && PathData.Count > 1) {
-                time = PathData[1].Time;
                 x = PathData[1].X;
                 y = PathData[1].Y;
+                time = PathData[1].Time;
+                position = new Vector3(x, getCellHeight(new Vector2(x, y)), y);
                 direction = PathData[1].Direction;
                 return 0;
             }
@@ -236,6 +255,7 @@ namespace Core.Path {
                     time = PathData[index + 1].Time;
                     x = PathData[index + 1].X;
                     y = PathData[index + 1].Y;
+                    position = new Vector3(x, getCellHeight(new Vector2(x, y)), y);
                     direction = 0;
                     return index;
                 }
@@ -244,6 +264,7 @@ namespace Core.Path {
             time = PathData[index].Time;
             x = PathData[index].X;
             y = PathData[index].Y;
+            position = new Vector3(x, getCellHeight(new Vector2(x, y)), y);
             direction = 0;
             //	Trace(" currentTime:%d, index3:%d, xPos:%d, yPos:%d",currentTime,index+1,x,y);
             return -1;

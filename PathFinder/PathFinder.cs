@@ -326,6 +326,10 @@ namespace Core.Path {
             return (float)Altitude.GetCellHeight(pktPosX, pktPosY);
         }
 
+        public float GetCellHeight(Vector2 pos) {
+            return (float)Altitude.GetCellHeight(pos.x, pos.y);
+        }
+
         public GAT.Cell GetCell(Vector2Int tile) {
             return Altitude.GetCell(tile.x, tile.y);
         }
