@@ -2,8 +2,20 @@
 using UnityEngine;
 
 public class GameManager : MonoBehaviour {
+    public static bool IsOffline = false;
 
-    public static long Tick => new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+    #region Time
 
+    public static long Tick => (serverTick * 1000) + (currentTick - previousLocalTick);
+
+    private static long serverTick;
+    private static long previousLocalTick;
+    private static long currentTick => new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+
+    public void SetServerTick(long tick) {
+        previousLocalTick = currentTick;
+        serverTick = tick;
+    }
+
+    #endregion
 }
-

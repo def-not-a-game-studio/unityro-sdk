@@ -1,274 +1,333 @@
-﻿using ROIO.Models.FileTypes;
 using System;
 using System.Collections.Generic;
+using Core.Extensions;
+using Priority_Queue;
+using ROIO.Models.FileTypes;
 using UnityEngine;
 
-public class PathFinder : MonoBehaviour {
+namespace Core.Path {
+    public class PathFinder : MonoBehaviour {
+        const int MAX_PATHNODE = 150;
 
-    public struct PathRequest {
-        public Vector2Int from;
-        public Vector2Int to;
-    }
+        private int m_destX;
+        private int m_destY;
 
-    enum eDirection {
-        DIR_NORTH = 1,
-        DIR_WEST = 2,
-        DIR_SOUTH = 4,
-        DIR_EAST = 8
-    }
+        private int m_poolCount;
+        private PathNode[] m_nodePool = new PathNode[MAX_PATHNODE];
 
-    private const int COST_STRAIGHT_MOVE = 10;
-    private const int COST_DIAGONAL_MOVE = 14;
-    private const int QUADS_FOR_PATH = 32 * 32;
+        private Altitude? Altitude;
 
-    public Altitude Altitude { get; private set; }
+        private Dictionary<int, PathNode> m_masterNodes = new(); //	hash value = int:x*width+y
 
-    private List<PathNode> mapNodes;
-    private List<PathNode> openSet = new List<PathNode>();
-    private HashSet<PathNode> closedSet = new HashSet<PathNode>();
-    private List<PathNode> finalPath = new List<PathNode>();
+        private SimplePriorityQueue<PathNode> m_openNodes = new();
 
-    private int gridX => (int)Altitude.getWidth();
-    private int gridY => (int)Altitude.getHeight();
-
-    public Vector2Int GetClosestTileTopToPoint(Vector2 point, Vector3 position) {
-        var x = Mathf.FloorToInt(point.x - position.x);
-        var y = Mathf.FloorToInt(point.y - position.z);
-
-        if (x < 0 || x >= gridX || y < 0 || y >= gridY)
-            return Vector2Int.zero;
-
-        return new Vector2Int(x, y);
-    }
-
-    public bool LoadMap(Altitude altitude) {
-        if (altitude != null && altitude != this.Altitude) {
-            this.Altitude = altitude;
-            this.mapNodes = GenerateNodes();
-            return true;
-        } else if (altitude == this.Altitude) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public List<PathNode> GetPath(Vector3 startPosition, Vector3 endPosition, int attackRange = 0) {
-        var newRequest = new PathRequest() {
-            from = new Vector2Int((int)startPosition.x, (int)startPosition.z),
-            to = new Vector2Int((int)endPosition.x, (int)endPosition.z)
-        };
-
-        List<PathNode> path = FindPath(newRequest, attackRange);
-        return path;
-    }
-
-    public float GetCellHeight(int x, int y) { 
-        if (Altitude != null) {
-            return (float) Altitude.GetCellHeight(x, y);
-        } else {
-            return 0f;
-        }
-    }
-
-    public List<PathNode> GetPath(int startX, int startY, int endX, int endY, int range = 0) {
-        if (startX == endX && startY == endY) {
-            return new List<PathNode>();
-        }
-
-        var newRequest = new PathRequest() {
-            from = new Vector2Int(startX, startY),
-            to = new Vector2Int(endX, endY)
-        };
-
-        return FindPath(newRequest, range);
-    }
-
-    public bool IsWalkable(float x, float y) => Altitude.IsCellWalkable((int) Math.Floor(x), (int) Math.Floor(y));
-
-    public GAT.Cell GetCell(float x, float y) => Altitude.GetCell(x, y);
-
-    private List<PathNode> FindPath(PathRequest pr, int range = 0) {
-        finalPath.Clear();
-        openSet.Clear();
-        closedSet.Clear();
-
-        var startNode = mapNodes[pr.from.x + (pr.from.y * gridX)];
-        var endNode = mapNodes[pr.to.x + (pr.to.y * gridX)];
-
-        List<PathNode> newPath = new List<PathNode>();
-
-        /**
-         * Don't spend resources if either start or end
-         * nodes are not walkable.
-         */
-        if (!endNode.walkable || !startNode.walkable) {
-            return newPath;
-        }
-
-        openSet.Add(startNode);
-
-        int x, y, xs, ys;
-        xs = gridX - 1;
-        ys = gridY - 1;
-
-        while (openSet.Count > 0) {
-            var currentNode = openSet[0];
-            for (int i = 1; i < openSet.Count; i++) {
-                var node = openSet[i];
-                if (node.fCost < currentNode.fCost || node.fCost == currentNode.fCost && node.hCost < currentNode.hCost) {
-                    currentNode = node;
-                }
+        public PathFinder() {
+            for (var i = 0; i < MAX_PATHNODE; i++) {
+                m_nodePool[i] = new PathNode();
             }
+        }
 
-            openSet.Remove(currentNode);
-            closedSet.Add(currentNode);
+        public int Width => (int)(Altitude?.getWidth() ?? -1);
+        public int Height => (int)(Altitude?.getHeight() ?? -1);
 
-            if (currentNode == endNode) {
-                newPath = ReversePath(startNode, endNode);
-                int idx = -1;
-                if (range > 0) {
-                    for (int i = 0; i < newPath.Count; i++) {
-                        if (Math.Abs(newPath[i].x - endNode.x) <= range && Math.Abs(newPath[i].z - endNode.z) <= range) {
-                            idx = i;
-                            break;
-                        }
+        private void Reset() {
+            m_masterNodes.Clear();
+            m_openNodes.Clear();
+        }
+
+        public void SetMap(Altitude newMap) {
+            Altitude = newMap;
+        }
+
+        private int GetMapWidth() {
+            return (int)Altitude.getWidth();
+        }
+
+        private int GetMapHeight() {
+            return (int)Altitude.getHeight();
+        }
+
+        private PathNode? FindNode(int x, int y) {
+            m_masterNodes.TryGetValue(x + y * GetMapWidth(), out var node);
+            return node;
+        }
+
+        private int GetHeuristicCost(int sx, int sy) {
+            return (Math.Abs(sx - m_destX) + Math.Abs(sy - m_destY)) * 10;
+        }
+
+        public bool FindPath(long startTime, int sx, int sy, int dx, int dy, int speedFactor, CPathInfo pathInfo) {
+            //	Trace("find path start : (%d, %d  xM:%d ,  yM:%d) - (%d, %d)", sx, sy, xM, yM, dx, dy);
+            m_destX = dx;
+            m_destY = dy;
+            if (sx == dx && sy == dy)
+                return false;
+
+            //	pretest using simpler method
+            //	straight first test
+            //	diagonal first test
+
+            pathInfo.ResetStartCell(); /// if start to find path, then pathInfo.startCell is set to zero
+            Reset();
+            m_poolCount = 0;
+            var startNode = GetNode(sx, sy);
+            startNode!.Type = PathNode.PathStatus.OPEN;
+            startNode.Parent = null;
+            startNode.Cost = 0;
+            startNode.Total = GetHeuristicCost(sx, sy);
+            //m_openNodes.Push(startNode);
+            m_openNodes.Enqueue(startNode, startNode.Total);
+
+            //while (!m_openNodes.IsEmpty())
+            while (m_openNodes.Count > 0) {
+                //var bestNode = m_openNodes.Pop();
+                var bestNode = m_openNodes.Dequeue();
+                if (bestNode.X == dx && bestNode.Y == dy) {
+                    //	goal reached
+                    pathInfo.StartPointX = sx;
+                    pathInfo.StartPointY = sy;
+                    BuildResultPath(startTime, bestNode, speedFactor, pathInfo);
+                    return true;
+                }
+
+                //	process successor nodes
+                bool result;
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X + 1, bestNode.Y - 1)) {
+                    result = ProcessNode(bestNode, 14, bestNode.X + 1, bestNode.Y - 1, 5);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
                     }
                 }
 
-                if (idx != -1) {
-                    newPath.RemoveRange(idx + 1, newPath.Count - (idx + 1));
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X + 1, bestNode.Y)) {
+                    result = ProcessNode(bestNode, 10, bestNode.X + 1, bestNode.Y, 6);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
+                    }
                 }
 
-                return newPath;
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X + 1, bestNode.Y + 1)) {
+                    result = ProcessNode(bestNode, 14, bestNode.X + 1, bestNode.Y + 1, 7);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
+                    }
+                }
+
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X, bestNode.Y + 1)) {
+                    result = ProcessNode(bestNode, 10, bestNode.X, bestNode.Y + 1, 0);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
+                    }
+                }
+
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X - 1, bestNode.Y + 1)) {
+                    result = ProcessNode(bestNode, 14, bestNode.X - 1, bestNode.Y + 1, 1);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
+                    }
+                }
+
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X - 1, bestNode.Y)) {
+                    result = ProcessNode(bestNode, 10, bestNode.X - 1, bestNode.Y, 2);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
+                    }
+                }
+
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X - 1, bestNode.Y - 1)) {
+                    result = ProcessNode(bestNode, 14, bestNode.X - 1, bestNode.Y - 1, 3);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
+                    }
+                }
+
+                if (IsConnected(bestNode.X, bestNode.Y, bestNode.X, bestNode.Y - 1)) {
+                    result = ProcessNode(bestNode, 10, bestNode.X, bestNode.Y - 1, 4);
+                    if (!result) {
+                        //Trace("find path aborted : buffer overflow");
+                        return false;
+                    }
+                }
+
+                bestNode.Type = PathNode.PathStatus.CLOSED;
             }
 
-            x = currentNode.x;
-            y = currentNode.z;
-            int gCost = currentNode.gCost;
-
-            // rAthena neighbour
-            int allowed_directions = 0;
-
-            if (y < ys && Altitude.IsCellWalkable(x, y + 1)) allowed_directions |= (int)eDirection.DIR_NORTH;
-            if (y > 0 && Altitude.IsCellWalkable(x, y - 1)) allowed_directions |= (int)eDirection.DIR_SOUTH;
-            if (x < xs && Altitude.IsCellWalkable(x + 1, y)) allowed_directions |= (int)eDirection.DIR_EAST;
-            if (x > 0 && Altitude.IsCellWalkable(x - 1, y)) allowed_directions |= (int)eDirection.DIR_WEST;
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_SOUTH | (int)eDirection.DIR_WEST)) && Altitude.IsCellWalkable(x - 1, y - 1))
-                ProcessNode(x - 1, y - 1, gCost + COST_DIAGONAL_MOVE, currentNode, endNode);
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_WEST)))
-                ProcessNode(x - 1, y, gCost + COST_STRAIGHT_MOVE, currentNode, endNode);
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_NORTH | (int)eDirection.DIR_WEST)) && Altitude.IsCellWalkable(x - 1, y + 1))
-                ProcessNode(x - 1, y + 1, gCost + COST_DIAGONAL_MOVE, currentNode, endNode);
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_NORTH)))
-                ProcessNode(x, y + 1, gCost + COST_STRAIGHT_MOVE, currentNode, endNode);
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_NORTH | (int)eDirection.DIR_EAST)) && Altitude.IsCellWalkable(x + 1, y + 1))
-                ProcessNode(x + 1, y + 1, gCost + COST_DIAGONAL_MOVE, currentNode, endNode);
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_EAST)))
-                ProcessNode(x + 1, y, gCost + COST_STRAIGHT_MOVE, currentNode, endNode);
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_SOUTH | (int)eDirection.DIR_EAST)) && Altitude.IsCellWalkable(x + 1, y - 1))
-                ProcessNode(x + 1, y - 1, gCost + COST_DIAGONAL_MOVE, currentNode, endNode);
-
-            if (CheckDirection(allowed_directions, ((int)eDirection.DIR_SOUTH)))
-                ProcessNode(x, y - 1, gCost + COST_STRAIGHT_MOVE, currentNode, endNode);
+            //Trace("find path failed : no path found");
+            return false; //	no path found
         }
 
-        return newPath;
-    }
+        private bool ProcessNode(PathNode parent, int traverseCost, int x, int y, int dir) {
+            int newCost = parent.Cost + traverseCost;
+            var node = GetNode(x, y);
+            if (node == null)
+                return false;
 
-    private void ProcessNode(int x, int y, int g_cost, PathNode parentNode, PathNode endNode) {
-        int idx = x + (y * gridX);
-        PathNode currentNode = mapNodes[idx];
-        int h_cost = GetHeuristic(x, y, endNode);
+            if (node.Type != PathNode.PathStatus.UNEXPLORED) { //	node already exists
+                if (node.Cost <= newCost) { //	ignore this node if shows no improvement
+                    return true;
+                }
 
-        if (closedSet.Contains(currentNode)) return;
-        if (openSet.Contains(currentNode)) {
-            if (g_cost < currentNode.gCost) {
-                currentNode.gCost = g_cost;
-                currentNode.hCost = h_cost;
-                currentNode.parentNode = parentNode;
-                openSet.Add(currentNode);
+                //	store the new or improved information
+                node.Parent = parent;
+                node.Cost = newCost;
+                node.Total = newCost + GetHeuristicCost(x, y);
+                node.Direction = dir;
+                if (node.Type == PathNode.PathStatus.OPEN) {
+                    //	already in openlist, just update priority
+                    m_openNodes.UpdatePriority(node, node.Total);
+                } else if (node.Type == PathNode.PathStatus.CLOSED) {
+                    node.Type = PathNode.PathStatus.OPEN; //	new path is closer, move newnode from closed to open again
+                }
+            } else {
+                //	unexplored node goes into open list
+                node.Type = PathNode.PathStatus.OPEN;
+                node.Parent = parent;
+                node.Cost = newCost;
+                node.Total = newCost + GetHeuristicCost(x, y);
+                node.Direction = dir;
+                m_openNodes.Enqueue(node, node.Total);
             }
 
-            return;
-        }
-
-        currentNode.gCost = g_cost;
-        currentNode.hCost = h_cost;
-        currentNode.parentNode = parentNode;
-        openSet.Add(currentNode);
-    }
-
-    private bool CheckDirection(int dir, int bitmask) => (dir & bitmask) == bitmask;
-
-    private int GetHeuristic(int x0, int y0, PathNode endNode) => COST_STRAIGHT_MOVE * (Mathf.Abs(x0 - endNode.x) + Mathf.Abs(y0 - endNode.z));
-
-    private List<PathNode> ReversePath(PathNode startNode, PathNode endNode) {
-        var path = new List<PathNode>();
-        var currentNode = endNode;
-
-        while (currentNode != startNode) {
-            path.Add(currentNode);
-            currentNode = currentNode.parentNode;
-        }
-
-        path.Add(startNode);
-        path.Reverse();
-
-        return path;
-    }
-
-    public static Direction GetDirectionForOffset(Vector3 v1, Vector3 v2) {
-        return GetDirectionForOffset(new Vector2Int((int)v1.x, (int)v1.z) - new Vector2Int((int)v2.x, (int)v2.z));
-    }
-
-    public static Direction GetDirectionForOffset(Vector2Int offset) {
-
-        if (offset.x == -1 && offset.y == -1) return Direction.SouthWest;
-        if (offset.x == -1 && offset.y == 0) return Direction.West;
-        if (offset.x == -1 && offset.y == 1) return Direction.NorthWest;
-        if (offset.x == 0 && offset.y == 1) return Direction.North;
-        if (offset.x == 1 && offset.y == 1) return Direction.NorthEast;
-        if (offset.x == 1 && offset.y == 0) return Direction.East;
-        if (offset.x == 1 && offset.y == -1) return Direction.SouthEast;
-        if (offset.x == 0 && offset.y == -1) return Direction.South;
-
-        return Direction.South;
-    }
-
-    public static bool IsDiagonal(Vector3 v1, Vector3 v2) {
-        return IsDiagonal(GetDirectionForOffset(v1, v2));
-    }
-
-    public static bool IsDiagonal(Direction dir) {
-        if (dir == Direction.NorthEast || dir == Direction.NorthWest ||
-            dir == Direction.SouthEast || dir == Direction.SouthWest)
             return true;
-        return false;
-    }
+        }
 
-    private List<PathNode> GenerateNodes() {
-        var mapNodes = new List<PathNode>();
-        for(int z = 0; z < Altitude.getHeight(); z++) {
-            for(int x = 0; x < Altitude.getWidth(); x++) {
-                var newNode = new PathNode() {
-                    x = x,
-                    z = z,
-                    y = Altitude.GetCellHeight(x, z),
-                    walkable = Altitude.IsCellWalkable(x, z)
-                };
+        private PathNode? GetNewNode() {
+            if (m_poolCount >= MAX_PATHNODE - 1) {
+                return null;
+            }
 
-                mapNodes.Add(newNode);
+            return m_nodePool[m_poolCount++];
+        }
+
+        private PathNode? GetNode(int x, int y) {
+            var node = FindNode(x, y);
+
+            if (node != null) {
+                return node;
+            }
+
+            node = GetNewNode();
+            if (node == null) {
+                return null; //	node pool exhausted
+            }
+
+            node.X = x;
+            node.Y = y;
+            node.Type = PathNode.PathStatus.UNEXPLORED;
+            AddNode(node);
+            return node;
+        }
+
+        private void AddNode(PathNode node) {
+            m_masterNodes[node.X + node.Y * GetMapWidth()] = node;
+        }
+
+        private long GetSecondNodeArrivalTime(long startTime, CPathInfo path, int speedFactor) {
+            var xlen = path.PathData[1].X - path.StartPointX;
+            var ylen = path.PathData[1].Y - path.StartPointY;
+            var distance = (float)Math.Sqrt(xlen * xlen + ylen * ylen);
+
+            return startTime + (long)(distance * speedFactor);
+        }
+
+        private void BuildResultPath(long startTime, PathNode goalNode, int speedFactor, CPathInfo path) {
+            //	count path size
+            var len = 0;
+            PathNode? tempnode = goalNode;
+
+            while (tempnode != null) {
+                len++;
+                tempnode = tempnode.Parent;
+            }
+
+            //	set path size
+            path.PathData.Resize(len, default!);
+            if (len <= 1)
+                return;
+
+            //	fill path info
+            tempnode = goalNode;
+            int i;
+            for (i = 0; i < len; i++) {
+                if (path.PathData[len - i - 1] == default) {
+                    path.PathData[len - i - 1] = new PathCell();
+                }
+
+                path.PathData[len - i - 1].X = tempnode!.X;
+                path.PathData[len - i - 1].Y = tempnode.Y;
+                path.PathData[len - i - 1].Direction = tempnode.Direction;
+                tempnode = tempnode.Parent;
+            }
+
+            //	fill pos, dir info
+            var diagonalMoveFactor = (int)(speedFactor * 1.414f);
+            path.PathData[0].Time = startTime;
+            path.PathData[1].Time = GetSecondNodeArrivalTime(startTime, path, speedFactor);
+
+            for (i = 1; i < len - 1; i++) {
+                if (path.PathData[i + 1].Direction % 2 == 1) { //	straight line move
+                    path.PathData[i + 1].Time = path.PathData[i].Time + diagonalMoveFactor;
+                } else { //	diagonal line move
+                    path.PathData[i + 1].Time = path.PathData[i].Time + speedFactor;
+                }
             }
         }
 
-        return mapNodes;
+        private bool IsConnected(int sx, int sy, int dx, int dy) {
+            if (dx < 0 || dy < 0 || dx >= GetMapWidth() || dy >= GetMapHeight()) {
+                return false;
+            }
+
+            if (!Altitude.IsCellWalkable(dx, dy)) {
+                return false;
+            }
+
+            if (sx == dx || sy == dy) return true;
+
+            return Altitude.IsCellWalkable(sx, dy) && Altitude.IsCellWalkable(dx, sy);
+        }
+
+        public static Direction GetDirectionForOffset(Vector3 v1, Vector3 v2) {
+            return GetDirectionForOffset(new Vector2Int((int)v1.x, (int)v1.z) - new Vector2Int((int)v2.x, (int)v2.z));
+        }
+
+        public static Direction GetDirectionForOffset(Vector2 offset) {
+            if (offset.x == -1 && offset.y == -1) return Direction.SouthWest;
+            if (offset.x == -1 && offset.y == 0) return Direction.West;
+            if (offset.x == -1 && offset.y == 1) return Direction.NorthWest;
+            if (offset.x == 0 && offset.y == 1) return Direction.North;
+            if (offset.x == 1 && offset.y == 1) return Direction.NorthEast;
+            if (offset.x == 1 && offset.y == 0) return Direction.East;
+            if (offset.x == 1 && offset.y == -1) return Direction.SouthEast;
+            if (offset.x == 0 && offset.y == -1) return Direction.South;
+
+            return Direction.South;
+        }
+
+        public static bool IsDiagonal(Vector3 v1, Vector3 v2) {
+            return IsDiagonal(GetDirectionForOffset(v1, v2));
+        }
+
+        public static bool IsDiagonal(Direction dir) {
+            if (dir == Direction.NorthEast || dir == Direction.NorthWest ||
+                dir == Direction.SouthEast || dir == Direction.SouthWest)
+                return true;
+            return false;
+        }
+
+        public float GetCellHeight(int pktPosX, int pktPosY) {
+            return (float)Altitude.GetCellHeight(pktPosX, pktPosY);
+        }
+
+        public GAT.Cell GetCell(Vector2Int tile) {
+            return Altitude.GetCell(tile.x, tile.y);
+        }
     }
 }

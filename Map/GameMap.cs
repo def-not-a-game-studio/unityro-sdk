@@ -1,7 +1,7 @@
 ﻿using ROIO.Models.FileTypes;
 using System;
+using Core.Path;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 
 [Serializable]
@@ -23,7 +23,7 @@ public class GameMap : MonoBehaviour {
 
     private void InitPathFinder() {
         PathFinder = gameObject.GetOrAddComponent<PathFinder>();
-        PathFinder.LoadMap(Altitude);
+        PathFinder.SetMap(Altitude);
     }
 
     private void InitWorldLight() {
@@ -78,7 +78,7 @@ public class GameMap : MonoBehaviour {
 
     public void SetMapAltitude(Altitude altitude) {
         Altitude = altitude;
-        PathFinder?.LoadMap(Altitude);
+        PathFinder?.SetMap(Altitude);
     }
 
     public PathFinder GetPathFinder() {
