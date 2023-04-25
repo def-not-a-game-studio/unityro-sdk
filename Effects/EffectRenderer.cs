@@ -19,11 +19,13 @@ namespace UnityRO.core.Effects {
                     var param = Effect.CylinderParts[i];
 
                     var cylinderRenderer = new GameObject($"Cylinder{i}").AddComponent<CylinderEffectRenderer>();
+                    cylinderRenderer.gameObject.layer = LayerMask.NameToLayer("Effects");
                     cylinderRenderer.transform.SetParent(transform, false);
-                    cylinderRenderer.Part = param;
+                    cylinderRenderer.SetPart(param, param.delay);
 
                     for (int j = 1; j <= param.duplicates; j++) {
                         var cylinderJ = new GameObject($"Cylinder{i}-{j}").AddComponent<CylinderEffectRenderer>();
+                        cylinderJ.gameObject.layer = LayerMask.NameToLayer("Effects");
                         cylinderJ.transform.SetParent(transform, false);
                         cylinderJ.SetPart(param, j * param.timeBetweenDuplication);
                     }
@@ -35,6 +37,8 @@ namespace UnityRO.core.Effects {
                     var param = Effect.ThreeDParts[i];
 
                     var threeDRenderer = new GameObject($"3D{i}").AddComponent<ThreeDEffectRenderer>();
+                    threeDRenderer.gameObject.layer = LayerMask.NameToLayer("Effects");
+                    //threeDRenderer.gameObject.GetOrAddComponent<Billboard>();
                     threeDRenderer.transform.SetParent(transform, false);
                     
                     var time = GameManager.Tick;
