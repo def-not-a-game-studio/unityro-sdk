@@ -1,6 +1,7 @@
 using ROIO.Models.FileTypes;
 using System.Collections;
 using UnityEngine;
+using UnityRO.Core.Camera;
 
 
 public class FramePaceCalculator {
@@ -20,17 +21,23 @@ public class FramePaceCalculator {
 	[SerializeField] private ACT.Action CurrentAction;
 	[SerializeField] private int ActionId;
 
+	private CharacterCamera CharacterCamera;
+	
 	private Coroutine MotionQueueCoroutine;
 
-	public FramePaceCalculator(CoreSpriteGameEntity entity, ViewerType viewerType, ACT currentACT) {
+	public FramePaceCalculator(CoreSpriteGameEntity entity,
+		ViewerType viewerType,
+		ACT currentACT,
+		CharacterCamera characterCamera) {
 		Entity = entity;
 		ViewerType = viewerType;
 		CurrentACT = currentACT;
+		CharacterCamera = characterCamera;
 	}
 
 	public int GetActionIndex() {
-		var cameraDirection = 0;
-		var entityDirection = Entity.Direction + 8;
+		var cameraDirection = (int) (CharacterCamera?.Direction ?? 0);
+		var entityDirection = (int)Entity.Direction + 8;
 
 		return (ActionId + (cameraDirection + entityDirection) % 8) % CurrentACT.actions.Length;
 	}

@@ -298,7 +298,7 @@ namespace Core.Path {
             return GetDirectionForOffset(new Vector2Int((int)v1.x, (int)v1.z) - new Vector2Int((int)v2.x, (int)v2.z));
         }
 
-        public static Direction GetDirectionForOffset(Vector2 offset) {
+        public static Direction GetDirectionForOffset(Vector2Int offset) {
             if (offset.x == -1 && offset.y == -1) return Direction.SouthWest;
             if (offset.x == -1 && offset.y == 0) return Direction.West;
             if (offset.x == -1 && offset.y == 1) return Direction.NorthWest;

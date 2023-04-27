@@ -2,6 +2,7 @@ using System;
 using ROIO.Models.FileTypes;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityRO.Core.Camera;
 
 
 [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
@@ -11,11 +12,8 @@ public class SpriteViewer : MonoBehaviour {
     [field: SerializeField] public SpriteState State { get; private set; }
 
     [SerializeField] private SpriteData SpriteData;
-
     [SerializeField] private Texture2D Atlas;
-
     [SerializeField] private SpriteViewer[] Children;
-
     [SerializeField] private SpriteViewer Parent;
 
     private Dictionary<ACT.Frame, Mesh> ColliderCache = new Dictionary<ACT.Frame, Mesh>();
@@ -24,6 +22,7 @@ public class SpriteViewer : MonoBehaviour {
     private MeshRenderer MeshRenderer;
     private MeshFilter MeshFilter;
     private MeshCollider MeshCollider;
+    private CharacterCamera CharacterCamera;
 
     private UnityEngine.Sprite[] Sprites;
 
@@ -33,6 +32,7 @@ public class SpriteViewer : MonoBehaviour {
     private FramePaceCalculator FramePaceCalculator;
 
     private void Awake() {
+        CharacterCamera = FindObjectOfType<CharacterCamera>();
         InitializeRenderers();
     }
 
@@ -48,11 +48,11 @@ public class SpriteViewer : MonoBehaviour {
 
     public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
         var state = motion.Motion switch {
-                        SpriteMotion.Idle => SpriteState.Idle,
-                        SpriteMotion.Standby => SpriteState.Standby,
-                        SpriteMotion.Walk => SpriteState.Walking,
-                        _ => throw new System.NotImplementedException()
-                    };
+            SpriteMotion.Idle => SpriteState.Idle,
+            SpriteMotion.Standby => SpriteState.Standby,
+            SpriteMotion.Walk => SpriteState.Walking,
+            _ => throw new System.NotImplementedException()
+        };
 
         if (state == State) {
             return;
@@ -85,10 +85,10 @@ public class SpriteViewer : MonoBehaviour {
     public void UpdatePalette() {
         if (SpriteData.palettes.Length <= 0) return;
         var palette = ViewerType switch {
-                          ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                          ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                          _ => throw new ArgumentOutOfRangeException()
-                      };
+            ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+            ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+            _ => throw new ArgumentOutOfRangeException()
+        };
 
         if (palette != null) {
             MeshRenderer.material.SetTexture("_PaletteTex", palette);
@@ -102,13 +102,13 @@ public class SpriteViewer : MonoBehaviour {
         Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
 
         Sprites = SpriteData.GetSprites();
-        FramePaceCalculator = new FramePaceCalculator(Entity, ViewerType, SpriteData.act);
+        FramePaceCalculator = new FramePaceCalculator(Entity, ViewerType, SpriteData.act, CharacterCamera);
         MeshRenderer.material = new Material(Shader.Find("UnityRO/BillboardSpriteShader"));
         MeshRenderer.material.SetTexture("_MainTex", Atlas);
 
         MeshRenderer.material.SetFloat("_UsePalette", SpriteData.palettes.Length);
         if (SpriteData.palettes.Length <= 0) return;
-        
+
         MeshRenderer.material.SetTexture("_PaletteTex", SpriteData.palettes[0]);
     }
 
@@ -120,7 +120,6 @@ public class SpriteViewer : MonoBehaviour {
         var ourAnchor = GetAnimationAnchor();
 
         var diff = parentAnchor - ourAnchor;
-
         transform.localPosition = new Vector3(diff.x, -diff.y, 0f) / 32;
     }
 

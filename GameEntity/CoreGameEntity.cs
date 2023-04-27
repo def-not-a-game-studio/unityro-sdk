@@ -7,4 +7,7 @@ public abstract class CoreGameEntity : MonoBehaviour {
     public abstract void ChangeMotion(MotionRequest request);
 
     public abstract void Init(GameEntityBaseStatus gameEntityBaseStatus);
+
+    public abstract bool HasAuthority();
+    public abstract int GetEntityGID();
 }
