@@ -51,6 +51,16 @@ public class SpriteViewer : MonoBehaviour {
             SpriteMotion.Idle => SpriteState.Idle,
             SpriteMotion.Standby => SpriteState.Standby,
             SpriteMotion.Walk => SpriteState.Walking,
+            SpriteMotion.Attack => SpriteState.Attack,
+            SpriteMotion.Attack1 => SpriteState.Attack,
+            SpriteMotion.Attack2 => SpriteState.Attack,
+            SpriteMotion.Attack3 => SpriteState.Attack,
+            SpriteMotion.Dead => SpriteState.Die,
+            SpriteMotion.Hit => SpriteState.Hit,
+            SpriteMotion.Casting => SpriteState.Casting,
+            SpriteMotion.PickUp => SpriteState.PickUp,
+            SpriteMotion.Freeze1 => SpriteState.Frozen,
+            SpriteMotion.Freeze2 => SpriteState.Frozen,
             _ => throw new System.NotImplementedException()
         };
 
@@ -162,7 +172,13 @@ public enum ViewerType {
 public enum SpriteState {
     Idle,
     Walking,
-    Standby
+    Standby,
+    Die,
+    Hit,
+    Attack,
+    Casting,
+    PickUp,
+    Frozen
 }
 
 public enum SpriteMotion {
