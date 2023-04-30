@@ -1,9 +1,8 @@
 using System;
-using Assets.Scripts.Renderer.Map.Effects.EffectParts;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
+namespace Core.Effects.EffectParts {
     
     [Serializable]
     public class CylinderEffectPart : EffectPart {

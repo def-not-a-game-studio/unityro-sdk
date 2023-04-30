@@ -1,6 +1,6 @@
-﻿using UnityEditor;
+﻿using Core.Effects;
+using UnityEditor;
 using UnityEngine;
-using UnityRO.core.Effects;
 
 [CustomEditor(typeof(EffectRenderer))]
 internal class EffectRendererEditor : Editor {

@@ -1,6 +1,7 @@
+using Core.Effects.EffectParts;
 using UnityEngine;
 
-namespace UnityRO.core.Effects {
+namespace Core.Effects {
     public struct EffectInitParam {
         public Effect effect;
         public int ownerAID;
@@ -21,7 +22,7 @@ namespace UnityRO.core.Effects {
 
         public Vector3 position;
         public Vector3 otherPosition;
-        
+
         public long startTick;
         public long endTick;
     }

@@ -1,16 +1,15 @@
 using System;
 using UnityEngine;
 
-namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
+namespace Core.Effects.EffectParts {
     [Serializable]
     public class TwoDEffect : EffectPart {
-        
         public long duration;
         public int duplicates;
         public float timeBetweenDuplication;
         public AudioClip wav;
         public bool attachedEntity;
-        
+
         /// type = 2D
         ///
         /// - file:
@@ -70,6 +69,7 @@ namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
         /// - sizeSmooth:
         ///   works the same way as positions, but effects the size of the texture
         public float size, sizeX, sizeY, sizeStart, sizeEnd, sizeStartX, sizeStartY, sizeEndX, sizeEndY;
+
         public float sizeRand, sizeRandX, sizeRandY;
         public float sizeSmooth;
 
@@ -80,11 +80,11 @@ namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
         /// - posxStartRandMiddle, posyStartRandMiddle, poszStartRandMiddle, posxEndRandMiddle, posyEndRandMiddle, poszEndRandMiddle:
         ///   sets the relative middle position of the random range of the starting and ending
         public float posXStartRandMiddle,
-                     posYStartRandMiddle,
-                     posZStartRandMiddle,
-                     posXEndRandMiddle,
-                     posYEndRandMiddle,
-                     posZEndRandMiddle;
+            posYStartRandMiddle,
+            posZStartRandMiddle,
+            posXEndRandMiddle,
+            posYEndRandMiddle,
+            posZEndRandMiddle;
 
         /// - sizeRandXMiddle, sizeRandYMiddle:
         ///   sets the middle value for the random range for the size X&Y values

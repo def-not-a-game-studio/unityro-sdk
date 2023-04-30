@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Core.Effects.EffectParts;
 using UnityEngine;
+using UnityRO.core.Effects;
 using Random = UnityEngine.Random;
 
-namespace UnityRO.core.Effects {
+namespace Core.Effects {
     public class ThreeDEffectRenderer : MonoBehaviour {
         [SerializeField] public ThreeDEffect Effect;
 

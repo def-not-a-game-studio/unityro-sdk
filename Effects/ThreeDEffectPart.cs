@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace UnityRO.core.Effects {
+namespace Core.Effects {
     [Serializable]
     public class ThreeDEffectPart {
         public int AID;

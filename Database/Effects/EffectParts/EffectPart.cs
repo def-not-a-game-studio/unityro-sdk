@@ -1,6 +1,6 @@
 using System;
 
-namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
+namespace Core.Effects.EffectParts {
     
     [Serializable]
     public class EffectPart {

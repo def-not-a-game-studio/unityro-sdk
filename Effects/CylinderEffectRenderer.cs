@@ -1,8 +1,8 @@
 using System;
-using Assets.Scripts.Renderer.Map.Effects.EffectParts;
+using Core.Effects.EffectParts;
 using UnityEngine;
 
-namespace UnityRO.core.Effects {
+namespace Core.Effects {
     public class CylinderEffectRenderer : MonoBehaviour {
         public CylinderEffectPart Part;
 

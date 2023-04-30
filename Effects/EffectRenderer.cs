@@ -1,7 +1,7 @@
-using System;
+using Core.Effects.EffectParts;
 using UnityEngine;
 
-namespace UnityRO.core.Effects {
+namespace Core.Effects {
     
     public class EffectRenderer : MonoBehaviour {
 

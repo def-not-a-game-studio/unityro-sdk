@@ -1,10 +1,9 @@
+using Core.Effects.EffectParts;
 using UnityEngine;
 
-namespace Assets.Scripts.Renderer.Map.Effects
-{
+namespace Core.Effects {
     [CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Skill Effect")]
-    public class SkillEffect : ScriptableObject
-    {
+    public class SkillEffect : ScriptableObject {
         public Effect Effect;
         public Effect CasterEffect;
         public Effect GroundEffect;

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Assets.Scripts.Renderer.Map.Effects.EffectParts {
+namespace Core.Effects.EffectParts {
     [Serializable]
     public class SprEffect : EffectPart {
         public long duration;
