@@ -10,4 +10,5 @@ public abstract class CoreGameEntity : MonoBehaviour {
 
     public abstract bool HasAuthority();
     public abstract int GetEntityGID();
+    public abstract void RequestMovement(Vector2 destination);
 }
