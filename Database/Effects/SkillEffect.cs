@@ -2,7 +2,7 @@ using Core.Effects.EffectParts;
 using UnityEngine;
 
 namespace Core.Effects {
-    [CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Skill Effect")]
+    [CreateAssetMenu(menuName = "Database Entry/Skill Effect")]
     public class SkillEffect : ScriptableObject {
         public Effect Effect;
         public Effect CasterEffect;

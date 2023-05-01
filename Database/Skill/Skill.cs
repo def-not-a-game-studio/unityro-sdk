@@ -1,7 +1,7 @@
 using Core.Effects;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "MidgardSurvivors/Database Entry/Skill")]
+[CreateAssetMenu(menuName = "Database Entry/Skill")]
 public class Skill : ScriptableObject {
     public int SkillId;
     public SkillEffect Effect;

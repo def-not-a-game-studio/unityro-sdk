@@ -2,7 +2,7 @@
 using UnityEngine;
 
 namespace Core.Effects.EffectParts {
-    [CreateAssetMenu(menuName = "UnityRO/Database Entry/Effect")]
+    [CreateAssetMenu(menuName = "Database Entry/Effect")]
     [Serializable]
     public class Effect : ScriptableObject {
         public int EffectId;
