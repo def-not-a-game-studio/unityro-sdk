@@ -133,5 +133,5 @@ public class PacketSerializer {
     }
 
     public event Action<ushort, int, InPacket> PacketReceived;
-    public delegate void OnPacketReceived(ushort cmd, int size, InPacket packet);
+    public delegate void OnPacketReceived<T>(ushort cmd, int size, T packet) where T : InPacket;
 }

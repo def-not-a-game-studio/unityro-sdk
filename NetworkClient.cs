@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -6,11 +7,12 @@ using UnityEngine.Events;
 using static PacketSerializer;
 
 public class NetworkClient : MonoBehaviour, IPacketHandler {
-
     public static UnityAction<NetworkPacket, bool> OnPacketEvent;
 
     #region Singleton
+
     private static NetworkClient _instance;
+
     private static NetworkClient Instance {
         get {
             if (_instance == null) {
@@ -20,13 +22,15 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
             return _instance;
         }
     }
+
     #endregion
 
     #region Members
+
     public bool IsConnected => CurrentConnection.IsConnected();
     public static int CLIENT_ID = new System.Random().Next();
 
-    private Dictionary<PacketHeader, OnPacketReceived> PacketHooks { get; set; } = new Dictionary<PacketHeader, OnPacketReceived>();
+    private Dictionary<PacketHeader, Delegate> PacketHooks { get; set; } = new();
 
     private bool IsPaused = false;
 
@@ -35,9 +39,11 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
 
     private Queue<OutPacket> OutPacketQueue;
     private Queue<InPacket> InPacketQueue;
+
     #endregion
 
     #region Lifecycle
+
     private void Awake() {
         DontDestroyOnLoad(this);
     }
@@ -54,6 +60,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         if (IsPaused) {
             return;
         }
+
         TrySendPacket();
         TryHandleReceivedPacket();
     }
@@ -61,6 +68,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     private void OnApplicationQuit() {
         Disconnect();
     }
+
     #endregion
 
     public async Task ChangeServer(string ip, int port) {
@@ -78,8 +86,8 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         CurrentConnection?.Disconnect();
     }
 
-    public void HookPacket(PacketHeader cmd, OnPacketReceived onPackedReceived) {
-        PacketHooks[cmd] = onPackedReceived;
+    public void HookPacket<T>(PacketHeader cmd, OnPacketReceived<T> onPackedReceived) where T : InPacket {
+        PacketHooks.Add(cmd, onPackedReceived);
     }
 
     public void SkipBytes(int bytesToSkip) {
@@ -87,6 +95,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     #region Packet Handling
+
     public void PausePacketHandling() {
         IsPaused = true;
     }
@@ -122,16 +131,19 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
 
         var packet = InPacketQueue.Dequeue();
         var isHandled = PacketHooks.TryGetValue(packet.Header, out var hook);
+
         if (hook != null) {
-            hook?.DynamicInvoke((ushort) packet.Header, -1, packet);
+            (hook).DynamicInvoke((ushort)packet.Header, -1, packet);
         }
+
         OnPacketEvent?.Invoke(packet, isHandled);
     }
+
     #endregion
 
     private IEnumerator ServerHeartBeat() {
-        for (; ; ) {
-            // TODO check if connection is still alive. If not, disconnect client
+        for (;;) {
+            if (!CurrentConnection.IsConnected()) yield break;
             new CZ.REQUEST_TIME2().Send();
             yield return new WaitForSeconds(10f);
         }
