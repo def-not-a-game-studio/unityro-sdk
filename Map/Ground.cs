@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 public class Ground {
-    public const int MAX_VERTICES = 65532;
+    public const int MAX_VERTICES = 65532; // 4096
     public Mesh[] meshes { get; private set; }
     private Texture2D atlas;
     private Texture2D lightmap;

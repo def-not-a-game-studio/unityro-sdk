@@ -6,8 +6,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [InitializeOnLoad]
 public class ROMapExtractor : EditorWindow {
@@ -69,11 +71,41 @@ public class ROMapExtractor : EditorWindow {
                 material.SetTexture("_MainTex", texture);
             }
 
+            var models = mapObject.transform.Find("_Models");
+            var originals = models.transform.Find("_Originals");
+            var cloned = models.transform.Find("_Cloned");
+
+            foreach (var child in originals.transform.GetChildren()) {
+                foreach (var grandChildren in child.transform.GetChildren()) {
+                    if (grandChildren.transform.GetComponentInChildren(typeof(NodeAnimation)) == null) {
+                        child.gameObject.isStatic = true;
+                    }
+                }
+            }
+
+            foreach (var child in cloned.transform.GetChildren()) {
+                foreach (var grandChildren in child.transform.GetChildren()) {
+                    if (grandChildren.transform.GetComponentInChildren(typeof(NodeAnimation)) == null) {
+                        child.gameObject.isStatic = true;
+                    }
+                }
+            }
+
             AssetDatabase.Refresh();
 
             localPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(localPath, $"{mapName}.prefab"));
-            UnityEditor.PrefabUtility.SaveAsPrefabAssetAndConnect(mapObject, localPath,
-                InteractionMode.AutomatedAction);
+            PrefabUtility.SaveAsPrefabAssetAndConnect(mapObject, localPath, InteractionMode.AutomatedAction);
+
+            var mapScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            mapScene.name = mapName;
+            SceneManager.MoveGameObjectToScene(mapObject, mapScene);
+            EditorSceneManager.MarkAllScenesDirty();
+            EditorSceneManager.SaveScene(mapScene, $"Assets/Scenes/Maps/{mapName}.unity");
+
+            StaticOcclusionCulling.GenerateInBackground();
+
+            EditorSceneManager.SaveOpenScenes();
+
             //ImportAssetAndApplyAddressableGroup(localPath, typeof(GameObject));
         } finally {
             EditorUtility.ClearProgressBar();
@@ -136,6 +168,65 @@ public class ROMapExtractor : EditorWindow {
 
     private static void ExtractGround(GameObject mapObject, string mapName) {
         var groundMeshes = mapObject.transform.FindRecursive("_Ground");
+
+        // Extract first textures only
+        var firstMesh = groundMeshes.transform.GetChild(0);
+        firstMesh.gameObject.SetActive(true);
+        var firstMeshMeshPath = Path.Combine(GetBasePath(), mapName, "ground");
+        Directory.CreateDirectory(firstMeshMeshPath);
+
+        var meshRenderers = firstMesh.GetComponentsInChildren<MeshRenderer>();
+        Texture2D mainTexture = null;
+        Texture2D lightmapTexture = null;
+        Texture2D tintmapTexture = null;
+
+        foreach (var r in meshRenderers) {
+            var material = r.material;
+
+            var mainTex = material.GetTexture("_MainTex") as Texture2D;
+            var lightmapTex = material.GetTexture("_Lightmap") as Texture2D;
+            var tintmapTex = material.GetTexture("_Tintmap") as Texture2D;
+
+            if (mainTex != null) {
+                if (!mainTex.isReadable) {
+                    mainTex = DuplicateTexture(mainTex);
+                }
+
+                var path = Path.Combine(firstMeshMeshPath, "texture.png");
+                var bytes = mainTex.EncodeToPNG();
+                File.WriteAllBytes(path, bytes);
+
+                AssetDatabase.ImportAsset(path);
+                mainTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
+            }
+
+            if (lightmapTex != null) {
+                if (!lightmapTex.isReadable) {
+                    lightmapTex = DuplicateTexture(lightmapTex);
+                }
+
+                var path = Path.Combine(firstMeshMeshPath, "lightmap.png");
+                var bytes = lightmapTex.EncodeToPNG();
+                File.WriteAllBytes(path, bytes);
+
+                AssetDatabase.ImportAsset(path);
+                lightmapTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
+            }
+
+            if (tintmapTex != null) {
+                if (!tintmapTex.isReadable) {
+                    tintmapTex = DuplicateTexture(tintmapTex);
+                }
+
+                var path = Path.Combine(firstMeshMeshPath, "tintmap.png");
+                var bytes = tintmapTex.EncodeToPNG();
+                File.WriteAllBytes(path, bytes);
+
+                AssetDatabase.ImportAsset(path);
+                tintmapTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
+            }
+        }
+        
         for (int i = 0; i < groundMeshes.transform.childCount; i++) {
             var mesh = groundMeshes.transform.GetChild(i);
             mesh.gameObject.SetActive(true);
@@ -154,52 +245,10 @@ public class ROMapExtractor : EditorWindow {
                 var filter = filters[k];
                 var material = renderers[k].material;
 
-                var mainTex = material.GetTexture("_MainTex") as Texture2D;
-                var lightmapTex = material.GetTexture("_Lightmap") as Texture2D;
-                var tintmapTex = material.GetTexture("_Tintmap") as Texture2D;
-
-                if (mainTex != null) {
-                    if (!mainTex.isReadable) {
-                        mainTex = DuplicateTexture(mainTex);
-                    }
-
-                    var path = Path.Combine(meshPath, "texture.png");
-                    var bytes = mainTex.EncodeToPNG();
-                    File.WriteAllBytes(path, bytes);
-
-                    AssetDatabase.ImportAsset(path);
-                    var tex = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
-                    material.SetTexture("_MainTex", tex);
-                }
-
-                if (lightmapTex != null) {
-                    if (!lightmapTex.isReadable) {
-                        lightmapTex = DuplicateTexture(lightmapTex);
-                    }
-
-                    var path = Path.Combine(meshPath, "lightmap.png");
-                    var bytes = lightmapTex.EncodeToPNG();
-                    File.WriteAllBytes(path, bytes);
-
-                    AssetDatabase.ImportAsset(path);
-                    var tex = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
-                    material.SetTexture("_Lightmap", tex);
-                }
-
-                if (tintmapTex != null) {
-                    if (!tintmapTex.isReadable) {
-                        tintmapTex = DuplicateTexture(tintmapTex);
-                    }
-
-                    var path = Path.Combine(meshPath, "tintmap.png");
-                    var bytes = tintmapTex.EncodeToPNG();
-                    File.WriteAllBytes(path, bytes);
-
-                    AssetDatabase.ImportAsset(path);
-                    var tex = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
-                    material.SetTexture("_Tintmap", tex);
-                }
-
+                material.SetTexture("_MainTex", mainTexture);
+                material.SetTexture("_Lightmap", lightmapTexture);
+                material.SetTexture("_Tintmap", tintmapTexture);
+                
                 var partPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
                     $"{filter.gameObject.name.SanitizeForAddressables()}_{k}.asset"));
                 var materialPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
@@ -286,7 +335,8 @@ public class ROMapExtractor : EditorWindow {
                 var nodes = mesh.GetComponentsInChildren<NodeProperties>();
                 foreach (var node in nodes) {
                     if (!node.TryGetComponent<NodeAnimation>(out var anim)) {
-                        GameObjectUtility.SetStaticEditorFlags(node.gameObject, StaticEditorFlags.BatchingStatic);
+                        //GameObjectUtility.SetStaticEditorFlags(node.gameObject, StaticEditorFlags.BatchingStatic);
+                        node.gameObject.isStatic = true;
                     }
 
                     var filter = node.GetComponent<MeshFilter>();
