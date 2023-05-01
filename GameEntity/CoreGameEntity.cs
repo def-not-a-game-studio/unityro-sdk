@@ -10,5 +10,16 @@ public abstract class CoreGameEntity : MonoBehaviour {
 
     public abstract bool HasAuthority();
     public abstract int GetEntityGID();
+    
+    /// <summary>
+    /// Use this when you have an offset to add to the current position to walk to
+    /// </summary>
+    /// <param name="destination"></param>
+    public abstract void RequestOffsetMovement(Vector2 destination);
+    
+    /// <summary>
+    /// Use this when you have an absolute coordinate to walk to
+    /// </summary>
+    /// <param name="destination"></param>
     public abstract void RequestMovement(Vector2 destination);
 }
