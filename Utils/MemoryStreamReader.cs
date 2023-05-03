@@ -125,7 +125,7 @@ namespace ROIO.Utils {
         }
 
         /**
-         * "Random bullshit, go!!"
+         * Random bullshit, go!!
          * Taken from roBrowser BinaryReader
          */
         public int[] ReadPos2() {
@@ -134,6 +134,7 @@ namespace ROIO.Utils {
             var c = base.ReadByte();
             var d = base.ReadByte();
             var e = base.ReadByte();
+            var f = base.ReadByte();
 
             var x1 = (a & 0xFF) << 2 | (b & 0xC0) >> 6;
             var y1 = (b & 0x3F) << 4 | (c & 0xF0) >> 4;
