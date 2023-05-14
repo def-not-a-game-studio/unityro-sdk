@@ -1,5 +1,6 @@
 ﻿using ROIO.Utils;
 using System.IO;
+using System.Linq;
 using System.Net;
 
 public partial class AC {
@@ -42,6 +43,9 @@ public partial class AC {
 
                 Servers[i] = csi;
             }
+
+            var validServers = Servers.Where(it => it.Name.Length > 0 && it.IP.ToString() != "0.0.0.0").ToArray();
+            Servers = validServers;
         }
     }
 }
