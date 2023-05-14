@@ -39,10 +39,11 @@ public partial class ZC {
             entityData.isPKModeON = (byte) br.ReadByte();
             entityData.sex = (byte) br.ReadByte();
             entityData.PosDir = br.ReadPos2();
-            br.Seek(1, SeekOrigin.Current);
             entityData.xSize = (byte) br.ReadByte();
             entityData.ySize = (byte) br.ReadByte();
+            
             entityData.state = EntitySpawnData.EntitySpawnState.Stand;
+            
             entityData.clevel = br.ReadShort();
             entityData.font = br.ReadShort();
             entityData.MaxHP = br.ReadInt();
