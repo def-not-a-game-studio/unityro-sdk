@@ -1,11 +1,12 @@
-﻿using ROIO.Models.FileTypes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
+using UnityRO.Core;
 
 namespace Core.Effects {
-    public class StrEffectRenderer : MonoBehaviour {
+    public class StrEffectRenderer : ManagedMonoBehaviour {
         [SerializeField] private STR Anim;
         [SerializeField] private BlendMode srcBlend;
         [SerializeField] private BlendMode dstBlend;
@@ -91,7 +92,7 @@ namespace Core.Effects {
                 Initialize(Anim);
         }
 
-        private void Update() {
+        public override void ManagedUpdate() {
             if (!isInit)
                 return;
 
@@ -125,7 +126,6 @@ namespace Core.Effects {
 
             UpdateAnimationFrame();
         }
-
 
         private Material GetEffectMaterial(int layer, int srcBlend, int destBlend) {
             var hash = $"{Anim.name}-{layer}-{srcBlend.ToString()}-{destBlend.ToString()}";
@@ -167,7 +167,7 @@ namespace Core.Effects {
 
             for (var i = 0; i < 4; i++) {
                 var p = Rotate(pos[i], -angle * Mathf.Deg2Rad);
-                tempPositions[i] = new Vector3(p.x, p.y, 0) / 35f;
+                tempPositions[i] = new Vector3(p.x, p.y, 0) / SPR.PIXELS_PER_UNIT;
 
                 var uvx = uvs[i].x; //.Remap(0, 1, bounds.xMin, bounds.xMax);
                 var uvy = uvs[i].y; //.Remap(0, 1, bounds.yMin, bounds.yMax);
@@ -201,7 +201,8 @@ namespace Core.Effects {
             Color color,
             int layerNum
         ) {
-            go.transform.localPosition = new Vector3((pos.x - 320f) / 35f, -(pos.y - 360f) / 35f, -(layerNum / 10f));
+            var z = -(layerNum < 10 ? layerNum / 10f : layerNum / 100f);
+            go.transform.localPosition = new Vector3((pos.x - 320f) / SPR.PIXELS_PER_UNIT, -(pos.y - 360f) / SPR.PIXELS_PER_UNIT, z);
             go.transform.localScale = Vector3.one;
             mat.SetColor("_Color", color);
         }
