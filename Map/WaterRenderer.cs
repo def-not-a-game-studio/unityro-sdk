@@ -1,12 +1,14 @@
 ﻿using ROIO.Models.FileTypes;
 using ROIO.Utils;
 using System;
+using System.IO;
 using UnityEngine;
+using UnityRO.Core;
 
 namespace Assets.Scripts.Renderer.Map {
 
     [Serializable]
-    public class WaterRenderer : MonoBehaviour {
+    public class WaterRenderer : ManagedMonoBehaviour {
 
         [SerializeField]
         private RSW.WaterInfo WaterInfo;
@@ -22,13 +24,13 @@ namespace Assets.Scripts.Renderer.Map {
             material.SetFloat("Wave Pitch", WaterInfo.wavePitch);
 
             textures = new Texture2D[32];
-            for (int i = 0; i < 32; i++) {
-                //var texture = Addressables.LoadAssetAsync<Texture2D>(Path.ChangeExtension(WaterInfo.images[i], ".png").SanitizeForAddressables()).WaitForCompletion();
-                //textures[i] = texture;
+            for (var i = 0; i < 32; i++) {
+                var texture = Resources.Load<Texture2D>($"Textures/Water/{Path.GetFileNameWithoutExtension(WaterInfo.images[i])}");
+                textures[i] = texture;
             }
         }
 
-        private void FixedUpdate() {
+        public override void ManagedUpdate() {
             float frame = Time.time / (1 / 60f);
             int textureId = (int) Conversions.SafeDivide(frame, WaterInfo.animSpeed) % 32;
 
