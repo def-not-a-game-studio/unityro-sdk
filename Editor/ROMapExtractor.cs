@@ -1,10 +1,10 @@
 #if UNITY_EDITOR
-using ROIO;
-using ROIO.Loaders;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ROIO;
+using ROIO.Loaders;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditorInternal;
@@ -100,7 +100,7 @@ public class ROMapExtractor : EditorWindow {
             mapScene.name = mapName;
             SceneManager.MoveGameObjectToScene(mapObject, mapScene);
             EditorSceneManager.MarkAllScenesDirty();
-            EditorSceneManager.SaveScene(mapScene, $"Assets/Scenes/Maps/{mapName}.unity");
+            EditorSceneManager.SaveScene(mapScene, $"Assets/3rdparty/unityro-resources/Scenes/{mapName}.unity");
 
             StaticOcclusionCulling.GenerateInBackground();
 
@@ -167,94 +167,31 @@ public class ROMapExtractor : EditorWindow {
     }
 
     private static void ExtractGround(GameObject mapObject, string mapName) {
-        var groundMeshes = mapObject.transform.FindRecursive("_Ground");
+        var ground = mapObject.transform.FindRecursive("_Ground");
 
-        // Extract first textures only
-        var firstMesh = groundMeshes.transform.GetChild(0);
-        firstMesh.gameObject.SetActive(true);
-        var firstMeshMeshPath = Path.Combine(GetBasePath(), mapName, "ground");
-        Directory.CreateDirectory(firstMeshMeshPath);
+        ExtractGroundTextures(mapName, ground, out var lightmapTexture, out var tintmapTexture, out var mainTexture, out var material);
 
-        var meshRenderers = firstMesh.GetComponentsInChildren<MeshRenderer>();
-        Texture2D mainTexture = null;
-        Texture2D lightmapTexture = null;
-        Texture2D tintmapTexture = null;
+        try {
+            AssetDatabase.StartAssetEditing();
 
-        foreach (var r in meshRenderers) {
-            var material = r.material;
+            for (var i = 0; i < ground.transform.childCount; i++) {
+                var mesh = ground.transform.GetChild(i);
+                mesh.gameObject.SetActive(true);
+                var meshPath = Path.Combine(GetBasePath(), mapName, "ground", mesh.gameObject.name);
+                Directory.CreateDirectory(meshPath);
 
-            var mainTex = material.GetTexture("_MainTex") as Texture2D;
-            var lightmapTex = material.GetTexture("_Lightmap") as Texture2D;
-            var tintmapTex = material.GetTexture("_Tintmap") as Texture2D;
-
-            if (mainTex != null) {
-                if (!mainTex.isReadable) {
-                    mainTex = DuplicateTexture(mainTex);
+                var progress = i * 1f / ground.transform.childCount;
+                if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving ground meshes - {progress * 100}%",
+                        progress)) {
+                    break;
                 }
 
-                var path = Path.Combine(firstMeshMeshPath, "texture.png");
-                var bytes = mainTex.EncodeToPNG();
-                File.WriteAllBytes(path, bytes);
+                var filter = mesh.GetComponent<MeshFilter>();
+                mesh.GetComponent<MeshRenderer>().material = material;
 
-                AssetDatabase.ImportAsset(path);
-                mainTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
-            }
-
-            if (lightmapTex != null) {
-                if (!lightmapTex.isReadable) {
-                    lightmapTex = DuplicateTexture(lightmapTex);
-                }
-
-                var path = Path.Combine(firstMeshMeshPath, "lightmap.png");
-                var bytes = lightmapTex.EncodeToPNG();
-                File.WriteAllBytes(path, bytes);
-
-                AssetDatabase.ImportAsset(path);
-                lightmapTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
-            }
-
-            if (tintmapTex != null) {
-                if (!tintmapTex.isReadable) {
-                    tintmapTex = DuplicateTexture(tintmapTex);
-                }
-
-                var path = Path.Combine(firstMeshMeshPath, "tintmap.png");
-                var bytes = tintmapTex.EncodeToPNG();
-                File.WriteAllBytes(path, bytes);
-
-                AssetDatabase.ImportAsset(path);
-                tintmapTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
-            }
-        }
-        
-        for (int i = 0; i < groundMeshes.transform.childCount; i++) {
-            var mesh = groundMeshes.transform.GetChild(i);
-            mesh.gameObject.SetActive(true);
-            var meshPath = Path.Combine(GetBasePath(), mapName, "ground", $"_{i}");
-            Directory.CreateDirectory(meshPath);
-
-            var progress = i * 1f / groundMeshes.transform.childCount;
-            if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving ground meshes - {progress * 100}%",
-                    progress)) {
-                break;
-            }
-
-            var filters = mesh.GetComponentsInChildren<MeshFilter>();
-            var renderers = mesh.GetComponentsInChildren<MeshRenderer>();
-            for (int k = 0; k < filters.Length; k++) {
-                var filter = filters[k];
-                var material = renderers[k].material;
-
-                material.SetTexture("_MainTex", mainTexture);
-                material.SetTexture("_Lightmap", lightmapTexture);
-                material.SetTexture("_Tintmap", tintmapTexture);
-                
-                var partPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
-                    $"{filter.gameObject.name.SanitizeForAddressables()}_{k}.asset"));
-                var materialPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
-                    $"{filter.gameObject.name.SanitizeForAddressables()}_{k}.mat"));
+                var partPath =
+                    AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath, $"{filter.gameObject.name.SanitizeForAddressables()}.asset"));
                 AssetDatabase.CreateAsset(filter.mesh, partPath);
-                AssetDatabase.CreateAsset(material, materialPath);
 
                 var prefabPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
                     $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
@@ -262,10 +199,75 @@ public class ROMapExtractor : EditorWindow {
                     InteractionMode.AutomatedAction);
 
                 AssetDatabase.ImportAsset(partPath);
-                AssetDatabase.ImportAsset(materialPath);
                 AssetDatabase.ImportAsset(prefabPath);
             }
+        } finally {
+            AssetDatabase.StopAssetEditing();
         }
+    }
+
+    private static void ExtractGroundTextures(string mapName,
+        Transform groundMeshes,
+        out Texture2D lightmapTexture,
+        out Texture2D tintmapTexture,
+        out Texture2D mainTex,
+        out Material material
+    ) { // Extract first textures only
+        var firstMesh = groundMeshes.transform;
+        firstMesh.gameObject.SetActive(true);
+        var firstMeshMeshPath = Path.Combine(GetBasePath(), mapName, "ground");
+        Directory.CreateDirectory(firstMeshMeshPath);
+
+        material = firstMesh.transform.GetChild(0).GetComponent<MeshRenderer>().material;
+
+        mainTex = material.GetTexture("_MainTex") as Texture2D;
+        lightmapTexture = material.GetTexture("_Lightmap") as Texture2D;
+        tintmapTexture = material.GetTexture("_Tintmap") as Texture2D;
+
+        if (mainTex != null) {
+            if (!mainTex.isReadable) {
+                mainTex = DuplicateTexture(mainTex);
+            }
+
+            var path = Path.Combine(firstMeshMeshPath, "texture.png");
+            var bytes = mainTex.EncodeToPNG();
+            File.WriteAllBytes(path, bytes);
+
+            AssetDatabase.ImportAsset(path);
+            mainTex = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
+            material.SetTexture("_MainTex", mainTex);
+        }
+
+        if (lightmapTexture != null) {
+            if (!lightmapTexture.isReadable) {
+                lightmapTexture = DuplicateTexture(lightmapTexture);
+            }
+
+            var path = Path.Combine(firstMeshMeshPath, "lightmap.png");
+            var bytes = lightmapTexture.EncodeToPNG();
+            File.WriteAllBytes(path, bytes);
+
+            AssetDatabase.ImportAsset(path);
+            lightmapTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
+            material.SetTexture("_Lightmap", lightmapTexture);
+        }
+
+        if (tintmapTexture != null) {
+            if (!tintmapTexture.isReadable) {
+                tintmapTexture = DuplicateTexture(tintmapTexture);
+            }
+
+            var path = Path.Combine(firstMeshMeshPath, "tintmap.png");
+            var bytes = tintmapTexture.EncodeToPNG();
+            File.WriteAllBytes(path, bytes);
+
+            AssetDatabase.ImportAsset(path);
+            tintmapTexture = AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
+            material.SetTexture("_Tintmap", tintmapTexture);
+        }
+
+        var materialPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(firstMeshMeshPath, $"{mapName}.mat"));
+        AssetDatabase.CreateAsset(material, materialPath);
     }
 
     private static void ExtractOriginalModels(GameObject mapObject, string overridePath = null) {
@@ -417,6 +419,10 @@ public class ROMapExtractor : EditorWindow {
         var data = EditorPrefs.GetString("ROMapExtractorWindow", JsonUtility.ToJson(this, false));
         // Then we apply them to this window
         JsonUtility.FromJsonOverwrite(data, this);
+
+        if (grfPaths.Count > 0 && grfRootPath.Length > 0) {
+            LoadGRF();
+        }
 
         GrfReordableList = new ReorderableList(grfPaths, typeof(string));
         GrfReordableList.drawHeaderCallback = (rect) => EditorGUI.LabelField(rect, "GRF List");

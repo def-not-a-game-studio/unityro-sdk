@@ -1,12 +1,15 @@
-﻿using ROIO;
-using ROIO.Models.FileTypes;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using MeshSplit.Scripts;
+using ROIO;
+using ROIO.Models.FileTypes;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 public class Ground {
-    public const int MAX_VERTICES = 65532; // 4096
+    private const int MAX_VERTICES = int.MaxValue;
+
     public Mesh[] meshes { get; private set; }
     private Texture2D atlas;
     private Texture2D lightmap;
@@ -37,34 +40,53 @@ public class Ground {
     }
 
     public void Render() {
-        GameObject ground = new GameObject("_Ground");
-        ground.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
+        GameObject gameObject = new GameObject("_Ground");
+        gameObject.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
         var material = Resources.Load<Material>("Materials/GroundMaterial");
 
-        for (int i = 0; i < meshes.Length; i++) {
-            Mesh mesh = meshes[i];
-            GameObject gameObject = new GameObject("Ground[" + i + "]");
-            gameObject.transform.parent = ground.transform;
-            var mf = gameObject.AddComponent<MeshFilter>();
-            mf.mesh = mesh;
-            var mr = gameObject.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = material;
-            mr.sharedMaterial.mainTexture = atlas;
-            mr.sharedMaterial.SetTexture("_Tintmap", tintmap);
-            mr.sharedMaterial.SetTexture("_Lightmap", lightmap);
+        Mesh mesh = meshes[0];
+        var mf = gameObject.AddComponent<MeshFilter>();
+        mf.mesh = mesh;
+        var mr = gameObject.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = material;
+        mr.sharedMaterial.mainTexture = atlas;
+        mr.sharedMaterial.SetTexture("_Tintmap", tintmap);
+        mr.sharedMaterial.SetTexture("_Lightmap", lightmap);
 
-            Vector3 scale = gameObject.transform.localScale;
-            scale.Set(1f, -1f, 1f);
-            gameObject.transform.localScale = scale;
+        Vector3 scale = gameObject.transform.localScale;
+        scale.Set(1f, -1f, 1f);
+        gameObject.transform.localScale = scale;
 
-            //smooth out mesh
-            NormalSolver.RecalculateNormals(mf.sharedMesh, 60);
+        //smooth out mesh
+        NormalSolver.RecalculateNormals(mf.sharedMesh, 60);
 
-            //avoid z fighting between ground and models
-            gameObject.transform.Translate(0, -0.002f, 0);
-            gameObject.AddComponent<MeshCollider>();
-            gameObject.layer = LayerMask.NameToLayer("Ground");
+        //avoid z fighting between ground and models
+        gameObject.transform.Translate(0, -0.002f, 0);
+        gameObject.AddComponent<MeshCollider>();
+        gameObject.layer = LayerMask.NameToLayer("Ground");
+
+        var meshSplitController = gameObject.AddComponent<MeshSplitController>();
+        meshSplitController.Parameters = new MeshSplitParameters {
+            GenerateColliders = true,
+            GridSize = 16,
+            SplitAxes = new bool3(true, false, true),
+            UseParentLayer = true,
+        };
+        meshSplitController.Split();
+
+        gameObject.name = "_Ground.old";
+        var newGround = new GameObject("_Ground") {
+            transform = {
+                parent = GameObject.FindObjectOfType<GameMap>().transform,
+                localScale = scale
+            },
+            layer = LayerMask.NameToLayer("Ground")
+        };
+        foreach (var subMesh in gameObject.transform.GetChildren()) {
+            subMesh.transform.SetParent(newGround.transform, true);
         }
+
+        GameObject.DestroyImmediate(gameObject);
     }
 
     public void InitTextures(GND.Mesh compiledMesh) {
