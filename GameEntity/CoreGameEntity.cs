@@ -1,6 +1,7 @@
 using UnityEngine;
+using UnityRO.Core;
 
-public abstract class CoreGameEntity : MonoBehaviour {
+public abstract class CoreGameEntity : ManagedMonoBehaviour {
     
     public abstract GameEntityBaseStatus Status { get; }
 

@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using Core.Effects.EffectParts;
 using UnityEngine;
+using UnityRO.Core;
 using UnityRO.core.Effects;
 using Random = UnityEngine.Random;
 
 namespace Core.Effects {
-    public class ThreeDEffectRenderer : MonoBehaviour {
+    public class ThreeDEffectRenderer : ManagedMonoBehaviour {
         [SerializeField] public ThreeDEffect Effect;
 
         private ThreeDEffectPart _part;
@@ -344,7 +345,7 @@ namespace Core.Effects {
 
         private bool isReady = false;
 
-        private void Update() {
+        public override void ManagedUpdate() {
             if (_part.startTick > GameManager.Tick || !isReady) return;
 
             if (GameManager.Tick > _part.endTick) {
