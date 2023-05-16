@@ -1,10 +1,4 @@
-﻿using B83.Image.BMP;
-using Newtonsoft.Json.Linq;
-using ROIO.GRF;
-using ROIO.Loaders;
-using ROIO.Models.FileTypes;
-using ROIO.Utils;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -12,8 +6,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using B83.Image.BMP;
+using Newtonsoft.Json.Linq;
+using ROIO.GRF;
+using ROIO.Loaders;
+using ROIO.Models.FileTypes;
+using ROIO.Utils;
 using UnityEngine;
-
 
 namespace ROIO {
     /// <summary>
@@ -43,6 +42,7 @@ namespace ROIO {
                 var grf = Grf.grf_callback_open(rootPath + path, "r", null);
                 GrfList.Add(grf);
             }
+            Debug.Log("GRF Loaded");
         }
 
         public static void InitBatch() {
