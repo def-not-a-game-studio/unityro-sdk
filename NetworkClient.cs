@@ -30,7 +30,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     public bool IsConnected => CurrentConnection.IsConnected();
     public static int CLIENT_ID = new System.Random().Next();
 
-    private Dictionary<PacketHeader, Delegate> PacketHooks { get; set; } = new();
+    private Dictionary<PacketHeader, List<Delegate>> PacketHooks { get; set; } = new();
 
     private bool IsPaused = false;
 
@@ -87,7 +87,17 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     public void HookPacket<T>(PacketHeader cmd, OnPacketReceived<T> onPackedReceived) where T : InPacket {
-        PacketHooks.Add(cmd, onPackedReceived);
+        if (PacketHooks.TryGetValue(cmd, out var delegates)) {
+            delegates.Add(onPackedReceived);
+        } else {
+            PacketHooks.Add(cmd, new List<Delegate> { onPackedReceived });
+        }
+    }
+
+    public void UnhookPacket<T>(PacketHeader cmd, OnPacketReceived<T> onPackedReceived) where T : InPacket {
+        if (PacketHooks.TryGetValue(cmd, out var delegates) && delegates.Contains(onPackedReceived)) {
+            delegates.Remove(onPackedReceived);
+        }
     }
 
     public void SkipBytes(int bytesToSkip) {
@@ -130,10 +140,10 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         }
 
         var packet = InPacketQueue.Dequeue();
-        var isHandled = PacketHooks.TryGetValue(packet.Header, out var hook);
+        var isHandled = PacketHooks.TryGetValue(packet.Header, out var delegates);
 
-        if (hook != null) {
-            (hook).DynamicInvoke((ushort)packet.Header, -1, packet);
+        if (delegates is { Count: > 0 }) {
+            delegates.ForEach(it => it.DynamicInvoke((ushort)packet.Header, -1, packet));
         }
 
         OnPacketEvent?.Invoke(packet, isHandled);
