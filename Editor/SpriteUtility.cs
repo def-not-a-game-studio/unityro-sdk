@@ -59,7 +59,7 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Body")]
     static void ExtractBodySprites() {
-        FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        //FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
         var Environment = InitUtilLua();
 
         try {
@@ -67,6 +67,7 @@ public class SpriteUtility {
                                         .FilterDescriptors(FileManager.GetFileDescriptors(),
                                                            DEFAULT_BODY_DIR)
                                         .Where(it => Path.GetExtension(it) == ".spr")
+                                        //.Where(it => Path.GetFileNameWithoutExtension(it) == $"ÃÊº¸ÀÚ_{FEMALE}")
                                         .ToList();
 
             for (var i = 0; i < bodySpriteDescriptors.Count; i++) {
@@ -94,13 +95,14 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Head")]
     static void ExtractHeadSprites() {
-        FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        //FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
         var Environment = InitUtilLua();
 
         try {
             var descriptors = DataUtility
                               .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_HEAD_DIR)
                               .Where(it => Path.GetExtension(it) == ".spr")
+                              //.Where(it => Path.GetFileNameWithoutExtension(it) == $"1_{FEMALE}")
                               .ToList();
 
             for (var i = 0; i < descriptors.Count; i++) {
@@ -130,8 +132,8 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Headgear")]
     static void ExtractHeadgearSprites() {
-        //FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
-        FileManager.LoadGRF("/Users/dms11/Documents/Personal/ragnarok/", new List<string> { "data.grf" });
+        ////FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        //FileManager.LoadGRF("/Users/dms11/Documents/Personal/ragnarok/", new List<string> { "data.grf" });
 
         try {
             var descriptors = DataUtility
@@ -216,7 +218,7 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/NPC and Monster")]
     static void ExtractNPCAndMonstersSprites() {
-        FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        //FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
         var Environment = InitUtilLua();
 
         try {

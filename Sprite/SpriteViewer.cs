@@ -39,7 +39,7 @@ public class SpriteViewer : ManagedMonoBehaviour {
     private void Start() {
         ChangeMotion(new MotionRequest { Motion = SpriteMotion.Idle });
     }
-    
+
     public override void ManagedUpdate() {
         var frame = UpdateFrame();
         UpdateMesh(frame);
@@ -85,10 +85,13 @@ public class SpriteViewer : ManagedMonoBehaviour {
         }
 
         var frame = CurrentAction.frames[CurrentFrameIndex];
+        
         if (frame.pos.Length > 0)
             return frame.pos[0];
+        
         if (ViewerType == ViewerType.Head && State == SpriteState.Idle)
             return frame.pos[CurrentFrameIndex];
+        
         return Vector2.zero;
     }
 
@@ -130,7 +133,10 @@ public class SpriteViewer : ManagedMonoBehaviour {
         var ourAnchor = GetAnimationAnchor();
 
         var diff = parentAnchor - ourAnchor;
-        transform.localPosition = new Vector3(diff.x, -diff.y, 0f) / 32;
+        
+        //@TODO
+        //I believe we are missing here the zoom factor so the head stops wiggling
+        transform.localPosition = (new Vector3(diff.x, -diff.y, 0f) / SPR.PIXELS_PER_UNIT);
     }
 
     private ACT.Frame UpdateFrame() {
