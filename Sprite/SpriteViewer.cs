@@ -1,12 +1,12 @@
 using System;
-using ROIO.Models.FileTypes;
 using System.Collections.Generic;
+using ROIO.Models.FileTypes;
 using UnityEngine;
+using UnityRO.Core;
 using UnityRO.Core.Camera;
 
-
 [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
-public class SpriteViewer : MonoBehaviour {
+public class SpriteViewer : ManagedMonoBehaviour {
     [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
     [field: SerializeField] public ViewerType ViewerType { get; private set; }
     [field: SerializeField] public SpriteState State { get; private set; }
@@ -39,8 +39,8 @@ public class SpriteViewer : MonoBehaviour {
     private void Start() {
         ChangeMotion(new MotionRequest { Motion = SpriteMotion.Idle });
     }
-
-    private void Update() {
+    
+    public override void ManagedUpdate() {
         var frame = UpdateFrame();
         UpdateMesh(frame);
         UpdateLocalPosition();
