@@ -9,13 +9,13 @@ public partial class ZC {
         public PacketHeader Header => HEADER;
         public const int SIZE = 16;
 
-        public uint GID;
+        public uint AID;
         public int[] StartPosition;
         public int[] EndPosition;
         public uint MoveStartTime;
 
         public void Read(MemoryStreamReader br, int size) {
-            this.GID = br.ReadUInt();
+            this.AID = br.ReadUInt();
             var moveData = br.ReadPos2();
             StartPosition = new int[2] { moveData[0], moveData[1] };
             EndPosition = new int[2] { moveData[2], moveData[3] };

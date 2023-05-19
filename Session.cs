@@ -2,9 +2,8 @@
 
 public class Session {
 
-    public const int PC_ENTITY_TYPE = 0;
+    public const int PC_ENTITY_TYPE = 3;
 
-    public static Session CurrentSession { get; private set; }
     public static Action<string> OnMapChanged;
 
     public int AccountID;
@@ -23,9 +22,5 @@ public class Session {
     public void SetCurrentMap(string mapname) {
         CurrentMap = mapname;
         OnMapChanged?.Invoke(mapname);
-    }
-
-    public static void StartSession(Session session) {
-        CurrentSession = session;
     }
 }
