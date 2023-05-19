@@ -1,5 +1,5 @@
-﻿using ROIO.Models.FileTypes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using ROIO.Models.FileTypes;
 using UnityEngine;
 
 public static class SpriteMeshBuilder {
@@ -132,8 +132,8 @@ public static class SpriteMeshBuilder {
             var scale = new Vector3(layer.scale.x * (layer.isMirror ? -1 : 1), layer.scale.y, 1);
 
             var offsetX = (Mathf.RoundToInt(sprite.rect.width) % 2 == 1) ? 0.5f : 0f;
-            var offsetY = (Mathf.RoundToInt(sprite.rect.height) % 2 == 1) ? 0.5f : 0f;
-
+            var offsetY = (Mathf.RoundToInt(sprite.rect.height) % 2 == 1) ? 1f : 0f;
+            
             for(var j = 0; j < verts.Length; j++) {
                 var v = rotation * (verts[j] * scale);
                 outVertices.Add(v + new Vector3(layer.pos.x - offsetX, -(layer.pos.y) + offsetY) / SPR.PIXELS_PER_UNIT);
