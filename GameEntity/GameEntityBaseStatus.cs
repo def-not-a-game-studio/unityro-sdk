@@ -14,6 +14,8 @@ public class GameEntityBaseStatus {
     public EntityType EntityType;
         
     public int GID;
+    public int AID;
+    public int GUID;
     public string Name;
 
     public int MoveSpeed;

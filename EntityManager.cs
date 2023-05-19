@@ -1,10 +1,12 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace UnityRO.Core {
     public class EntityManager : ManagedMonoBehaviour {
+        [SerializeField] private CoreGameEntity EntityPrefab;
+        [SerializeField] private Transform EntitiesParent;
+
         private Dictionary<uint, CoreGameEntity> entityCache = new();
 
         private NetworkClient NetworkClient;
@@ -27,20 +29,21 @@ namespace UnityRO.Core {
 
         public CoreGameEntity Spawn(EntitySpawnData data) {
             var hasFound = entityCache.TryGetValue(data.AID, out var entity);
-            
+
             if (!hasFound) {
-                entity = (EntityType)data.objecttype switch {
-                    EntityType.PC => SpawnPC(data),
-                    EntityType.NPC => SpawnNPC(data),
-                    EntityType.MOB => SpawnMOB(data),
-                    _ => throw new ArgumentOutOfRangeException()
-                };
+                entity = Instantiate(EntityPrefab, EntitiesParent);
+                entity.gameObject.name = data.name;
+                entity.gameObject.SetActive(false);
+                entity.Spawn(GetBaseStatus(data), new Vector2(data.PosDir[0], data.PosDir[1]), (Direction)data.PosDir[2]);
+
+                Debug.Log($"Caching entity {data.AID}");
+                entityCache.Add(data.AID, entity);
             }
 
             if (entity != null) {
                 entity.gameObject.SetActive(true);
             }
-            
+
             return entity;
         }
 
@@ -50,6 +53,7 @@ namespace UnityRO.Core {
                 return entity;
             } else {
                 Debug.LogError($"No Entity found for given ID: {AID}");
+                Debug.LogError($"Entities cached {entityCache.Keys.ToList()}");
                 return null;
             }
         }
@@ -58,33 +62,47 @@ namespace UnityRO.Core {
             entityCache.Values.ToList().ForEach(Destroy);
             entityCache.Clear();
         }
-        
+
         public void RemoveEntity(uint AID) {
             if (!entityCache.TryGetValue(AID, out var entity)) return;
             Destroy(entity.gameObject);
             entityCache.Remove(AID);
         }
 
-        private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_STANDENTRY11 packet) { }
-
-        private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_NEWENTRY11 packet) { }
-
-        private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_MOVEENTRY11 packet) { }
-
-        private void OnEntityDespawned(ushort cmd, int size, ZC.NOTIFY_VANISH packet) { }
-
-        private CoreGameEntity SpawnPC(EntitySpawnData data) {
-            return null;
+        private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_STANDENTRY11 packet) {
+            Spawn(packet.entityData);
         }
 
-        private CoreGameEntity SpawnMOB(EntitySpawnData data) {
-            return null;
+        private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_NEWENTRY11 packet) {
+            Spawn(packet.entityData);
         }
 
-        private CoreGameEntity SpawnNPC(EntitySpawnData data) {
-            return null;
+        private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_MOVEENTRY11 packet) {
+            Spawn(packet.entityData);
+        }
+
+        private void OnEntityDespawned(ushort cmd, int size, ZC.NOTIFY_VANISH packet) {
+            GetEntity(packet.AID)?.Vanish(packet.Type);
         }
 
         public override void ManagedUpdate() { }
+
+        private GameEntityBaseStatus GetBaseStatus(EntitySpawnData data) {
+            return new GameEntityBaseStatus {
+                EntityType = data.objecttype.GetEntityType(),
+                GID = (int)data.GID,
+                AID = (int)data.AID,
+                GUID = (int)data.GuildID,
+                Name = data.name,
+                Job = data.job,
+                IsMale = data.sex == 1,
+
+                HairStyle = data.head,
+                HairColor = data.HairColor,
+                ClothesColor = data.ClothesColor,
+
+                MoveSpeed = data.speed,
+            };
+        }
     }
 }

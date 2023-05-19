@@ -13,11 +13,11 @@ public class SpriteViewer : ManagedMonoBehaviour {
 
     [SerializeField] private SpriteData SpriteData;
     [SerializeField] private Texture2D Atlas;
-    [SerializeField] private SpriteViewer[] Children;
+    [SerializeField] private List<SpriteViewer> Children = new();
     [SerializeField] private SpriteViewer Parent;
 
-    private Dictionary<ACT.Frame, Mesh> ColliderCache = new Dictionary<ACT.Frame, Mesh>();
-    private Dictionary<ACT.Frame, Mesh> MeshCache = new Dictionary<ACT.Frame, Mesh>();
+    private Dictionary<ACT.Frame, Mesh> ColliderCache = new();
+    private Dictionary<ACT.Frame, Mesh> MeshCache = new();
 
     private MeshRenderer MeshRenderer;
     private MeshFilter MeshFilter;
@@ -31,6 +31,13 @@ public class SpriteViewer : ManagedMonoBehaviour {
     private int CurrentFrameIndex;
     private FramePaceCalculator FramePaceCalculator;
 
+    public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity) {
+        SpriteData = spriteData;
+        Atlas = spriteData.atlas;
+        ViewerType = viewerType;
+        Entity = entity;
+    }
+
     private void Awake() {
         CharacterCamera = FindObjectOfType<CharacterCamera>();
         InitializeRenderers();
@@ -38,6 +45,14 @@ public class SpriteViewer : ManagedMonoBehaviour {
 
     private void Start() {
         ChangeMotion(new MotionRequest { Motion = SpriteMotion.Idle });
+    }
+
+    public void SetParent(SpriteViewer parent) {
+        Parent = parent;
+    }
+
+    public void AddChildren(SpriteViewer child) {
+        Children.Add(child);
     }
 
     public override void ManagedUpdate() {
@@ -69,7 +84,7 @@ public class SpriteViewer : ManagedMonoBehaviour {
         }
 
         State = state;
-        ActionId = AnimationHelper.GetMotionIdForSprite(motion.Motion, Entity.IsMonster);
+        ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, motion.Motion);
         CurrentFrameIndex = 0;
 
         FramePaceCalculator.OnMotionChanged(motion, nextMotion, ActionId);
@@ -85,13 +100,13 @@ public class SpriteViewer : ManagedMonoBehaviour {
         }
 
         var frame = CurrentAction.frames[CurrentFrameIndex];
-        
+
         if (frame.pos.Length > 0)
             return frame.pos[0];
-        
+
         if (ViewerType == ViewerType.Head && State == SpriteState.Idle)
             return frame.pos[CurrentFrameIndex];
-        
+
         return Vector2.zero;
     }
 
@@ -133,7 +148,7 @@ public class SpriteViewer : ManagedMonoBehaviour {
         var ourAnchor = GetAnimationAnchor();
 
         var diff = parentAnchor - ourAnchor;
-        
+
         //@TODO
         //I believe we are missing here the zoom factor so the head stops wiggling
         transform.localPosition = (new Vector3(diff.x, -diff.y, 0f) / SPR.PIXELS_PER_UNIT);

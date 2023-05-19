@@ -8,6 +8,7 @@ public abstract class CoreGameEntity : ManagedMonoBehaviour {
     public abstract void ChangeMotion(MotionRequest request);
 
     public abstract void Init(GameEntityBaseStatus gameEntityBaseStatus);
+    public abstract void Spawn(GameEntityBaseStatus gameEntityBaseStatus, Vector2 pos, Direction direction);
 
     public abstract bool HasAuthority();
     public abstract int GetEntityGID();
@@ -23,4 +24,6 @@ public abstract class CoreGameEntity : ManagedMonoBehaviour {
     /// </summary>
     /// <param name="destination"></param>
     public abstract void RequestMovement(Vector2 destination);
+
+    public abstract void Vanish(ZC.NOTIFY_VANISH.VanishType vanishType);
 }
