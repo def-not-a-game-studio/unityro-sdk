@@ -36,7 +36,6 @@ namespace UnityRO.Core {
                 entity.gameObject.SetActive(false);
                 entity.Spawn(GetBaseStatus(data), new Vector2(data.PosDir[0], data.PosDir[1]), (Direction)data.PosDir[2]);
 
-                Debug.Log($"Caching entity {data.AID}");
                 entityCache.Add(data.AID, entity);
             }
 
@@ -52,8 +51,7 @@ namespace UnityRO.Core {
             if (hasFound) {
                 return entity;
             } else {
-                Debug.LogError($"No Entity found for given ID: {AID}");
-                Debug.LogError($"Entities cached {entityCache.Keys.ToList()}");
+                //Debug.LogError($"No Entity found for given ID: {AID}");
                 return null;
             }
         }

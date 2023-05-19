@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 
 namespace UnityRO.Core {
@@ -17,10 +15,8 @@ namespace UnityRO.Core {
     }
 
     public static class UpdateManager {
-        public static Stopwatch SW { get; private set; } = new Stopwatch();
-        public static Action StopWatchStoppedCallback;
 
-        static HashSet<ManagedMonoBehaviour> _updateables = new HashSet<ManagedMonoBehaviour>();
+        static HashSet<ManagedMonoBehaviour> _updateables = new();
         static UpdateManagerInnerMonoBehaviour _innerMonoBehaviour;
 
         static UpdateManager() {
@@ -43,13 +39,9 @@ namespace UnityRO.Core {
 
         class UpdateManagerInnerMonoBehaviour : MonoBehaviour {
             private void Update() {
-                SW.Restart();
                 foreach (var mover in _updateables) {
                     mover.ManagedUpdate();
                 }
-
-                SW.Stop();
-                StopWatchStoppedCallback?.Invoke();
             }
         }
     }
