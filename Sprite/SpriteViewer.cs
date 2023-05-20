@@ -137,6 +137,7 @@ public class SpriteViewer : ManagedMonoBehaviour {
         MeshRenderer.material.SetFloat("_UsePalette", SpriteData.palettes.Length);
         if (SpriteData.palettes.Length <= 0) return;
 
+        MeshRenderer.material.SetFloat("_Offset", Sprites.Length / 125f);
         MeshRenderer.material.SetTexture("_PaletteTex", SpriteData.palettes[0]);
     }
 
