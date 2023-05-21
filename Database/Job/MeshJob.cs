@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Database {
     

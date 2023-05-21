@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core {
     public class EntityManager : ManagedMonoBehaviour {
@@ -80,7 +81,7 @@ namespace UnityRO.Core {
         }
 
         private void OnEntityDespawned(ushort cmd, int size, ZC.NOTIFY_VANISH packet) {
-            GetEntity(packet.AID)?.Vanish(packet.Type);
+            GetEntity(packet.AID)?.Vanish((VanishType)packet.Type);
         }
 
         public override void ManagedUpdate() { }

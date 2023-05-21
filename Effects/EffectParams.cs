@@ -1,5 +1,6 @@
 using Core.Effects.EffectParts;
 using UnityEngine;
+using UnityRO.Core.GameEntity;
 
 namespace Core.Effects {
     public struct EffectInitParam {

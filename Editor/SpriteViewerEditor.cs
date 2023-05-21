@@ -1,15 +1,15 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using UnityRO.Core.Sprite;
 
 namespace _3rdparty.unityro_core.Editor {
     [CustomEditor(typeof(SpriteViewer))]
     public class EntityViewerEditor : UnityEditor.Editor {
-
         public override void OnInspectorGUI() {
             var component = (SpriteViewer)target;
             base.OnInspectorGUI();
-            
+
             GUILayout.Space(20);
             GUILayout.Label("Force Motion");
 
@@ -32,6 +32,7 @@ namespace _3rdparty.unityro_core.Editor {
                     if ((SpriteMotion)motion == SpriteMotion.Attack) {
                         //component.Entity.SetAttackSpeed(380);
                     }
+
                     component.ChangeMotion(
                         new MotionRequest { Motion = (SpriteMotion)motion }
                         // new MotionRequest { Motion = SpriteMotion.Idle }
