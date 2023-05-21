@@ -25,7 +25,7 @@ namespace UnityRO.Core.Sprite {
         private MeshCollider MeshCollider;
         private CharacterCamera CharacterCamera;
 
-        private UnityEngine.Sprite[] Sprites;
+        public UnityEngine.Sprite[] Sprites;
 
         private int ActionId;
         private ACT.Action CurrentAction;
@@ -64,21 +64,21 @@ namespace UnityRO.Core.Sprite {
 
         public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
             var state = motion.Motion switch {
-                SpriteMotion.Idle => SpriteState.Idle,
-                SpriteMotion.Standby => SpriteState.Standby,
-                SpriteMotion.Walk => SpriteState.Walking,
-                SpriteMotion.Attack => SpriteState.Attack,
-                SpriteMotion.Attack1 => SpriteState.Attack,
-                SpriteMotion.Attack2 => SpriteState.Attack,
-                SpriteMotion.Attack3 => SpriteState.Attack,
-                SpriteMotion.Dead => SpriteState.Die,
-                SpriteMotion.Hit => SpriteState.Hit,
-                SpriteMotion.Casting => SpriteState.Casting,
-                SpriteMotion.PickUp => SpriteState.PickUp,
-                SpriteMotion.Freeze1 => SpriteState.Frozen,
-                SpriteMotion.Freeze2 => SpriteState.Frozen,
-                _ => throw new System.NotImplementedException()
-            };
+                            SpriteMotion.Idle => SpriteState.Idle,
+                            SpriteMotion.Standby => SpriteState.Standby,
+                            SpriteMotion.Walk => SpriteState.Walking,
+                            SpriteMotion.Attack => SpriteState.Attack,
+                            SpriteMotion.Attack1 => SpriteState.Attack,
+                            SpriteMotion.Attack2 => SpriteState.Attack,
+                            SpriteMotion.Attack3 => SpriteState.Attack,
+                            SpriteMotion.Dead => SpriteState.Die,
+                            SpriteMotion.Hit => SpriteState.Hit,
+                            SpriteMotion.Casting => SpriteState.Casting,
+                            SpriteMotion.PickUp => SpriteState.PickUp,
+                            SpriteMotion.Freeze1 => SpriteState.Frozen,
+                            SpriteMotion.Freeze2 => SpriteState.Frozen,
+                            _ => throw new System.NotImplementedException()
+                        };
 
             if (state == State) {
                 return;
@@ -108,22 +108,16 @@ namespace UnityRO.Core.Sprite {
 
             var frame = CurrentAction.frames[CurrentFrameIndex];
 
-            if (frame.pos.Length > 0)
-                return frame.pos[0];
-
-            if (ViewerType == ViewerType.Head && State == SpriteState.Idle)
-                return frame.pos[CurrentFrameIndex];
-
-            return Vector2.zero;
+            return frame.pos.Length > 0 ? frame.pos[0] : Vector2.zero;
         }
 
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
-                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                _ => throw new ArgumentOutOfRangeException()
-            };
+                              ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+                              ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+                              _ => throw new ArgumentOutOfRangeException()
+                          };
 
             if (palette != null) {
                 MeshRenderer.material.SetTexture("_PaletteTex", palette);
@@ -143,22 +137,9 @@ namespace UnityRO.Core.Sprite {
 
             MeshRenderer.material.SetFloat("_UsePalette", SpriteData.palettes.Length);
             if (SpriteData.palettes.Length <= 0) return;
-
-            MeshRenderer.material.SetFloat("_Offset", Sprites.Length / 125f);
+            
             MeshRenderer.material.SetTexture("_PaletteTex", SpriteData.palettes[0]);
         }
-
-
-        public Vector3 worldPos;
-        public Vector3 originPos;
-        public Vector3 upPos;
-        public float outDist;
-        public float angleA;
-        public float angleB;
-        public float angleC;
-        public float camDist;
-        public float fixDist;
-        public float decRate;
 
         private void UpdateLocalPosition() {
             if (Parent == null)
@@ -167,40 +148,22 @@ namespace UnityRO.Core.Sprite {
             var parentAnchor = Parent.GetAnimationAnchor();
             var ourAnchor = GetAnimationAnchor();
 
+            if (ourAnchor == Vector2.zero) {
+                transform.localPosition = new Vector3(0f, 0f, 0f);
+                return;
+            }
+
             var diff = parentAnchor - ourAnchor;
-            var position = transform.position;
-            
-            worldPos = new Vector3(position.x, position.y, 0);
-            originPos = new Vector3(position.x, 0, 0);
-            upPos = originPos + Vector3.up;
-            outDist = Mathf.Abs(position.y);
-
-            angleA = angle(originPos, upPos, worldPos);
-            angleB = angle(worldPos, CharacterCamera.transform.position, originPos);
-            camDist = Vector3.Distance(CharacterCamera.transform.position, worldPos);
-
-            if (transform.localPosition.y > 0) {
-                angleA = 90 - (angleA - 90);
-                angleB = 90 - (angleB - 90);
-            }
-
-            angleC = 180 - angleA - angleB;
-            fixDist = 0f;
-            if (transform.localPosition.y > 0) {
-                fixDist = outDist / Mathf.Sin(angleC * Mathf.Deg2Rad) * Mathf.Sin(angleA * Mathf.Deg2Rad);
-            }
-
-            decRate = (fixDist * 0.7f - (Sprites.Length / 125f) / 2f) / camDist;
             //@TODO
             //I believe we are missing here the zoom factor so the head stops wiggling
-            var offset = new Vector3(diff.x - decRate, -diff.y - decRate, 0f);
-            transform.localPosition = (offset / SPR.PIXELS_PER_UNIT);
-        }
-
-        private float angle(Vector3 center, Vector3 pos1, Vector3 pos2) {
-            var dir1 = (pos1 - center).normalized;
-            var dir2 = (pos2 - center).normalized;
-            return Mathf.Cos(Vector3.Dot(dir1, dir2)) * Mathf.Rad2Deg;
+            //The position diff is to avoid the sudden jumps to very far positions
+            //Needs further investigation, the camera seems to be the culprit
+            var localPosition = new Vector3(diff.x, -diff.y, 0f) / SPR.PIXELS_PER_UNIT;
+            var positionDiff = Vector3.Distance(localPosition, transform.localPosition);
+            
+            if (positionDiff > 0f && positionDiff < 0.4f) {
+                transform.localPosition = localPosition;
+            }
         }
 
         private ACT.Frame UpdateFrame() {
