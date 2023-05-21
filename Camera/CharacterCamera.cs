@@ -96,9 +96,7 @@ namespace UnityRO.Core.Camera {
                 var zoomVel = ZoomControl.Velocity * dt;
                 Distance = Mathf.Clamp(Distance + zoomVel, ZoomConstraint.x, ZoomConstraint.y);
             }
-        }
-
-        private void LateUpdate() {
+            
             UpdateCameraPosition();
             UpdateCameraLookAt();
         }
