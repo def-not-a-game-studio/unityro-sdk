@@ -142,8 +142,10 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         var packet = InPacketQueue.Dequeue();
         var isHandled = PacketHooks.TryGetValue(packet.Header, out var delegates);
 
-        if (delegates is { Count: > 0 }) {
-            delegates.ForEach(it => it.DynamicInvoke((ushort)packet.Header, -1, packet));
+        if (delegates != null) {
+            foreach (var d in delegates) {
+                d.DynamicInvoke((ushort)packet.Header, -1, packet);
+            }
         }
 
         OnPacketEvent?.Invoke(packet, isHandled);
