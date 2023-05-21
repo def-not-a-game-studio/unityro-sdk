@@ -10,25 +10,27 @@ namespace UnityRO.Core.Sprite {
         private const int AVERAGE_ATTACKED_SPEED = 288;
         private const int MAX_ATTACK_SPEED = AVERAGE_ATTACKED_SPEED * 2;
 
-        [SerializeField] private CoreSpriteGameEntity Entity;
-        [SerializeField] private ViewerType ViewerType;
-        [SerializeField] private int CurrentFrame = 0;
-        [SerializeField] private long AnimationStart = GameManager.Tick;
-        [SerializeField] private float CurrentDelay = 0f;
-        [SerializeField] private MotionRequest CurrentMotion;
-        [SerializeField] private MotionRequest? NextMotion;
-        [SerializeField] private ACT CurrentACT;
-        [SerializeField] private ACT.Action CurrentAction;
-        [SerializeField] private int ActionId;
+        private CoreSpriteGameEntity Entity;
+        private ViewerType ViewerType;
+        private int CurrentFrame = 0;
+        private long AnimationStart = GameManager.Tick;
+        private float CurrentDelay = 0f;
+        private MotionRequest CurrentMotion;
+        private MotionRequest? NextMotion;
+        private ACT CurrentACT;
+        private ACT.Action CurrentAction;
+        private int ActionId;
 
         private CharacterCamera CharacterCamera;
 
         private Coroutine MotionQueueCoroutine;
 
-        public FramePaceCalculator(CoreSpriteGameEntity entity,
+        public FramePaceCalculator(
+            CoreSpriteGameEntity entity,
             ViewerType viewerType,
             ACT currentACT,
-            CharacterCamera characterCamera) {
+            CharacterCamera characterCamera
+        ) {
             Entity = entity;
             ViewerType = viewerType;
             CurrentACT = currentACT;
@@ -36,7 +38,7 @@ namespace UnityRO.Core.Sprite {
         }
 
         public int GetActionIndex() {
-            var cameraDirection = (int)(CharacterCamera?.Direction ?? 0);
+            var cameraDirection = (int)CharacterCamera.Direction;
             var entityDirection = (int)Entity.Direction + 8;
 
             return (ActionId + (cameraDirection + entityDirection) % 8) % CurrentACT.actions.Length;
@@ -45,7 +47,8 @@ namespace UnityRO.Core.Sprite {
         public int GetCurrentFrame() {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
 
-            var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentMotion.Motion is SpriteMotion.Idle or SpriteMotion.Sit);
+            var isIdle = (Entity.Status.EntityType == EntityType.PC &&
+                          CurrentMotion.Motion is SpriteMotion.Idle or SpriteMotion.Sit);
             int frameCount = CurrentAction.frames.Length;
             long deltaSinceMotionStart = GameManager.Tick - AnimationStart;
 
@@ -83,7 +86,8 @@ namespace UnityRO.Core.Sprite {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
 
-            if (CurrentMotion.Motion is SpriteMotion.Attack or SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
+            if (CurrentMotion.Motion is SpriteMotion.Attack or SpriteMotion.Attack1 or SpriteMotion.Attack2
+                or SpriteMotion.Attack3) {
                 return (float)Entity.Status.AttackSpeed / CurrentAction.frames.Length;
             }
 
