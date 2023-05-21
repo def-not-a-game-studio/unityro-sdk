@@ -39,15 +39,30 @@ public class ROMapExtractor : EditorWindow {
         string mapName = Path.GetFileNameWithoutExtension(mapObject.name);
         string localPath = Path.Combine(GetBasePath());
         Directory.CreateDirectory(localPath);
+        var texturePaths = new List<string>();
 
         try {
             AssetDatabase.StartAssetEditing();
-            ExtractOriginalModels(mapObject, Path.Combine(GetBasePath(), mapName, "models"));
+            texturePaths = ExtractOriginalModels(mapObject, Path.Combine(GetBasePath(), mapName, "models"));
         } finally {
             AssetDatabase.StopAssetEditing();
         }
 
         AssetDatabase.Refresh();
+
+        foreach (var texture in texturePaths) {
+            TextureImporter importer = AssetImporter.GetAtPath(texture) as TextureImporter;
+            importer.alphaIsTransparency = true;
+            importer.wrapMode = TextureWrapMode.Repeat;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.mipmapEnabled = true;
+            importer.mipMapBias = 0.5f;
+            var textureSettings = new TextureImporterSettings();
+            importer.ReadTextureSettings(textureSettings);
+
+            importer.SetTextureSettings(textureSettings);
+            importer.SaveAndReimport();
+        }
 
         try {
             AssetDatabase.StartAssetEditing();
@@ -96,15 +111,26 @@ public class ROMapExtractor : EditorWindow {
             localPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(localPath, $"{mapName}.prefab"));
             PrefabUtility.SaveAsPrefabAssetAndConnect(mapObject, localPath, InteractionMode.AutomatedAction);
 
+            var defaultScene = EditorSceneManager.GetActiveScene();
             var mapScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
             mapScene.name = mapName;
             SceneManager.MoveGameObjectToScene(mapObject, mapScene);
             EditorSceneManager.MarkAllScenesDirty();
             EditorSceneManager.SaveScene(mapScene, $"Assets/3rdparty/unityro-resources/Scenes/{mapName}.unity");
+            EditorSceneManager.CloseScene(defaultScene, true);
 
-            StaticOcclusionCulling.GenerateInBackground();
+            StaticOcclusionCulling.Compute();
 
             EditorSceneManager.SaveOpenScenes();
+
+            var original = EditorBuildSettings.scenes;
+            var newSettings = new EditorBuildSettingsScene[original.Length + 1];
+            System.Array.Copy(original, newSettings, original.Length);
+            var sceneToAdd = new EditorBuildSettingsScene(mapScene.path, true);
+            newSettings[newSettings.Length - 1] = sceneToAdd;
+            EditorBuildSettings.scenes = newSettings;
+            
+            EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
 
             //ImportAssetAndApplyAddressableGroup(localPath, typeof(GameObject));
         } finally {
@@ -151,7 +177,6 @@ public class ROMapExtractor : EditorWindow {
                 var materialPath = Path.Combine(meshPath, $"{filter.gameObject.name.SanitizeForAddressables()}.mat");
                 AssetDatabase.CreateAsset(material, materialPath);
                 AssetDatabase.ImportAsset(materialPath);
-
 
                 var filterPath = Path.Combine(meshPath, $"{filter.gameObject.name.SanitizeForAddressables()}.asset");
                 AssetDatabase.CreateAsset(filter.mesh, filterPath);
@@ -270,7 +295,7 @@ public class ROMapExtractor : EditorWindow {
         AssetDatabase.CreateAsset(material, materialPath);
     }
 
-    private static void ExtractOriginalModels(GameObject mapObject, string overridePath = null) {
+    private static List<string> ExtractOriginalModels(GameObject mapObject, string overridePath = null) {
         var originalMeshes = mapObject.transform.FindRecursive("_Originals");
         /**
          * we need to set the new prefabs to another parent so we can delete the old meshes
@@ -279,6 +304,7 @@ public class ROMapExtractor : EditorWindow {
         newOriginalParent.transform.SetParent(originalMeshes.transform.parent);
 
         var children = originalMeshes.transform.GetChildren();
+        var texturePaths = new List<string>();
 
         var i = 0;
         foreach (var mesh in children) {
@@ -291,7 +317,8 @@ public class ROMapExtractor : EditorWindow {
             mesh.gameObject.SetActive(true);
 
             try {
-                ExtractMesh(mesh.gameObject, newOriginalParent.transform, overridePath);
+                var textures = ExtractMesh(mesh.gameObject, newOriginalParent.transform, overridePath);
+                texturePaths.AddRange(textures);
             } catch (Exception e) {
                 Debug.LogError(e);
                 Debug.LogError($"Error extracting model {mesh.gameObject.name}");
@@ -301,9 +328,11 @@ public class ROMapExtractor : EditorWindow {
         }
 
         EditorUtility.ClearProgressBar();
+        return texturePaths;
     }
 
-    public static void ExtractMesh(GameObject mesh, Transform overrideParent = null, string overridePath = null) {
+    public static List<string> ExtractMesh(GameObject mesh, Transform overrideParent = null, string overridePath = null) {
+        var nodeTexturesPath = new List<string>();
         string meshPathWithoutExtension;
         if (Path.GetExtension(mesh.name).Length == 0) {
             meshPathWithoutExtension = mesh.name;
@@ -352,7 +381,9 @@ public class ROMapExtractor : EditorWindow {
                         AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath, $"{nodeName}_{node.nodeId}.mat"));
 
                     var texture = FileManager.Load($"data/texture/{node.textureName}") as Texture2D;
-                    File.WriteAllBytes(Path.Combine(meshPath, $"{nodeName}_{node.nodeId}.png"), texture.EncodeToPNG());
+                    var texturePath = Path.Combine(meshPath, $"{nodeName}_{node.nodeId}.png");
+                    nodeTexturesPath.Add(texturePath);
+                    File.WriteAllBytes(texturePath, texture.EncodeToPNG());
 
                     AssetDatabase.CreateAsset(filter.mesh, partPath);
                     AssetDatabase.CreateAsset(material, materialPath);
@@ -364,6 +395,8 @@ public class ROMapExtractor : EditorWindow {
                 Debug.LogError($"Failed extracting model {mesh.name}");
             }
         }
+
+        return nodeTexturesPath;
     }
 
     private static void ExtractClonedModels(GameObject mapObject, string overridePath = null) {
