@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class Connection {
     public const int DATA_BUFFER_SIZE = 1 * 1024 * 1024;
@@ -41,8 +42,18 @@ public class Connection {
     public void Start() {
         TcpClient
             .Client
-            .BeginReceive(receiveBuffer, 0, receiveBuffer.Length, SocketFlags.None, out var err, OnReceivedCallback,
-                          null);
+            .BeginReceive(
+                receiveBuffer,
+                0, 
+                receiveBuffer.Length,
+                SocketFlags.None,
+                out var err,
+                OnReceivedCallback,
+                null);
+
+        if (err != SocketError.Success) {
+            Debug.LogError(err);
+        }
     }
 
     public void SkipBytes(int bytesToSkip) {
@@ -59,6 +70,7 @@ public class Connection {
         }
 
         if (err != SocketError.Success) {
+            Debug.LogError(err);
             Disconnect();
             OnDisconnect?.Invoke();
         } else {

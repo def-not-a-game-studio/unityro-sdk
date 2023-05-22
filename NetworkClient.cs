@@ -123,7 +123,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     private void TrySendPacket() {
-        if (OutPacketQueue.Count == 0) {
+        if (OutPacketQueue.Count == 0 || CurrentConnection == null) {
             return;
         }
 
@@ -136,7 +136,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     private void TryHandleReceivedPacket() {
-        if (InPacketQueue.Count == 0) {
+        if (InPacketQueue.Count == 0 || CurrentConnection == null) {
             return;
         }
 
