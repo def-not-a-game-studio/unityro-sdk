@@ -5,9 +5,10 @@ namespace UnityRO.Core.GameEntity {
         public abstract GameEntityBaseStatus Status { get; }
 
         public abstract void ChangeMotion(MotionRequest request);
+        public abstract void ChangeDirection(Direction direction);
 
         public abstract void Init(GameEntityBaseStatus gameEntityBaseStatus);
-        public abstract void Spawn(GameEntityBaseStatus gameEntityBaseStatus, Vector2 pos, Direction direction);
+        public abstract void Spawn(GameEntityBaseStatus gameEntityBaseStatus, int[] PosDir, bool forceNorthDirection);
 
         public abstract bool HasAuthority();
         public abstract int GetEntityGID();

@@ -18,24 +18,25 @@ namespace UnityRO.Core {
             NetworkClient.HookPacket<ZC.NOTIFY_NEWENTRY11>(ZC.NOTIFY_NEWENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.HookPacket<ZC.NOTIFY_STANDENTRY11>(ZC.NOTIFY_STANDENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.HookPacket<ZC.NOTIFY_MOVEENTRY11>(ZC.NOTIFY_MOVEENTRY11.HEADER, OnEntitySpawned);
-            NetworkClient.HookPacket<ZC.NOTIFY_VANISH>(ZC.NOTIFY_VANISH.HEADER, OnEntityDespawned);
+            NetworkClient.HookPacket<ZC.NOTIFY_VANISH>(ZC.NOTIFY_VANISH.HEADER, OnEntityVanish);
         }
 
         private void OnDestroy() {
             NetworkClient.UnhookPacket<ZC.NOTIFY_NEWENTRY11>(ZC.NOTIFY_NEWENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.UnhookPacket<ZC.NOTIFY_STANDENTRY11>(ZC.NOTIFY_STANDENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.UnhookPacket<ZC.NOTIFY_MOVEENTRY11>(ZC.NOTIFY_MOVEENTRY11.HEADER, OnEntitySpawned);
-            NetworkClient.UnhookPacket<ZC.NOTIFY_VANISH>(ZC.NOTIFY_VANISH.HEADER, OnEntityDespawned);
+            NetworkClient.UnhookPacket<ZC.NOTIFY_VANISH>(ZC.NOTIFY_VANISH.HEADER, OnEntityVanish);
         }
 
-        public CoreGameEntity Spawn(EntitySpawnData data) {
+        public CoreGameEntity Spawn(EntitySpawnData data, bool forceNorthDirection) {
             var hasFound = entityCache.TryGetValue(data.AID, out var entity);
 
             if (!hasFound) {
                 entity = Instantiate(EntityPrefab, EntitiesParent);
                 entity.gameObject.name = data.name;
                 entity.gameObject.SetActive(false);
-                entity.Spawn(GetBaseStatus(data), new Vector2(data.PosDir[0], data.PosDir[1]), (Direction)data.PosDir[2]);
+
+                entity.Spawn(GetBaseStatus(data), data.PosDir, forceNorthDirection);
 
                 entityCache.Add(data.AID, entity);
             }
@@ -69,18 +70,18 @@ namespace UnityRO.Core {
         }
 
         private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_STANDENTRY11 packet) {
-            Spawn(packet.entityData);
+            Spawn(packet.entityData, true);
         }
 
         private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_NEWENTRY11 packet) {
-            Spawn(packet.entityData);
+            Spawn(packet.entityData, false);
         }
 
         private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_MOVEENTRY11 packet) {
-            Spawn(packet.entityData);
+            Spawn(packet.entityData, false);
         }
 
-        private void OnEntityDespawned(ushort cmd, int size, ZC.NOTIFY_VANISH packet) {
+        private void OnEntityVanish(ushort cmd, int size, ZC.NOTIFY_VANISH packet) {
             GetEntity(packet.AID)?.Vanish((VanishType)packet.Type);
         }
 

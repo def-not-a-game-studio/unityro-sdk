@@ -71,7 +71,7 @@ namespace UnityRO.Core.Sprite {
                             SpriteMotion.Attack1 => SpriteState.Attack,
                             SpriteMotion.Attack2 => SpriteState.Attack,
                             SpriteMotion.Attack3 => SpriteState.Attack,
-                            SpriteMotion.Dead => SpriteState.Die,
+                            SpriteMotion.Dead => SpriteState.Dead,
                             SpriteMotion.Hit => SpriteState.Hit,
                             SpriteMotion.Casting => SpriteState.Casting,
                             SpriteMotion.PickUp => SpriteState.PickUp,
@@ -84,7 +84,7 @@ namespace UnityRO.Core.Sprite {
                 return;
             }
 
-            if (state == SpriteState.Die) {
+            if (state == SpriteState.Dead) {
                 MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", false);
             } else {
                 MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", true);
@@ -206,7 +206,7 @@ namespace UnityRO.Core.Sprite {
         Idle,
         Walking,
         Standby,
-        Die,
+        Dead,
         Hit,
         Attack,
         Casting,
