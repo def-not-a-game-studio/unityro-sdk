@@ -127,10 +127,11 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
             return;
         }
 
-        var packet = OutPacketQueue.Dequeue();
-        if (CurrentConnection.GetStream().CanWrite) {
-            OnPacketEvent?.Invoke(packet, false);
-            packet.Send(CurrentConnection.GetStream());
+        while (OutPacketQueue.TryDequeue(out var packet)) {
+            if (CurrentConnection.GetStream().CanWrite) {
+                OnPacketEvent?.Invoke(packet, false);
+                packet.Send(CurrentConnection.GetStream());
+            }
         }
     }
 
@@ -139,16 +140,17 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
             return;
         }
 
-        var packet = InPacketQueue.Dequeue();
-        var isHandled = PacketHooks.TryGetValue(packet.Header, out var delegates);
+        while (InPacketQueue.TryDequeue(out var packet)) {
+            var isHandled = PacketHooks.TryGetValue(packet.Header, out var delegates);
 
-        if (delegates != null) {
-            foreach (var d in delegates) {
-                d.DynamicInvoke((ushort)packet.Header, -1, packet);
+            if (delegates != null) {
+                foreach (var d in delegates) {
+                    d.DynamicInvoke((ushort)packet.Header, -1, packet);
+                }
             }
-        }
 
-        OnPacketEvent?.Invoke(packet, isHandled);
+            OnPacketEvent?.Invoke(packet, isHandled);
+        }
     }
 
     #endregion
