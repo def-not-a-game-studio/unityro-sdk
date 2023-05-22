@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 public class Connection {
-    public const int DATA_BUFFER_SIZE = 1 * 1024 * 1024;
+    public const int DATA_BUFFER_SIZE = 16 * 1024;
 
     public static System.Action OnDisconnect;
 
@@ -44,16 +44,13 @@ public class Connection {
             .Client
             .BeginReceive(
                 receiveBuffer,
-                0, 
+                0,
                 receiveBuffer.Length,
                 SocketFlags.None,
                 out var err,
                 OnReceivedCallback,
-                null);
-
-        if (err != SocketError.Success) {
-            Debug.LogError(err);
-        }
+                null
+            );
     }
 
     public void SkipBytes(int bytesToSkip) {

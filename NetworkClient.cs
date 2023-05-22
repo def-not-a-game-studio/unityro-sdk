@@ -115,11 +115,19 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     public void OnPacketReceived(InPacket packet) {
-        InPacketQueue.Enqueue(packet);
+        if (IsPaused) {
+            InPacketQueue.Enqueue(packet);
+        } else {
+            HandleIncomingPacket(packet);
+        }
     }
 
     public static void SendPacket(OutPacket packet) {
-        Instance?.OutPacketQueue.Enqueue(packet);
+        if (Instance?.IsPaused == true) {
+            Instance?.OutPacketQueue.Enqueue(packet);
+        } else {
+            Instance?.HandleOutPacket(packet);
+        }
     }
 
     private void TrySendPacket() {
@@ -128,10 +136,14 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         }
 
         while (OutPacketQueue.TryDequeue(out var packet)) {
-            if (CurrentConnection.GetStream().CanWrite) {
-                OnPacketEvent?.Invoke(packet, false);
-                packet.Send(CurrentConnection.GetStream());
-            }
+            HandleOutPacket(packet);
+        }
+    }
+
+    private void HandleOutPacket(OutPacket packet) {
+        if (CurrentConnection.GetStream().CanWrite) {
+            OnPacketEvent?.Invoke(packet, false);
+            packet.Send(CurrentConnection.GetStream());
         }
     }
 
@@ -141,16 +153,22 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         }
 
         while (InPacketQueue.TryDequeue(out var packet)) {
-            var isHandled = PacketHooks.TryGetValue(packet.Header, out var delegates);
-
-            if (delegates != null) {
-                foreach (var d in delegates) {
-                    d.DynamicInvoke((ushort)packet.Header, -1, packet);
-                }
-            }
+            var isHandled = HandleIncomingPacket(packet);
 
             OnPacketEvent?.Invoke(packet, isHandled);
         }
+    }
+
+    private bool HandleIncomingPacket(InPacket packet) {
+        var isHandled = PacketHooks.TryGetValue(packet.Header, out var delegates);
+
+        if (delegates != null) {
+            foreach (var d in delegates) {
+                d.DynamicInvoke((ushort)packet.Header, -1, packet);
+            }
+        }
+
+        return isHandled;
     }
 
     #endregion
