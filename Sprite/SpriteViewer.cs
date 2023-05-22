@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityRO.Core.Camera;
@@ -37,14 +38,16 @@ namespace UnityRO.Core.Sprite {
             Atlas = spriteData.atlas;
             ViewerType = viewerType;
             Entity = entity;
+            
+            InitializeRenderers();
         }
 
         private void Awake() {
             CharacterCamera = FindObjectOfType<CharacterCamera>();
-            InitializeRenderers();
         }
 
         private void Start() {
+            InitializeRenderers();
             ChangeMotion(new MotionRequest { Motion = SpriteMotion.Idle });
         }
 
@@ -194,6 +197,10 @@ namespace UnityRO.Core.Sprite {
             MeshFilter.sharedMesh = null;
             MeshFilter.sharedMesh = rendererMesh;
             MeshCollider.sharedMesh = colliderMesh;
+        }
+
+        public SpriteViewer FindChild(ViewerType viewerType) {
+            return Children.FirstOrDefault(it => it.ViewerType == viewerType);
         }
     }
 

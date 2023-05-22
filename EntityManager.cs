@@ -34,15 +34,9 @@ namespace UnityRO.Core {
             if (!hasFound) {
                 entity = Instantiate(EntityPrefab, EntitiesParent);
                 entity.gameObject.name = data.name;
-                entity.gameObject.SetActive(false);
-
                 entity.Spawn(GetBaseStatus(data), data.PosDir, forceNorthDirection);
 
                 entityCache.Add(data.AID, entity);
-            }
-
-            if (entity != null) {
-                entity.gameObject.SetActive(true);
             }
 
             return entity;
