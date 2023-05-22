@@ -2,7 +2,6 @@
 using System.IO;
 
 namespace ROIO.Utils {
-
     /// <summary>
     /// Helper to load and parse binary data
     /// 
@@ -10,14 +9,12 @@ namespace ROIO.Utils {
     /// Based on ROBrowser by Vincent Thibault (robrowser.com)
     /// </summary>
     public class MemoryStreamReader : MemoryStream {
-        public MemoryStreamReader(byte[] buffer) : base(buffer) {
-        }
+        public MemoryStreamReader(byte[] buffer) : base(buffer) { }
 
-        public MemoryStreamReader() : base() {
-        }
+        public MemoryStreamReader() : base() { }
 
         public string ReadBinaryString(long length) {
-            return ReadBinaryString((int) length);
+            return ReadBinaryString((int)length);
         }
 
         /// <summary>
@@ -30,7 +27,7 @@ namespace ROIO.Utils {
             char[] strBytes = new char[length];
 
             for (int i = 0; i < length; i++) {
-                strBytes[i] = (char) base.ReadByte();
+                strBytes[i] = (char)base.ReadByte();
             }
 
             //string krEncoded = Encoding.GetEncoding(949).GetString(strBytes);
@@ -40,11 +37,12 @@ namespace ROIO.Utils {
             if (terminator != -1) {
                 str = str.Substring(0, terminator);
             }
+
             return str;
         }
 
         public string ReadBinaryString(uint length) {
-            return ReadBinaryString((int) length);
+            return ReadBinaryString((int)length);
         }
 
         public int ReadInt() {
@@ -113,15 +111,12 @@ namespace ROIO.Utils {
          * Taken from rAthena RBUFPOS
          */
         public int[] ReadPos() {
-            var posX = base.ReadByte();
-            var posY = base.ReadByte();
-            var dir = base.ReadByte();
+            var PosDir = new[] { (byte)base.ReadByte(), (byte)base.ReadByte(), (byte)base.ReadByte() };
+            int x = (PosDir[0] << 2) | ((PosDir[1] & 0xC0) >> 6);
+            int y = ((PosDir[1] & 0x3f) << 4) | ((PosDir[2] & 0xF0) >> 4);
+            int dir = (PosDir[2] & 0xF);
 
-            var x = (posX & 0xff) << 2 | posY >> 6;
-            var y = (posY & 0x3f) << 4 | dir >> 4;
-            var d = dir & 0x0f;
-
-            return new int[3] { x, y, d };
+            return new[] { x, y, dir };
         }
 
         /**
@@ -129,19 +124,34 @@ namespace ROIO.Utils {
          * Taken from roBrowser BinaryReader
          */
         public int[] ReadPos2() {
-            var a = base.ReadByte();
-            var b = base.ReadByte();
-            var c = base.ReadByte();
-            var d = base.ReadByte();
-            var e = base.ReadByte();
-            var f = base.ReadByte();
+            var MoveData = new[] {
+                (byte)base.ReadByte(),
+                (byte)base.ReadByte(),
+                (byte)base.ReadByte(),
+                (byte)base.ReadByte(),
+                (byte)base.ReadByte(),
+                (byte)base.ReadByte()
+            };
+            // var a = base.ReadByte();
+            // var b = base.ReadByte();
+            // var c = base.ReadByte();
+            // var d = base.ReadByte();
+            // var e = base.ReadByte();
+            // var f = base.ReadByte();
 
-            var x1 = (a & 0xFF) << 2 | (b & 0xC0) >> 6;
-            var y1 = (b & 0x3F) << 4 | (c & 0xF0) >> 4;
-            var x2 = (d & 0xFC) >> 2 | (c & 0x0F) << 6;
-            var y2 = (d & 0x03) << 8 | e & 0xFF;
+            int x = (MoveData[0] << 2) | ((MoveData[1] & 0xC0) >> 6);
+            int y = ((MoveData[1] & 0x3f) << 4) | ((MoveData[2] & 0xF0) >> 4);
+            int dir = (MoveData[2] & 0xF);
 
-            return new int[4] { x1, y1, x2, y2 };
+            int x2 = ((MoveData[2] & 0x0f) << 6) | (MoveData[3] >> 2);
+            int y2 = ((MoveData[3] & 0x03) << 8) | (MoveData[4]);
+
+            // var x1 = (a & 0xFF) << 2 | (b & 0xC0) >> 6;
+            // var y1 = (b & 0x3F) << 4 | (c & 0xF0) >> 4;
+            // var x2 = (d & 0xFC) >> 2 | (c & 0x0F) << 6;
+            // var y2 = (d & 0x03) << 8 | e & 0xFF;
+
+            return new[] { x, y, x2, y2, dir };
         }
     }
 }
