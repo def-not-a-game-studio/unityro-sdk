@@ -4,8 +4,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 
 public class Connection {
-
-    public const int DATA_BUFFER_SIZE = 16 * 1024;
+    public const int DATA_BUFFER_SIZE = 1 * 1024 * 1024;
 
     public static System.Action OnDisconnect;
 
@@ -21,12 +20,14 @@ public class Connection {
 
     public Connection(IPacketHandler packetHandler) {
         TcpClient = new TcpClient();
+        TcpClient.NoDelay = true;
+
         PacketSerializer = new PacketSerializer(packetHandler);
         receiveBuffer = new byte[DATA_BUFFER_SIZE];
     }
 
     public async Task Connect(string target, int port) {
-        if(TcpClient.Connected)
+        if (TcpClient.Connected)
             Disconnect();
 
         await TcpClient.ConnectAsync(target, port);
@@ -40,7 +41,8 @@ public class Connection {
     public void Start() {
         TcpClient
             .Client
-            .BeginReceive(receiveBuffer, 0, receiveBuffer.Length, SocketFlags.None, out var err, OnReceivedCallback, null);
+            .BeginReceive(receiveBuffer, 0, receiveBuffer.Length, SocketFlags.None, out var err, OnReceivedCallback,
+                          null);
     }
 
     public void SkipBytes(int bytesToSkip) {
@@ -56,7 +58,7 @@ public class Connection {
             return;
         }
 
-        if(err != SocketError.Success) {
+        if (err != SocketError.Success) {
             Disconnect();
             OnDisconnect?.Invoke();
         } else {
@@ -67,13 +69,11 @@ public class Connection {
     }
 
     public void Disconnect() {
-        if(TcpClient.Connected) {
+        if (TcpClient.Connected) {
             try {
                 TcpClient.Close();
                 TcpClient.Client.Dispose();
-            } catch {
-
-            }
+            } catch { }
 
             TcpClient = new TcpClient();
             Stream = null;
@@ -82,4 +82,3 @@ public class Connection {
         }
     }
 }
-
