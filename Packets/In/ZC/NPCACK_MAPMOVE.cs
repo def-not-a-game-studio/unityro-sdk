@@ -14,7 +14,7 @@ public partial class ZC {
         public short PosY;
 
         public void Read(MemoryStreamReader br, int size) {
-            MapName = br.ReadBinaryString(16);
+            MapName = br.ReadBinaryString(16).Split(".")[0];
             PosX = br.ReadShort();
             PosY = br.ReadShort();
         }

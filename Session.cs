@@ -7,11 +7,11 @@ public class Session {
     public static Action<string> OnMapChanged;
 
     public int AccountID;
-    public NetworkEntity Entity { get; private set; }
+    public INetworkEntity Entity { get; private set; }
     public string CurrentMap { get; private set; }
 
-    public Session(NetworkEntity entity, int accountID) {
-        if (entity.EntityType != PC_ENTITY_TYPE) {
+    public Session(INetworkEntity entity, int accountID) {
+        if (entity.GetEntityType() != PC_ENTITY_TYPE) {
             throw new ArgumentException("Cannot start session with non player entity");
         }
 
