@@ -144,6 +144,8 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         if (CurrentConnection.GetStream().CanWrite) {
             OnPacketEvent?.Invoke(packet, false);
             packet.Send(CurrentConnection.GetStream());
+            
+            OnPacketEvent?.Invoke(packet, true);
         }
     }
 
@@ -153,10 +155,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         }
 
         while (InPacketQueue.TryDequeue(out var packet)) {
-            var isHandled = HandleIncomingPacket(packet);
-
-            OnPacketEvent?.Invoke(packet, isHandled);
-        }
+            HandleIncomingPacket(packet); }
     }
 
     private bool HandleIncomingPacket(InPacket packet) {
@@ -167,6 +166,8 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
                 d.DynamicInvoke((ushort)packet.Header, -1, packet);
             }
         }
+        
+        OnPacketEvent?.Invoke(packet, isHandled);
 
         return isHandled;
     }

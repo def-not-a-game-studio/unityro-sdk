@@ -27,12 +27,11 @@ namespace UnityRO.Net.Editor {
             foreach (var keypair in _networkPackets) {
                 GUI.contentColor = keypair.Value ? defaultColor : Color.yellow;
                 if (keypair.Key is InPacket In) {
-                    GUILayout.Label($"<< {In.Header}");
+                    GUILayout.Button($"<< {In.Header}");
                 } else if (keypair.Key is OutPacket Out) {
-                    GUILayout.Label($">> {Out.Header}");
+                    GUILayout.Button($">> {Out.Header}");
                 }
             }
-
             EditorGUILayout.EndScrollView();
         }
 
@@ -41,6 +40,9 @@ namespace UnityRO.Net.Editor {
         }
 
         private void OnPacketReceived(NetworkPacket packet, bool isHandled) {
+            if (_networkPackets.Count > 50) {
+                _networkPackets.RemoveAt(0);
+            }
             _networkPackets.Add(new KeyValuePair<NetworkPacket, bool>(packet, isHandled));
         }
     }
