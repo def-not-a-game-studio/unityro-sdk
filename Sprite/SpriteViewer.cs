@@ -38,7 +38,7 @@ namespace UnityRO.Core.Sprite {
             Atlas = spriteData.atlas;
             ViewerType = viewerType;
             Entity = entity;
-            
+
             InitializeRenderers();
         }
 
@@ -67,21 +67,21 @@ namespace UnityRO.Core.Sprite {
 
         public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
             var state = motion.Motion switch {
-                            SpriteMotion.Idle => SpriteState.Idle,
-                            SpriteMotion.Standby => SpriteState.Standby,
-                            SpriteMotion.Walk => SpriteState.Walking,
-                            SpriteMotion.Attack => SpriteState.Attack,
-                            SpriteMotion.Attack1 => SpriteState.Attack,
-                            SpriteMotion.Attack2 => SpriteState.Attack,
-                            SpriteMotion.Attack3 => SpriteState.Attack,
-                            SpriteMotion.Dead => SpriteState.Dead,
-                            SpriteMotion.Hit => SpriteState.Hit,
-                            SpriteMotion.Casting => SpriteState.Casting,
-                            SpriteMotion.PickUp => SpriteState.PickUp,
-                            SpriteMotion.Freeze1 => SpriteState.Frozen,
-                            SpriteMotion.Freeze2 => SpriteState.Frozen,
-                            _ => throw new System.NotImplementedException()
-                        };
+                SpriteMotion.Idle => SpriteState.Idle,
+                SpriteMotion.Standby => SpriteState.Standby,
+                SpriteMotion.Walk => SpriteState.Walking,
+                SpriteMotion.Attack => SpriteState.Attack,
+                SpriteMotion.Attack1 => SpriteState.Attack,
+                SpriteMotion.Attack2 => SpriteState.Attack,
+                SpriteMotion.Attack3 => SpriteState.Attack,
+                SpriteMotion.Dead => SpriteState.Dead,
+                SpriteMotion.Hit => SpriteState.Hit,
+                SpriteMotion.Casting => SpriteState.Casting,
+                SpriteMotion.PickUp => SpriteState.PickUp,
+                SpriteMotion.Freeze1 => SpriteState.Frozen,
+                SpriteMotion.Freeze2 => SpriteState.Frozen,
+                _ => SpriteState.Idle
+            };
 
             if (state == State) {
                 return;
@@ -117,10 +117,10 @@ namespace UnityRO.Core.Sprite {
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
-                              ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                              ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                              _ => throw new ArgumentOutOfRangeException()
-                          };
+                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             if (palette != null) {
                 MeshRenderer.material.SetTexture("_PaletteTex", palette);
@@ -135,13 +135,19 @@ namespace UnityRO.Core.Sprite {
 
             Sprites = SpriteData.GetSprites();
             FramePaceCalculator = new FramePaceCalculator(Entity, ViewerType, SpriteData.act, CharacterCamera);
-            MeshRenderer.material = new Material(Shader.Find("UnityRO/BillboardSpriteShader"));
-            MeshRenderer.material.SetTexture("_MainTex", Atlas);
+            MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
+
 
             MeshRenderer.material.SetFloat("_UsePalette", SpriteData.palettes.Length);
-            if (SpriteData.palettes.Length <= 0) return;
-            
-            MeshRenderer.material.SetTexture("_PaletteTex", SpriteData.palettes[0]);
+            if (SpriteData.palettes.Length <= 0) {
+                Atlas.filterMode = FilterMode.Bilinear;
+            }
+
+            MeshRenderer.material.SetTexture("_MainTex", Atlas);
+
+            if (SpriteData.palettes.Length > 0) {
+                MeshRenderer.material.SetTexture("_PaletteTex", SpriteData.palettes[0]);
+            }
         }
 
         private void UpdateLocalPosition() {
@@ -163,7 +169,7 @@ namespace UnityRO.Core.Sprite {
             //Needs further investigation, the camera seems to be the culprit
             var localPosition = new Vector3(diff.x, -diff.y, 0f) / SPR.PIXELS_PER_UNIT;
             var positionDiff = Vector3.Distance(localPosition, transform.localPosition);
-            
+
             if (positionDiff > 0f && positionDiff < 0.4f) {
                 transform.localPosition = localPosition;
             }

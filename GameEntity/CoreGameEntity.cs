@@ -1,7 +1,11 @@
 using UnityEngine;
 
 namespace UnityRO.Core.GameEntity {
-    public abstract class CoreGameEntity : ManagedMonoBehaviour {
+    public abstract class CoreGameEntity : ManagedMonoBehaviour, INetworkEntity {
+        
+        
+        
+        
         public abstract GameEntityBaseStatus Status { get; }
 
         public abstract void ChangeMotion(MotionRequest request);
@@ -11,6 +15,10 @@ namespace UnityRO.Core.GameEntity {
         public abstract void Spawn(GameEntityBaseStatus gameEntityBaseStatus, int[] PosDir, bool forceNorthDirection);
 
         public abstract bool HasAuthority();
+        public int GetEntityType() => (int)Status.EntityType;
+        public int GetEntityAID() => Status.AID;
+        public string GetEntityName() => Status.Name;
+
         public abstract int GetEntityGID();
 
         /// <summary>
