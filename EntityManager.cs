@@ -37,6 +37,8 @@ namespace UnityRO.Core {
                 entity.Spawn(GetBaseStatus(data), data.PosDir, forceNorthDirection);
 
                 entityCache.Add(data.AID, entity);
+            } else {
+                entity.gameObject.SetActive(true);
             }
 
             return entity;
@@ -45,6 +47,7 @@ namespace UnityRO.Core {
         public CoreGameEntity GetEntity(uint AID) {
             var hasFound = entityCache.TryGetValue(AID, out var entity);
             if (hasFound) {
+                entity.gameObject.SetActive(true);
                 return entity;
             } else {
                 //Debug.LogError($"No Entity found for given ID: {AID}");
@@ -57,10 +60,9 @@ namespace UnityRO.Core {
             entityCache.Clear();
         }
 
-        public void RemoveEntity(uint AID) {
+        public void HideEntity(uint AID) {
             if (!entityCache.TryGetValue(AID, out var entity)) return;
-            Destroy(entity.gameObject);
-            entityCache.Remove(AID);
+            entity.gameObject.SetActive(false);
         }
 
         private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_STANDENTRY11 packet) {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ROIO.Models.FileTypes;
@@ -207,6 +208,22 @@ namespace UnityRO.Core.Sprite {
 
         public SpriteViewer FindChild(ViewerType viewerType) {
             return Children.FirstOrDefault(it => it.ViewerType == viewerType);
+        }
+
+        public void FadeOut() {
+            StartCoroutine(FadeOutRenderer());
+        }
+
+        private IEnumerator FadeOutRenderer() {
+            float currentTime = 0f;
+            var currentAlpha = MeshRenderer.material.GetFloat("_Alpha");
+
+            while (currentTime <= 0.5f) {
+                currentTime += Time.deltaTime;
+                currentAlpha = Mathf.Lerp(currentAlpha, 0f, Time.deltaTime / 0.5f);
+                MeshRenderer.material.SetFloat("_Alpha", currentAlpha);
+                yield return new WaitForEndOfFrame();
+            }
         }
     }
 
