@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace UnityRO.Core.Database {
 
-    [CreateAssetMenu(menuName = "Heimdallr/Database/Job")]
+    [CreateAssetMenu(menuName = "Database/Job")]
     public class JobDatabase : ScriptableObject {
         public List<Job> Values;
     }

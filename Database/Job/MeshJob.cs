@@ -4,7 +4,7 @@ using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Database {
     
-    [CreateAssetMenu(menuName = "Heimdallr/Database Entry/Mesh Job")]
+    [CreateAssetMenu(menuName = "Database Entry/Mesh Job")]
     public class MeshJob : Job {
         public CoreMeshGameEntity Female;
         public CoreMeshGameEntity Male;

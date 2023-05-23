@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -91,6 +92,24 @@ namespace UnityRO.Core.Editor {
             }
 
             AssetDatabase.StopAssetEditing();
+        }
+
+        [MenuItem("UnityRO/Utils/Database/Assign Entries to DB")]
+        static void AssignEntriesToDbFile() {
+            var pcjobs = Resources.LoadAll<Job>("Database/Job").ToList();
+            var npcJobs = Resources.LoadAll<Job>("Database/Npc").ToList();
+            var spriteHeads = Resources.LoadAll<SpriteHead>("Database/Head").ToList();
+            
+            var jobDatabase = ScriptableObject.CreateInstance<JobDatabase>();
+            jobDatabase.Values = new List<Job>();
+            jobDatabase.Values.AddRange(pcjobs);
+            jobDatabase.Values.AddRange(npcJobs);
+            AssetDatabase.CreateAsset(jobDatabase, "Assets/3rdparty/unityro-resources/Resources/Database/JobDatabase.asset");
+            
+            var spriteHeadDatabase = ScriptableObject.CreateInstance<SpriteHeadDatabase>();
+            spriteHeadDatabase.Values = new List<SpriteHead>();
+            spriteHeadDatabase.Values.AddRange(spriteHeads);
+            AssetDatabase.CreateAsset(spriteHeadDatabase, "Assets/3rdparty/unityro-resources/Resources/Database/SpriteHeadDatabase.asset");
         }
     }
 }
