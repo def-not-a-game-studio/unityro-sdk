@@ -8,6 +8,16 @@
     public short count;
     public ActionRequestType action;
     public int leftDamage;
+
+    public bool IsAttackAction() {
+        return action is ActionRequestType.ATTACK
+            or ActionRequestType.ATTACK_LUCKY
+            or ActionRequestType.ATTACK_REPEAT
+            or ActionRequestType.ATTACK_CRITICAL
+            or ActionRequestType.ATTACK_MULTIPLE
+            or ActionRequestType.ATTACK_NOMOTION
+            or ActionRequestType.ATTACK_MULTIPLE_NOMOTION;
+    }
 }
 
 public enum ActionRequestType : byte {
