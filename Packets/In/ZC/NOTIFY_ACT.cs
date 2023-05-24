@@ -13,8 +13,8 @@ public partial class ZC {
 
         public void Read(MemoryStreamReader fp, int size) {
             ActionRequest = new EntityActionRequest() {
-                GID = fp.ReadUInt(),
-                targetGID = fp.ReadUInt(),
+                AID = fp.ReadUInt(),
+                targetAID = fp.ReadUInt(),
                 startTime = fp.ReadUInt(),
                 sourceSpeed = (ushort)fp.ReadInt(),
                 targetSpeed = (ushort)fp.ReadInt(),

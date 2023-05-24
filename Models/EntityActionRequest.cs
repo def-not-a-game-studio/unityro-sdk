@@ -1,6 +1,6 @@
 ﻿public class EntityActionRequest {
-    public uint GID;
-    public uint targetGID;
+    public uint AID;
+    public uint targetAID;
     public uint startTime;
     public ushort sourceSpeed;
     public ushort targetSpeed;
