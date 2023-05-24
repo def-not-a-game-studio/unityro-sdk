@@ -116,7 +116,7 @@ namespace UnityRO.Core.Camera {
         private void UpdateCameraLookAt() {
             if (m_Target != null) {
                 GameCamera.transform.LookAt(m_Target);
-                m_Target.transform.rotation = transform.rotation;
+                //m_Target.transform.rotation = transform.rotation;
             }
 
             var angle = (float) ((m_Yaw + Math.PI / 8f) / (2f * Math.PI));
