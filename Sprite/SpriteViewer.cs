@@ -33,6 +33,11 @@ namespace UnityRO.Core.Sprite {
         private ACT.Action CurrentAction;
         private int CurrentFrameIndex;
         private FramePaceCalculator FramePaceCalculator;
+        
+        private static readonly int OffsetProp = Shader.PropertyToID("_Offset");
+        private static readonly int UsePaletteProp = Shader.PropertyToID("_UsePalette");
+        private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
+        private static readonly int PaletteTexProp = Shader.PropertyToID("_PaletteTex");
 
         public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity) {
             SpriteData = spriteData;
@@ -68,20 +73,20 @@ namespace UnityRO.Core.Sprite {
 
         public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
             var state = motion.Motion switch {
-                SpriteMotion.Idle => SpriteState.Idle,
-                SpriteMotion.Standby => SpriteState.Standby,
-                SpriteMotion.Walk => SpriteState.Walking,
-                SpriteMotion.Attack => SpriteState.Attack,
-                SpriteMotion.Attack1 => SpriteState.Attack,
-                SpriteMotion.Attack2 => SpriteState.Attack,
-                SpriteMotion.Attack3 => SpriteState.Attack,
-                SpriteMotion.Dead => SpriteState.Dead,
-                SpriteMotion.Hit => SpriteState.Hit,
-                SpriteMotion.Casting => SpriteState.Casting,
-                SpriteMotion.PickUp => SpriteState.PickUp,
-                SpriteMotion.Freeze1 => SpriteState.Frozen,
-                SpriteMotion.Freeze2 => SpriteState.Frozen,
-                SpriteMotion.Sit => SpriteState.Sit,
+                            SpriteMotion.Idle => SpriteState.Idle,
+                            SpriteMotion.Standby => SpriteState.Standby,
+                            SpriteMotion.Walk => SpriteState.Walking,
+                            SpriteMotion.Attack => SpriteState.Attack,
+                            SpriteMotion.Attack1 => SpriteState.Attack,
+                            SpriteMotion.Attack2 => SpriteState.Attack,
+                            SpriteMotion.Attack3 => SpriteState.Attack,
+                            SpriteMotion.Dead => SpriteState.Dead,
+                            SpriteMotion.Hit => SpriteState.Hit,
+                            SpriteMotion.Casting => SpriteState.Casting,
+                            SpriteMotion.PickUp => SpriteState.PickUp,
+                            SpriteMotion.Freeze1 => SpriteState.Frozen,
+                            SpriteMotion.Freeze2 => SpriteState.Frozen,
+                            SpriteMotion.Sit => SpriteState.Sit,
                 _ => SpriteState.Idle
             };
 
@@ -111,23 +116,13 @@ namespace UnityRO.Core.Sprite {
             }
         }
 
-        public Vector2 GetAnimationAnchor() {
-            if (CurrentAction == null) {
-                return Vector2.zero;
-            }
-
-            var frame = CurrentAction.frames[CurrentFrameIndex];
-
-            return frame.pos.Length > 0 ? frame.pos[0] : Vector2.zero;
-        }
-
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
-                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                _ => throw new ArgumentOutOfRangeException()
-            };
+                              ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+                              ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+                              _ => throw new ArgumentOutOfRangeException()
+                          };
 
             if (palette != null) {
                 MeshRenderer.material.SetTexture("_PaletteTex", palette);
@@ -145,16 +140,29 @@ namespace UnityRO.Core.Sprite {
             MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
 
 
-            MeshRenderer.material.SetFloat("_UsePalette", SpriteData.palettes.Length);
+            MeshRenderer.material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
             if (SpriteData.palettes.Length <= 0) {
                 Atlas.filterMode = FilterMode.Bilinear;
             }
 
-            MeshRenderer.material.SetTexture("_MainTex", Atlas);
+            MeshRenderer.material.SetTexture(MainTexProp, Atlas);
 
             if (SpriteData.palettes.Length > 0) {
-                MeshRenderer.material.SetTexture("_PaletteTex", SpriteData.palettes[0]);
+                MeshRenderer.material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
             }
+        }
+        
+        public Vector2 GetAnimationAnchor() {
+            if (CurrentAction == null) {
+                return Vector2.zero;
+            }
+
+            var frame = CurrentAction.frames[CurrentFrameIndex];
+
+            if (ViewerType == ViewerType.Head && (State == SpriteState.Idle || State == SpriteState.Sit))
+                return frame.pos[CurrentFrameIndex];
+
+            return frame.pos.Length > 0 ? frame.pos[0] : Vector2.zero;
         }
 
         private void UpdateLocalPosition() {
@@ -170,16 +178,8 @@ namespace UnityRO.Core.Sprite {
             }
 
             var diff = parentAnchor - ourAnchor;
-            //@TODO
-            //I believe we are missing here the zoom factor so the head stops wiggling
-            //The position diff is to avoid the sudden jumps to very far positions
-            //Needs further investigation, the camera seems to be the culprit
             var localPosition = new Vector3(diff.x, -diff.y, 0f) / SPR.PIXELS_PER_UNIT;
-            var positionDiff = Vector3.Distance(localPosition, transform.localPosition);
-
-            if (positionDiff > 0f && positionDiff < 0.4f) {
-                transform.localPosition = localPosition;
-            }
+            MeshRenderer.material.SetVector(OffsetProp, localPosition);
         }
 
         private ACT.Frame UpdateFrame() {
