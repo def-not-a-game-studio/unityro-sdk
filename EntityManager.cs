@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityRO.Core.GameEntity;
+using UnityRO.Core.Sprite;
 
 namespace UnityRO.Core {
     public class EntityManager : ManagedMonoBehaviour {
@@ -19,6 +21,8 @@ namespace UnityRO.Core {
             NetworkClient.HookPacket<ZC.NOTIFY_STANDENTRY11>(ZC.NOTIFY_STANDENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.HookPacket<ZC.NOTIFY_MOVEENTRY11>(ZC.NOTIFY_MOVEENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.HookPacket<ZC.NOTIFY_VANISH>(ZC.NOTIFY_VANISH.HEADER, OnEntityVanish);
+            NetworkClient.HookPacket<ZC.NOTIFY_ACT>(ZC.NOTIFY_ACT.HEADER, OnEntityAct);
+            NetworkClient.HookPacket<ZC.NOTIFY_ACT3>(ZC.NOTIFY_ACT3.HEADER, OnEntityAct3);
         }
 
         private void OnDestroy() {
@@ -26,6 +30,8 @@ namespace UnityRO.Core {
             NetworkClient.UnhookPacket<ZC.NOTIFY_STANDENTRY11>(ZC.NOTIFY_STANDENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.UnhookPacket<ZC.NOTIFY_MOVEENTRY11>(ZC.NOTIFY_MOVEENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.UnhookPacket<ZC.NOTIFY_VANISH>(ZC.NOTIFY_VANISH.HEADER, OnEntityVanish);
+            NetworkClient.UnhookPacket<ZC.NOTIFY_ACT>(ZC.NOTIFY_ACT.HEADER, OnEntityAct);
+            NetworkClient.UnhookPacket<ZC.NOTIFY_ACT3>(ZC.NOTIFY_ACT3.HEADER, OnEntityAct3);
         }
 
         public CoreGameEntity Spawn(EntitySpawnData data, bool forceNorthDirection) {
@@ -79,6 +85,22 @@ namespace UnityRO.Core {
 
         private void OnEntityVanish(ushort cmd, int size, ZC.NOTIFY_VANISH packet) {
             GetEntity(packet.AID)?.Vanish((VanishType)packet.Type);
+        }
+
+        private void OnEntityAct3(ushort cmd, int size, ZC.NOTIFY_ACT3 packet) {
+            OnEntityAction(packet.ActionRequest);
+        }
+        
+        private void OnEntityAct(ushort cmd, int size, ZC.NOTIFY_ACT packet) {
+            OnEntityAction(packet.ActionRequest);
+        }
+
+        private void OnEntityAction(EntityActionRequest actionRequest) {
+            var source = GetEntity(actionRequest.AID);
+            var target = GetEntity(actionRequest.targetAID);
+
+            source.SetAction(actionRequest.action);
+            source.SetAttackSpeed(actionRequest.sourceSpeed);
         }
 
         public override void ManagedUpdate() { }

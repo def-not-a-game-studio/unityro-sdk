@@ -2,10 +2,6 @@ using UnityEngine;
 
 namespace UnityRO.Core.GameEntity {
     public abstract class CoreGameEntity : ManagedMonoBehaviour, INetworkEntity {
-        
-        
-        
-        
         public abstract GameEntityBaseStatus Status { get; }
 
         public abstract void ChangeMotion(MotionRequest request);
@@ -34,5 +30,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract void RequestMovement(Vector2 destination);
 
         public abstract void Vanish(VanishType vanishType);
+        public abstract void SetAction(ActionRequestType actionRequestAction);
+        public abstract void SetAttackSpeed(ushort actionRequestSourceSpeed);
     }
 }

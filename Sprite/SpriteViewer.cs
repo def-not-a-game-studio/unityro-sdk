@@ -81,11 +81,17 @@ namespace UnityRO.Core.Sprite {
                 SpriteMotion.PickUp => SpriteState.PickUp,
                 SpriteMotion.Freeze1 => SpriteState.Frozen,
                 SpriteMotion.Freeze2 => SpriteState.Frozen,
+                SpriteMotion.Sit => SpriteState.Sit,
                 _ => SpriteState.Idle
             };
 
-            if (state == State) {
+            if (state == State && !motion.forced) {
                 return;
+            }
+
+            if (state == SpriteState.Attack) {
+                //@TODO forcing it to a correct attack motion until we have weapons logic
+                ChangeMotion(new MotionRequest { Motion = SpriteMotion.Attack1, forced = motion.forced, delay = motion.delay }, nextMotion);
             }
 
             if (state == SpriteState.Dead) {
@@ -241,7 +247,8 @@ namespace UnityRO.Core.Sprite {
         Attack,
         Casting,
         PickUp,
-        Frozen
+        Frozen,
+        Sit
     }
 
     public enum SpriteMotion {
