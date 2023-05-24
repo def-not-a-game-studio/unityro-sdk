@@ -81,17 +81,25 @@ namespace UnityRO.Core.Sprite {
             return CurrentFrame;
         }
 
+        private float attackMotion = 6f;
+
         public float GetDelay() {
             if (ViewerType == ViewerType.Body && CurrentMotion.Motion == SpriteMotion.Walk) {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
 
-            if (CurrentMotion.Motion is SpriteMotion.Attack 
+            if (CurrentMotion.Motion is SpriteMotion.Attack
                 or SpriteMotion.Attack1
                 or SpriteMotion.Attack2
                 or SpriteMotion.Attack3) {
-                // var multiplier = (Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed) / (float)AVERAGE_ATTACK_SPEED;
-                return (float)Entity.Status.AttackSpeed / CurrentAction.frames.Length;
+                var multiplier = (Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed) /
+                                 (float)AVERAGE_ATTACK_SPEED;
+                var delayTime = attackMotion * multiplier * 24f;
+                if (delayTime < 0) {
+                    delayTime = 0;
+                }
+
+                return delayTime;
             }
 
             return CurrentAction.delay;
@@ -111,6 +119,67 @@ namespace UnityRO.Core.Sprite {
             if (currentMotion.delay > GameManager.Tick) {
                 MotionQueueCoroutine = Entity.StartCoroutine(DelayCurrentMotion(currentMotion, nextMotion, actionId));
                 return;
+            }
+
+            if (CurrentMotion.Motion is SpriteMotion.Attack
+                or SpriteMotion.Attack1
+                or SpriteMotion.Attack2
+                or SpriteMotion.Attack3) {
+                if ((EntityType)Entity.GetEntityType() == EntityType.PC) {
+                    // switch (isSecondAttack)
+                    // {
+                    //     case 0:
+                    //         switch (job)
+                    //         {
+                    //             case JT_THIEF:
+                    //                 return 5.75f;
+                    //                 break;
+                    //             case JT_MERCHANT:
+                    //                 return 5.85f;
+                    //                 break;
+                    //         }
+                    //         break;
+                    //     case 1:
+                    //         switch (job)
+                    //         {
+                    //             case JT_NOVICE:
+                    //             case JT_SUPERNOVICE:
+                    //             case JT_SUPERNOVICE_B:
+                    //                 switch (sex)
+                    //                 {
+                    //                     case SEX_MALE:
+                    //                         return 5.85f;
+                    //                         break;
+                    //                 }
+                    //                 break;
+                    //             case JT_ASSASSIN:
+                    //             case JT_ASSASSIN_H:
+                    //             case JT_ASSASSIN_B:
+                    //                 switch (weapon)
+                    //                 {
+                    //                     case WEAPONTYPE_CATARRH:
+                    //                     case WEAPONTYPE_SHORTSWORD_SHORTSWORD:
+                    //                     case WEAPONTYPE_SWORD_SWORD:
+                    //                     case WEAPONTYPE_AXE_AXE:
+                    //                     case WEAPONTYPE_SHORTSWORD_SWORD:
+                    //                     case WEAPONTYPE_SHORTSWORD_AXE:
+                    //                     case WEAPONTYPE_SWORD_AXE:
+                    //                         return 3.0f;
+                    //                 }
+                    //                 break;
+                    //         }
+                    //         break;
+                    // }
+                    // return 6;
+                    attackMotion = 5.85f;
+                } else {
+                    for (var index = 0; index < CurrentACT.sounds.Length; index++) {
+                        var sound = CurrentACT.sounds[index];
+                        if (sound == "atk") {
+                            attackMotion = index;
+                        }
+                    }
+                }
             }
 
             AnimationStart = GameManager.Tick;
