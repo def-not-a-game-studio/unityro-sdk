@@ -33,7 +33,7 @@ namespace UnityRO.Core.Sprite {
         private ACT.Action CurrentAction;
         private int CurrentFrameIndex;
         private FramePaceCalculator FramePaceCalculator;
-        
+
         private static readonly int OffsetProp = Shader.PropertyToID("_Offset");
         private static readonly int UsePaletteProp = Shader.PropertyToID("_UsePalette");
         private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
@@ -73,20 +73,20 @@ namespace UnityRO.Core.Sprite {
 
         public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
             var state = motion.Motion switch {
-                            SpriteMotion.Idle => SpriteState.Idle,
-                            SpriteMotion.Standby => SpriteState.Standby,
-                            SpriteMotion.Walk => SpriteState.Walking,
-                            SpriteMotion.Attack => SpriteState.Attack,
-                            SpriteMotion.Attack1 => SpriteState.Attack,
-                            SpriteMotion.Attack2 => SpriteState.Attack,
-                            SpriteMotion.Attack3 => SpriteState.Attack,
-                            SpriteMotion.Dead => SpriteState.Dead,
-                            SpriteMotion.Hit => SpriteState.Hit,
-                            SpriteMotion.Casting => SpriteState.Casting,
-                            SpriteMotion.PickUp => SpriteState.PickUp,
-                            SpriteMotion.Freeze1 => SpriteState.Frozen,
-                            SpriteMotion.Freeze2 => SpriteState.Frozen,
-                            SpriteMotion.Sit => SpriteState.Sit,
+                SpriteMotion.Idle => SpriteState.Idle,
+                SpriteMotion.Standby => SpriteState.Standby,
+                SpriteMotion.Walk => SpriteState.Walking,
+                SpriteMotion.Attack => SpriteState.Attack,
+                SpriteMotion.Attack1 => SpriteState.Attack,
+                SpriteMotion.Attack2 => SpriteState.Attack,
+                SpriteMotion.Attack3 => SpriteState.Attack,
+                SpriteMotion.Dead => SpriteState.Dead,
+                SpriteMotion.Hit => SpriteState.Hit,
+                SpriteMotion.Casting => SpriteState.Casting,
+                SpriteMotion.PickUp => SpriteState.PickUp,
+                SpriteMotion.Freeze1 => SpriteState.Frozen,
+                SpriteMotion.Freeze2 => SpriteState.Frozen,
+                SpriteMotion.Sit => SpriteState.Sit,
                 _ => SpriteState.Idle
             };
 
@@ -94,7 +94,7 @@ namespace UnityRO.Core.Sprite {
                 return;
             }
 
-            if (state == SpriteState.Attack) {
+            if (motion.Motion == SpriteMotion.Attack) {
                 //@TODO forcing it to a correct attack motion until we have weapons logic
                 ChangeMotion(new MotionRequest { Motion = SpriteMotion.Attack1, forced = motion.forced, delay = motion.delay }, nextMotion);
             }
@@ -119,10 +119,10 @@ namespace UnityRO.Core.Sprite {
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
-                              ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                              ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                              _ => throw new ArgumentOutOfRangeException()
-                          };
+                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             if (palette != null) {
                 MeshRenderer.material.SetTexture("_PaletteTex", palette);
@@ -151,16 +151,13 @@ namespace UnityRO.Core.Sprite {
                 MeshRenderer.material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
             }
         }
-        
+
         public Vector2 GetAnimationAnchor() {
             if (CurrentAction == null) {
                 return Vector2.zero;
             }
 
-            var frame = CurrentAction.frames[CurrentFrameIndex];
-
-            if (ViewerType == ViewerType.Head && (State == SpriteState.Idle || State == SpriteState.Sit))
-                return frame.pos[CurrentFrameIndex];
+            var frame = UpdateFrame();
 
             return frame.pos.Length > 0 ? frame.pos[0] : Vector2.zero;
         }
@@ -173,7 +170,7 @@ namespace UnityRO.Core.Sprite {
             var ourAnchor = GetAnimationAnchor();
 
             if (ourAnchor == Vector2.zero) {
-                transform.localPosition = new Vector3(0f, 0f, 0f);
+                MeshRenderer.material.SetVector(OffsetProp, Vector3.zero);
                 return;
             }
 
