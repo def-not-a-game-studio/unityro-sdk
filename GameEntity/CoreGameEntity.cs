@@ -4,7 +4,7 @@ namespace UnityRO.Core.GameEntity {
     public abstract class CoreGameEntity : ManagedMonoBehaviour, INetworkEntity {
         public abstract GameEntityBaseStatus Status { get; }
 
-        public abstract void ChangeMotion(MotionRequest request);
+        public abstract void ChangeMotion(MotionRequest request, MotionRequest? nextRequest = null);
         public abstract void ChangeDirection(Direction direction);
 
         public abstract void Init(GameEntityBaseStatus gameEntityBaseStatus);

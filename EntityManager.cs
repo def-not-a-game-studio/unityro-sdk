@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.Path;
 using UnityEngine;
 using UnityRO.Core.GameEntity;
-using UnityRO.Core.Sprite;
 
 namespace UnityRO.Core {
     public class EntityManager : ManagedMonoBehaviour {
@@ -98,7 +97,10 @@ namespace UnityRO.Core {
         private void OnEntityAction(EntityActionRequest actionRequest) {
             var source = GetEntity(actionRequest.AID);
             var target = GetEntity(actionRequest.targetAID);
-
+            
+            if (actionRequest.IsAttackAction() && target != null) {
+                source.ChangeDirection(PathFinder.GetDirectionForOffset(source.gameObject.transform.position, target.gameObject.transform.position));
+            }
             source.SetAction(actionRequest.action);
             source.SetAttackSpeed(actionRequest.sourceSpeed);
         }

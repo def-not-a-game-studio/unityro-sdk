@@ -86,8 +86,11 @@ namespace UnityRO.Core.Sprite {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
 
-            if (CurrentMotion.Motion is SpriteMotion.Attack or SpriteMotion.Attack1 or SpriteMotion.Attack2
+            if (CurrentMotion.Motion is SpriteMotion.Attack 
+                or SpriteMotion.Attack1
+                or SpriteMotion.Attack2
                 or SpriteMotion.Attack3) {
+                // var multiplier = (Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed) / (float)AVERAGE_ATTACK_SPEED;
                 return (float)Entity.Status.AttackSpeed / CurrentAction.frames.Length;
             }
 
