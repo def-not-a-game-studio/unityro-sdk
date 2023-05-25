@@ -92,8 +92,8 @@ namespace UnityRO.Core.Sprite {
                 or SpriteMotion.Attack1
                 or SpriteMotion.Attack2
                 or SpriteMotion.Attack3) {
-                var multiplier = (Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed) /
-                                 (float)AVERAGE_ATTACK_SPEED;
+                var attackSpeed = (Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed);
+                var multiplier = attackSpeed / (float)AVERAGE_ATTACK_SPEED;
                 var delayTime = attackMotion * multiplier * 24f;
                 if (delayTime < 0) {
                     delayTime = 0;
@@ -171,7 +171,7 @@ namespace UnityRO.Core.Sprite {
                     //         break;
                     // }
                     // return 6;
-                    attackMotion = 5.85f;
+                    attackMotion = Entity.Status.attackMotion; // 4f
                 } else {
                     for (var index = 0; index < CurrentACT.sounds.Length; index++) {
                         var sound = CurrentACT.sounds[index];
@@ -184,6 +184,7 @@ namespace UnityRO.Core.Sprite {
 
             AnimationStart = GameManager.Tick;
             CurrentFrame = 0;
+
             CurrentMotion = currentMotion;
             NextMotion = nextMotion;
             ActionId = actionId;

@@ -99,7 +99,7 @@ namespace UnityRO.Core {
             var target = GetEntity(actionRequest.targetAID);
             
             if (actionRequest.IsAttackAction() && target != null) {
-                source.ChangeDirection(PathFinder.GetDirectionForOffset(source.gameObject.transform.position, target.gameObject.transform.position));
+                source.ChangeDirection(PathFinder.GetDirectionForOffset(target.gameObject.transform.position, source.gameObject.transform.position));
             }
             source.SetAction(actionRequest.action);
             source.SetAttackSpeed(actionRequest.sourceSpeed);

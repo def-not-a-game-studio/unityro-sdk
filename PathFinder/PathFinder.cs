@@ -299,14 +299,14 @@ namespace Core.Path {
         }
 
         public static Direction GetDirectionForOffset(Vector2Int offset) {
-            if (offset.x == -1 && offset.y == -1) return Direction.SouthWest;
-            if (offset.x == -1 && offset.y == 0) return Direction.West;
-            if (offset.x == -1 && offset.y == 1) return Direction.NorthWest;
-            if (offset.x == 0 && offset.y == 1) return Direction.North;
-            if (offset.x == 1 && offset.y == 1) return Direction.NorthEast;
-            if (offset.x == 1 && offset.y == 0) return Direction.East;
-            if (offset.x == 1 && offset.y == -1) return Direction.SouthEast;
-            if (offset.x == 0 && offset.y == -1) return Direction.South;
+            if (offset.x <= -1 && offset.y <= -1) return Direction.SouthWest;
+            if (offset.x <= -1 && offset.y == 0) return Direction.West;
+            if (offset.x <= -1 && offset.y <= 1) return Direction.NorthWest;
+            if (offset.x == 0 && offset.y >= 1) return Direction.North;
+            if (offset.x >= 1 && offset.y >= 1) return Direction.NorthEast;
+            if (offset.x >= 1 && offset.y == 0) return Direction.East;
+            if (offset.x >= 1 && offset.y <= -1) return Direction.SouthEast;
+            if (offset.x == 0 && offset.y <= -1) return Direction.South;
 
             return Direction.South;
         }
