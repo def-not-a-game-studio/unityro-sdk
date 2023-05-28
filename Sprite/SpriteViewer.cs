@@ -5,6 +5,7 @@ using System.Linq;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityRO.Core.Camera;
+using UnityRO.Core.Database;
 using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Sprite {
@@ -13,6 +14,8 @@ namespace UnityRO.Core.Sprite {
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
         [field: SerializeField] public ViewerType ViewerType { get; private set; }
         [field: SerializeField] public SpriteState State { get; private set; }
+        [field: SerializeField] public SpriteMotion Motion { get; private set; }
+        
 
         [SerializeField] private SpriteData SpriteData;
         [SerializeField] private Texture2D Atlas;
@@ -72,6 +75,7 @@ namespace UnityRO.Core.Sprite {
         }
 
         public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
+            Motion = motion.Motion;
             var state = motion.Motion switch {
                 SpriteMotion.Idle => SpriteState.Idle,
                 SpriteMotion.Standby => SpriteState.Standby,
@@ -95,8 +99,15 @@ namespace UnityRO.Core.Sprite {
             }
 
             if (motion.Motion == SpriteMotion.Attack) {
-                //@TODO forcing it to a correct attack motion until we have weapons logic
-                ChangeMotion(new MotionRequest { Motion = SpriteMotion.Attack1, forced = motion.forced, delay = motion.delay }, nextMotion);
+                var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
+                    Entity.Status.Job,
+                    Entity.Status.IsMale ? 1 : 0,
+                    Entity.Status.Weapon,
+                    Entity.Status.Shield
+                );
+                var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
+                
+                ChangeMotion(new MotionRequest { Motion = attackMotion, forced = motion.forced, delay = motion.delay }, nextMotion);
             }
 
             if (state == SpriteState.Dead) {

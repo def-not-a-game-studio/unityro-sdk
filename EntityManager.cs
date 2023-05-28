@@ -70,6 +70,13 @@ namespace UnityRO.Core {
             entity.gameObject.SetActive(false);
         }
 
+        public void DestroyEntity(uint AID) {
+            if (!entityCache.TryGetValue(AID, out var entity)) return;
+            entity.gameObject.SetActive(false);
+            Destroy(entity.gameObject);
+            entityCache.Remove(AID);
+        }
+
         private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_STANDENTRY11 packet) {
             Spawn(packet.entityData, true);
         }
@@ -89,7 +96,7 @@ namespace UnityRO.Core {
         private void OnEntityAct3(ushort cmd, int size, ZC.NOTIFY_ACT3 packet) {
             OnEntityAction(packet.ActionRequest);
         }
-        
+
         private void OnEntityAct(ushort cmd, int size, ZC.NOTIFY_ACT packet) {
             OnEntityAction(packet.ActionRequest);
         }
@@ -97,10 +104,11 @@ namespace UnityRO.Core {
         private void OnEntityAction(EntityActionRequest actionRequest) {
             var source = GetEntity(actionRequest.AID);
             var target = GetEntity(actionRequest.targetAID);
-            
+
             if (actionRequest.IsAttackAction() && target != null) {
                 source.ChangeDirection(PathFinder.GetDirectionForOffset(target.gameObject.transform.position, source.gameObject.transform.position));
             }
+
             source.SetAction(actionRequest.action);
             source.SetAttackSpeed(actionRequest.sourceSpeed);
         }
@@ -122,6 +130,9 @@ namespace UnityRO.Core {
                 ClothesColor = data.ClothesColor,
 
                 MoveSpeed = data.speed,
+
+                Weapon = (int)data.Weapon,
+                Shield = (int)data.Shield
             };
         }
     }

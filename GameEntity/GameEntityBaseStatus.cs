@@ -21,5 +21,8 @@ public class GameEntityBaseStatus {
     public int MoveSpeed;
     public int AttackSpeed;
 
+    public int Weapon;
+    public int Shield;
+
     public float attackMotion = 6f;
 }

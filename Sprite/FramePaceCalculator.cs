@@ -2,16 +2,19 @@ using System.Collections;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityRO.Core.Camera;
+using UnityRO.Core.Database;
 using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Sprite {
     public class FramePaceCalculator {
-        private const int AVERAGE_ATTACK_SPEED = 432;
+        private const int AVERAGE_ATTACK_SPEED = 435;
         private const int AVERAGE_ATTACKED_SPEED = 288;
         private const int MAX_ATTACK_SPEED = AVERAGE_ATTACKED_SPEED * 2;
 
         private CoreSpriteGameEntity Entity;
         private ViewerType ViewerType;
+        private CharacterCamera CharacterCamera;
+
         private int CurrentFrame = 0;
         private long AnimationStart = GameManager.Tick;
         private float CurrentDelay = 0f;
@@ -20,8 +23,8 @@ namespace UnityRO.Core.Sprite {
         private ACT CurrentACT;
         private ACT.Action CurrentAction;
         private int ActionId;
+        private float AttackMotion = 6f;
 
-        private CharacterCamera CharacterCamera;
 
         private Coroutine MotionQueueCoroutine;
 
@@ -44,13 +47,13 @@ namespace UnityRO.Core.Sprite {
             return (ActionId + (cameraDirection + entityDirection) % 8) % CurrentACT.actions.Length;
         }
 
+
         public int GetCurrentFrame() {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
 
-            var isIdle = (Entity.Status.EntityType == EntityType.PC &&
-                          CurrentMotion.Motion is SpriteMotion.Idle or SpriteMotion.Sit);
-            int frameCount = CurrentAction.frames.Length;
-            long deltaSinceMotionStart = GameManager.Tick - AnimationStart;
+            var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentMotion.Motion is SpriteMotion.Idle or SpriteMotion.Sit);
+            var frameCount = CurrentAction.frames.Length;
+            var deltaSinceMotionStart = (GameManager.Tick - AnimationStart);
 
             var maxFrame = frameCount - 1;
 
@@ -58,7 +61,6 @@ namespace UnityRO.Core.Sprite {
                 CurrentFrame = Entity.HeadDirection;
             }
 
-            CurrentDelay = GetDelay();
             if (deltaSinceMotionStart >= CurrentDelay) {
                 AnimationStart = GameManager.Tick;
 
@@ -81,8 +83,6 @@ namespace UnityRO.Core.Sprite {
             return CurrentFrame;
         }
 
-        private float attackMotion = 6f;
-
         public float GetDelay() {
             if (ViewerType == ViewerType.Body && CurrentMotion.Motion == SpriteMotion.Walk) {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
@@ -92,14 +92,16 @@ namespace UnityRO.Core.Sprite {
                 or SpriteMotion.Attack1
                 or SpriteMotion.Attack2
                 or SpriteMotion.Attack3) {
-                var attackSpeed = (Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed);
+                var attackSpeed = Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed;
                 var multiplier = attackSpeed / (float)AVERAGE_ATTACK_SPEED;
-                var delayTime = attackMotion * multiplier * 24f;
+                var motionSpeed = CurrentAction.delay * multiplier;
+
+                var delayTime = AttackMotion * motionSpeed;
                 if (delayTime < 0) {
                     delayTime = 0;
                 }
 
-                return delayTime;
+                return delayTime / CurrentAction.frames.Length;
             }
 
             return CurrentAction.delay;
@@ -126,68 +128,57 @@ namespace UnityRO.Core.Sprite {
                 or SpriteMotion.Attack2
                 or SpriteMotion.Attack3) {
                 if ((EntityType)Entity.GetEntityType() == EntityType.PC) {
-                    // switch (isSecondAttack)
-                    // {
-                    //     case 0:
-                    //         switch (job)
-                    //         {
-                    //             case JT_THIEF:
-                    //                 return 5.75f;
-                    //                 break;
-                    //             case JT_MERCHANT:
-                    //                 return 5.85f;
-                    //                 break;
-                    //         }
-                    //         break;
-                    //     case 1:
-                    //         switch (job)
-                    //         {
-                    //             case JT_NOVICE:
-                    //             case JT_SUPERNOVICE:
-                    //             case JT_SUPERNOVICE_B:
-                    //                 switch (sex)
-                    //                 {
-                    //                     case SEX_MALE:
-                    //                         return 5.85f;
-                    //                         break;
-                    //                 }
-                    //                 break;
-                    //             case JT_ASSASSIN:
-                    //             case JT_ASSASSIN_H:
-                    //             case JT_ASSASSIN_B:
-                    //                 switch (weapon)
-                    //                 {
-                    //                     case WEAPONTYPE_CATARRH:
-                    //                     case WEAPONTYPE_SHORTSWORD_SHORTSWORD:
-                    //                     case WEAPONTYPE_SWORD_SWORD:
-                    //                     case WEAPONTYPE_AXE_AXE:
-                    //                     case WEAPONTYPE_SHORTSWORD_SWORD:
-                    //                     case WEAPONTYPE_SHORTSWORD_AXE:
-                    //                     case WEAPONTYPE_SWORD_AXE:
-                    //                         return 3.0f;
-                    //                 }
-                    //                 break;
-                    //         }
-                    //         break;
-                    // }
-                    // return 6;
-                    attackMotion = Entity.Status.attackMotion; // 4f
+                    AttackMotion = Entity.Status.attackMotion;
+
+                    var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
+                        Entity.Status.Job,
+                        Entity.Status.IsMale ? 1 : 0,
+                        Entity.Status.Weapon,
+                        Entity.Status.Shield
+                    );
+
+                    if (isSecondAttack) {
+                        if ((JobType)Entity.Status.Job is JobType.JT_NOVICE or JobType.JT_SUPERNOVICE or JobType.JT_SUPERNOVICE_B) {
+                            if (Entity.Status.IsMale) {
+                                AttackMotion = 5.85f;
+                            }
+                        } else if ((JobType)Entity.Status.Job is JobType.JT_ASSASSIN or JobType.JT_ASSASSIN_H or JobType.JT_ASSASSIN_B) {
+                            switch ((WeaponType)Entity.Status.Weapon) {
+                                case WeaponType.CATARRH:
+                                case WeaponType.SHORTSWORD_SHORTSWORD:
+                                case WeaponType.SWORD_SWORD:
+                                case WeaponType.AXE_AXE:
+                                case WeaponType.SHORTSWORD_SWORD:
+                                case WeaponType.SHORTSWORD_AXE:
+                                case WeaponType.SWORD_AXE:
+                                    AttackMotion = 3.0f;
+                                    break;
+                            }
+                        }
+                    } else {
+                        AttackMotion = (JobType)Entity.Status.Job switch {
+                            JobType.JT_THIEF => 5.75f,
+                            JobType.JT_MERCHANT => 5.85f,
+                            _ => AttackMotion
+                        };
+                    }
                 } else {
                     for (var index = 0; index < CurrentACT.sounds.Length; index++) {
                         var sound = CurrentACT.sounds[index];
                         if (sound == "atk") {
-                            attackMotion = index;
+                            AttackMotion = index;
                         }
                     }
                 }
             }
 
+
             AnimationStart = GameManager.Tick;
             CurrentFrame = 0;
-
             CurrentMotion = currentMotion;
             NextMotion = nextMotion;
             ActionId = actionId;
+            CurrentDelay = GetDelay();
         }
     }
 }
