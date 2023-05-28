@@ -188,7 +188,7 @@ namespace UnityRO.Core.Database {
                 }
             }
 
-            WeaponType realWeapon = GetRealWeaponId(weapon);
+            var realWeapon = GetRealWeaponId(weapon);
             switch ((JobType)job) {
                 case JobType.JT_SWORDMAN:
                 case JobType.JT_KNIGHT:
@@ -544,6 +544,16 @@ namespace UnityRO.Core.Database {
             }
 
             return isSecondAttack;
+        }
+
+        public static bool IsWeaponUsingArrow(int weapon) {
+            var weaponType = weapon > (int)WeaponType.WEAPONTYPE_LAST ? GetWeaponType(weapon) : (WeaponType)weapon;
+            return weaponType is WeaponType.BOW or
+                WeaponType.CrossBow or
+                WeaponType.Arbalest or
+                WeaponType.Kakkung or
+                WeaponType.Hunter_Bow or
+                WeaponType.Bow_Of_Rudra;
         }
     }
 }

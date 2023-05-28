@@ -23,8 +23,9 @@ namespace UnityRO.Core.Sprite {
         private ACT CurrentACT;
         private ACT.Action CurrentAction;
         private int ActionId;
-        private float AttackMotion = 6f;
 
+        private float AttackMotion = 6f;
+        private float MotionSpeed = 1f;
 
         private Coroutine MotionQueueCoroutine;
 
@@ -47,7 +48,6 @@ namespace UnityRO.Core.Sprite {
             return (ActionId + (cameraDirection + entityDirection) % 8) % CurrentACT.actions.Length;
         }
 
-
         public int GetCurrentFrame() {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
 
@@ -61,7 +61,9 @@ namespace UnityRO.Core.Sprite {
                 CurrentFrame = Entity.HeadDirection;
             }
 
+            CurrentDelay = GetDelay();
             if (deltaSinceMotionStart >= CurrentDelay) {
+                PCLog($"{CurrentMotion.Motion} Frame delay passed {deltaSinceMotionStart} {CurrentDelay}, advancing frame");
                 AnimationStart = GameManager.Tick;
 
                 if (CurrentFrame < maxFrame && !isIdle) {
@@ -71,11 +73,14 @@ namespace UnityRO.Core.Sprite {
 
             if (CurrentFrame >= maxFrame) {
                 if (AnimationHelper.IsLoopingMotion(CurrentMotion.Motion)) {
+                    PCLog($"{CurrentMotion.Motion} Animation ended, looping");
                     CurrentFrame = 0;
                 } else if (NextMotion.HasValue && ViewerType == ViewerType.Body) {
+                    PCLog($"{CurrentMotion.Motion} Animation ended, next is available, advancing");
                     // Since body is the main component, it's the only one "allowed" to ask for the next motion
                     Entity.ChangeMotion(NextMotion.Value);
                 } else {
+                    PCLog($"{CurrentMotion.Motion} Animation ended, stopping");
                     CurrentFrame = maxFrame;
                 }
             }
@@ -88,15 +93,8 @@ namespace UnityRO.Core.Sprite {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
 
-            if (CurrentMotion.Motion is SpriteMotion.Attack
-                or SpriteMotion.Attack1
-                or SpriteMotion.Attack2
-                or SpriteMotion.Attack3) {
-                var attackSpeed = Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed;
-                var multiplier = attackSpeed / (float)AVERAGE_ATTACK_SPEED;
-                var motionSpeed = CurrentAction.delay * multiplier;
-
-                var delayTime = AttackMotion * motionSpeed;
+            if (CurrentMotion.Motion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
+                var delayTime = AttackMotion * MotionSpeed;
                 if (delayTime < 0) {
                     delayTime = 0;
                 }
@@ -105,11 +103,6 @@ namespace UnityRO.Core.Sprite {
             }
 
             return CurrentAction.delay;
-        }
-
-        private IEnumerator DelayCurrentMotion(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
-            yield return new WaitUntil(() => GameManager.Tick > currentMotion.delay);
-            OnMotionChanged(currentMotion, nextMotion, actionId);
         }
 
         public void OnMotionChanged(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
@@ -128,7 +121,8 @@ namespace UnityRO.Core.Sprite {
                 or SpriteMotion.Attack2
                 or SpriteMotion.Attack3) {
                 if ((EntityType)Entity.GetEntityType() == EntityType.PC) {
-                    AttackMotion = Entity.Status.attackMotion;
+                    MotionSpeed = GetMotionSpeed();
+                    AttackMotion = 6f;
 
                     var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
                         Entity.Status.Job,
@@ -162,6 +156,13 @@ namespace UnityRO.Core.Sprite {
                             _ => AttackMotion
                         };
                     }
+
+                    var usingArrow = WeaponTypeDatabase.IsWeaponUsingArrow(Entity.Status.Weapon);
+                    if (usingArrow) {
+                        //TODO some additional checks see Pc.cpp line 847
+                        // Dividing by 25f to get rid of the mult we do when reading the act delays...
+                        AttackMotion += 8 / (MotionSpeed / 25f);
+                    }
                 } else {
                     for (var index = 0; index < CurrentACT.sounds.Length; index++) {
                         var sound = CurrentACT.sounds[index];
@@ -172,13 +173,35 @@ namespace UnityRO.Core.Sprite {
                 }
             }
 
-
             AnimationStart = GameManager.Tick;
             CurrentFrame = 0;
             CurrentMotion = currentMotion;
             NextMotion = nextMotion;
             ActionId = actionId;
+
+            CurrentAction = CurrentACT.actions[GetActionIndex()];
             CurrentDelay = GetDelay();
+            PCLog($"{ViewerType} Current delay for {CurrentMotion.Motion} is {CurrentDelay}");
+        }
+
+        private IEnumerator DelayCurrentMotion(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
+            yield return new WaitUntil(() => GameManager.Tick > currentMotion.delay);
+            OnMotionChanged(currentMotion, nextMotion, actionId);
+        }
+
+        private float GetMotionSpeed() {
+            CurrentAction = CurrentACT.actions[GetActionIndex()];
+            var attackSpeed = Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed;
+            var multiplier = attackSpeed / (float)AVERAGE_ATTACK_SPEED;
+            var motionSpeed = CurrentAction.delay * multiplier;
+
+            return motionSpeed;
+        }
+
+        private void PCLog(string message) {
+            if (Entity.GetEntityType() == (int)EntityType.PC && ViewerType == ViewerType.Body && !Entity.HasAuthority()) {
+                //Debug.Log(message);
+            }
         }
     }
 }

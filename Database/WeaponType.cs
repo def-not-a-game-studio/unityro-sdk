@@ -1,5 +1,5 @@
 namespace UnityRO.Core.Database {
-        public enum WeaponType : int {
+    public enum WeaponType : int {
         NONE = 0,
         SHORTSWORD = 1, //¶Ì½£
         SWORD = 2, //´ó½£

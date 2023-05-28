@@ -106,8 +106,7 @@ namespace UnityRO.Core.Sprite {
                     Entity.Status.Shield
                 );
                 var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
-                
-                ChangeMotion(new MotionRequest { Motion = attackMotion, forced = motion.forced, delay = motion.delay }, nextMotion);
+                motion.Motion = attackMotion;
             }
 
             if (state == SpriteState.Dead) {
