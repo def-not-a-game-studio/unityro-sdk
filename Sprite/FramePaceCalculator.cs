@@ -116,10 +116,7 @@ namespace UnityRO.Core.Sprite {
                 return;
             }
 
-            if (CurrentMotion.Motion is SpriteMotion.Attack
-                or SpriteMotion.Attack1
-                or SpriteMotion.Attack2
-                or SpriteMotion.Attack3) {
+            if (CurrentMotion.Motion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
                 if ((EntityType)Entity.GetEntityType() == EntityType.PC) {
                     MotionSpeed = GetMotionSpeed();
                     AttackMotion = 6f;
