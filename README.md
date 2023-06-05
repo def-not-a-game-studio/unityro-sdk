@@ -1,4 +1,4 @@
-# UnityRO
+# UnityRO SDK
 
 ![GitHub issues](https://img.shields.io/github/issues/def-not-a-game-studio/unityro-sdk)
 ![Repo size](https://img.shields.io/github/repo-size/def-not-a-game-studio/unityro-sdk)
