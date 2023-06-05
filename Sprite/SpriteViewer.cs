@@ -15,7 +15,6 @@ namespace UnityRO.Core.Sprite {
         [field: SerializeField] public ViewerType ViewerType { get; private set; }
         [field: SerializeField] public SpriteState State { get; private set; }
         [field: SerializeField] public SpriteMotion Motion { get; private set; }
-        
 
         [SerializeField] private SpriteData SpriteData;
         [SerializeField] private Texture2D Atlas;
@@ -210,10 +209,6 @@ namespace UnityRO.Core.Sprite {
                 MeshCache.Add(frame, rendererMesh);
             }
 
-            foreach (var layer in frame.layers) {
-                MeshRenderer.material.SetFloat("_Alpha", layer.color.a);
-            }
-
             MeshFilter.sharedMesh = null;
             MeshFilter.sharedMesh = rendererMesh;
             MeshCollider.sharedMesh = colliderMesh;
@@ -228,7 +223,9 @@ namespace UnityRO.Core.Sprite {
         }
 
         private IEnumerator FadeOutRenderer() {
-            float currentTime = 0f;
+            yield return new WaitForSeconds(2f);
+            
+            var currentTime = 0f;
             var currentAlpha = MeshRenderer.material.GetFloat("_Alpha");
 
             while (currentTime <= 0.5f) {
@@ -238,44 +235,5 @@ namespace UnityRO.Core.Sprite {
                 yield return new WaitForEndOfFrame();
             }
         }
-    }
-
-    public enum ViewerType {
-        Head,
-        Body
-    }
-
-    public enum SpriteState {
-        Idle,
-        Walking,
-        Standby,
-        Dead,
-        Hit,
-        Attack,
-        Casting,
-        PickUp,
-        Frozen,
-        Sit
-    }
-
-    public enum SpriteMotion {
-        Idle,
-        Walk,
-        Sit,
-        PickUp,
-        Attack,
-        Attack1, // Normal attack
-        Attack2, // No weapon attack
-        Attack3, // Combo attack
-        Standby,
-        Hit,
-        Freeze1,
-        Freeze2,
-        Dead,
-        Casting,
-        Special,
-        Performance1,
-        Performance2,
-        Performance3,
     }
 }

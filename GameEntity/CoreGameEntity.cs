@@ -6,6 +6,7 @@ namespace UnityRO.Core.GameEntity {
 
         public abstract void ChangeMotion(MotionRequest request, MotionRequest? nextRequest = null);
         public abstract void ChangeDirection(Direction direction);
+        public abstract void LookTo(Vector3 position);
 
         public abstract void Init(GameEntityBaseStatus gameEntityBaseStatus);
         public abstract void Spawn(GameEntityBaseStatus gameEntityBaseStatus, int[] PosDir, bool forceNorthDirection);
@@ -30,7 +31,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract void RequestMovement(Vector2 destination);
 
         public abstract void Vanish(VanishType vanishType);
-        public abstract void SetAction(ActionRequestType actionRequestAction);
+        public abstract void SetAction(EntityActionRequest actionRequest, bool isSource);
         public abstract void SetAttackSpeed(ushort actionRequestSourceSpeed);
     }
 }

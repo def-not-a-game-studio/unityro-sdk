@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using Core.Path;
 using UnityEngine;
 using UnityRO.Core.GameEntity;
+using UnityRO.Net;
 
 namespace UnityRO.Core {
     public class EntityManager : ManagedMonoBehaviour {
@@ -12,9 +12,11 @@ namespace UnityRO.Core {
         private Dictionary<uint, CoreGameEntity> entityCache = new();
 
         private NetworkClient NetworkClient;
+        private SessionManager SessionManager;
 
         private void Awake() {
             NetworkClient = FindObjectOfType<NetworkClient>();
+            SessionManager = FindObjectOfType<SessionManager>();
 
             NetworkClient.HookPacket<ZC.NOTIFY_NEWENTRY11>(ZC.NOTIFY_NEWENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.HookPacket<ZC.NOTIFY_STANDENTRY11>(ZC.NOTIFY_STANDENTRY11.HEADER, OnEntitySpawned);
@@ -72,7 +74,6 @@ namespace UnityRO.Core {
 
         public void DestroyEntity(uint AID) {
             if (!entityCache.TryGetValue(AID, out var entity)) return;
-            entity.gameObject.SetActive(false);
             Destroy(entity.gameObject);
             entityCache.Remove(AID);
         }
@@ -103,14 +104,25 @@ namespace UnityRO.Core {
 
         private void OnEntityAction(EntityActionRequest actionRequest) {
             var source = GetEntity(actionRequest.AID);
-            var target = GetEntity(actionRequest.targetAID);
+            var target = actionRequest.action is not (ActionRequestType.SIT or ActionRequestType.STAND) ? GetEntity(actionRequest.targetAID) : null;
 
+            if (actionRequest.AID == SessionManager.CurrentSession.AccountID ||
+                actionRequest.AID == SessionManager.CurrentSession.Entity.GetEntityGID()) {
+                source = SessionManager.CurrentSession.Entity as CoreGameEntity;
+            } else if (actionRequest.targetAID == SessionManager.CurrentSession.AccountID ||
+                       actionRequest.targetAID == SessionManager.CurrentSession.Entity.GetEntityGID()) {
+                target = SessionManager.CurrentSession.Entity as CoreGameEntity;
+            }
+            
             if (actionRequest.IsAttackAction() && target != null) {
-                source.ChangeDirection(PathFinder.GetDirectionForOffset(target.gameObject.transform.position, source.gameObject.transform.position));
+                source.LookTo(target.gameObject.transform.position);
             }
 
-            source.SetAction(actionRequest.action);
+            source.SetAction(actionRequest, true);
             source.SetAttackSpeed(actionRequest.sourceSpeed);
+            
+            target.SetAction(actionRequest, false);
+            target.SetAttackSpeed(actionRequest.targetSpeed);
         }
 
         public override void ManagedUpdate() { }
