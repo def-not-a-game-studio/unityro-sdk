@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using UnityEngine;
 
 public class Connection {
     public const int DATA_BUFFER_SIZE = 16 * 1024;
@@ -67,7 +66,6 @@ public class Connection {
         }
 
         if (err != SocketError.Success) {
-            Debug.LogError(err);
             Disconnect();
             OnDisconnect?.Invoke();
         } else {
