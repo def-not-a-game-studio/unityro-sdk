@@ -76,16 +76,17 @@ namespace UnityRO.Core.Editor {
                 .Select(AssetDatabase.LoadAssetAtPath<SpriteData>)
                 .ToList();
 
-
             AssetDatabase.StartAssetEditing();
             foreach (var npc in npcs) {
                 try {
-                    var job = ScriptableObject.CreateInstance<SpriteJob>();
-                    job.JobId = npc.jobId;
-                    job.Male = npc;
+                    foreach (var npcJob in npc.jobs) {
+                        var job = ScriptableObject.CreateInstance<SpriteJob>();
+                        job.JobId = npcJob;
+                        job.Male = npc;
 
-                    var fullAssetPath = $"Assets/3rdparty/unityro-resources/Resources/Database/Npc/{npc.name}.asset";
-                    AssetDatabase.CreateAsset(job, fullAssetPath);
+                        var fullAssetPath = $"Assets/3rdparty/unityro-resources/Resources/Database/Npc/{(JobType)npcJob}.asset";
+                        AssetDatabase.CreateAsset(job, fullAssetPath);
+                    }
                 } catch {
                     Debug.LogError($"Error saving job {npc.name}");
                 }

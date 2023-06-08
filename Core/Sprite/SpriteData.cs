@@ -1,10 +1,11 @@
-using ROIO.Models.FileTypes;
 using System;
 using System.Linq;
+using ROIO.Models.FileTypes;
 using UnityEngine;
 
 [Serializable]
 public class SpriteData : ScriptableObject {
+    public int[] jobs; //used for npcs/mobs with many repetitions
     public int jobId;
     public ACT act;
     

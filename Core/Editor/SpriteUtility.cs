@@ -387,18 +387,26 @@ public class SpriteUtility {
 
         #region Lookup for readable name
 
-        var npcIdsTable = luaEnvironment.Globals["jobtbl"] as Table;
         var npcNameTable = luaEnvironment.Globals["JobNameTable"] as Table;
+        var JobNameTable = new Dictionary<int, string>();
+        foreach (var pair in npcNameTable.Pairs) {
+            JobNameTable[int.Parse(pair.Key.ToString())] = pair.Value.CastToString();
+        }
 
         var bodyPathKey = filename;
-        var jobId = -1;
+        var jobs = new List<int>();
 
-        foreach (var pair in npcNameTable.Pairs) {
-            if (!pair.Value.CastToString().Equals(filename, StringComparison.OrdinalIgnoreCase)) continue;
-
-            jobId = int.Parse(pair.Key.ToString());
-            bodyPathKey = pair.Value.CastToString();
+        foreach (var (key, value) in JobNameTable) {
+            if (!value.Equals(filename, StringComparison.OrdinalIgnoreCase)) continue;
+            
+            bodyPathKey = value;
             break;
+        }
+
+        foreach (var (key, value) in JobNameTable) {
+            if (!value.Equals(filename, StringComparison.OrdinalIgnoreCase)) continue;
+            
+            jobs.Add(key);
         }
 
         #endregion
@@ -428,7 +436,7 @@ public class SpriteUtility {
 
         var spriteData = ScriptableObject.CreateInstance<SpriteData>();
         spriteData.act = act;
-        spriteData.jobId = jobId;
+        spriteData.jobs = jobs.ToArray();
         spriteData.atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(atlasPath);
         spriteData.rects = spriteLoader.SpriteRects;
 

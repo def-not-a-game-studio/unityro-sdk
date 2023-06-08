@@ -5,9 +5,8 @@ using UnityRO.Core.Database;
 namespace UnityRO.Core.Editor {
     [InitializeOnLoad]
     public static class SpriteUtilityTables {
-        
-        public const int JOBMINUS = 3950; 
-        
+        public const int JOBMINUS = 3950;
+
         static SpriteUtilityTables() {
             InitPcJobNameTable();
         }
