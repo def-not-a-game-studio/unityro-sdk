@@ -13,6 +13,10 @@ namespace _3rdparty.unityro_core.Editor {
             GUILayout.Space(20);
             GUILayout.Label("Force Motion");
 
+            if (GUILayout.Button("FadeOut")) {
+                component.FadeOut();
+            }
+
             if (GUILayout.Button("Attack 1 > Standby")) {
                 component.ChangeMotion(
                                        new MotionRequest { Motion = SpriteMotion.Attack1 },

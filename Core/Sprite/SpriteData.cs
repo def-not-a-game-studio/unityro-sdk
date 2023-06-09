@@ -20,6 +20,8 @@ public class SpriteData : ScriptableObject {
     }
     
     public Sprite[] GetSprites(Texture2D atlas) {
+        if (rects == null) return Array.Empty<Sprite>();
+        
         return rects
             .Select(t =>
                 new Rect(t.x * atlas.width, t.y * atlas.height, t.width * atlas.width, t.height * atlas.height)).Select(

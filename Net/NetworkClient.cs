@@ -155,7 +155,8 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         }
 
         while (InPacketQueue.TryDequeue(out var packet)) {
-            HandleIncomingPacket(packet); }
+            HandleIncomingPacket(packet);
+        }
     }
 
     private bool HandleIncomingPacket(InPacket packet) {

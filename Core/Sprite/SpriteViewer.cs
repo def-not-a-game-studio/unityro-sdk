@@ -74,6 +74,7 @@ namespace UnityRO.Core.Sprite {
         }
 
         public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
+            MeshRenderer.material.SetFloat("_Alpha", 1f);
             Motion = motion.Motion;
             var state = motion.Motion switch {
                 SpriteMotion.Idle => SpriteState.Idle,
@@ -143,11 +144,13 @@ namespace UnityRO.Core.Sprite {
             MeshFilter = GetComponent<MeshFilter>();
             MeshCollider = GetComponent<MeshCollider>();
             Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
+            
+            if (SpriteData == null) return;
 
             Sprites = SpriteData.GetSprites();
             FramePaceCalculator = new FramePaceCalculator(Entity, ViewerType, SpriteData.act, CharacterCamera);
             MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
-
+            MeshRenderer.material.SetFloat("_Alpha", 1f);
 
             MeshRenderer.material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
             if (SpriteData.palettes.Length <= 0) {
@@ -218,21 +221,21 @@ namespace UnityRO.Core.Sprite {
             return Children.FirstOrDefault(it => it.ViewerType == viewerType);
         }
 
-        public void FadeOut() {
-            StartCoroutine(FadeOutRenderer());
+        public void FadeOut(float delay = 2f, float timeout = 2f) {
+            StartCoroutine(FadeOutRenderer(delay, timeout));
         }
 
-        private IEnumerator FadeOutRenderer() {
-            yield return new WaitForSeconds(2f);
-            
+        public IEnumerator FadeOutRenderer(float delay, float timeout) {
+            yield return new WaitForSeconds(delay);
             var currentTime = 0f;
             var currentAlpha = MeshRenderer.material.GetFloat("_Alpha");
 
-            while (currentTime <= 0.5f) {
+            while (currentTime <= timeout && currentAlpha > 0f) {
                 currentTime += Time.deltaTime;
-                currentAlpha = Mathf.Lerp(currentAlpha, 0f, Time.deltaTime / 0.5f);
+                currentAlpha = Mathf.Lerp(currentAlpha, 0f, currentTime / timeout);
                 MeshRenderer.material.SetFloat("_Alpha", currentAlpha);
-                yield return new WaitForEndOfFrame();
+
+                yield return null;
             }
         }
     }

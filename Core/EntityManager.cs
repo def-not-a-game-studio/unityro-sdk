@@ -1,13 +1,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Pool;
 using UnityRO.Core.GameEntity;
 using UnityRO.Net;
 
 namespace UnityRO.Core {
     public class EntityManager : ManagedMonoBehaviour {
-        [SerializeField] private CoreGameEntity EntityPrefab;
         [SerializeField] private Transform EntitiesParent;
+        [SerializeField] private CoreGameEntity PCPrefab;
+        [SerializeField] private CoreGameEntity MobPrefab;
+
+        private ObjectPool<CoreGameEntity> PCPool;
+        private ObjectPool<CoreGameEntity> MobPool;
 
         private Dictionary<uint, CoreGameEntity> entityCache = new();
 
@@ -26,6 +31,16 @@ namespace UnityRO.Core {
             NetworkClient.HookPacket<ZC.NOTIFY_ACT3>(ZC.NOTIFY_ACT3.HEADER, OnEntityAct3);
         }
 
+        private void Start() {
+            PCPool = new ObjectPool<CoreGameEntity>(() => Instantiate(PCPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
+                entity => entity.gameObject.SetActive(false),
+                Destroy, true, 100);
+            
+            MobPool = new ObjectPool<CoreGameEntity>(() => Instantiate(MobPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
+                entity => entity.gameObject.SetActive(false),
+                Destroy, true, 100);
+        }
+
         private void OnDestroy() {
             NetworkClient.UnhookPacket<ZC.NOTIFY_NEWENTRY11>(ZC.NOTIFY_NEWENTRY11.HEADER, OnEntitySpawned);
             NetworkClient.UnhookPacket<ZC.NOTIFY_STANDENTRY11>(ZC.NOTIFY_STANDENTRY11.HEADER, OnEntitySpawned);
@@ -39,7 +54,7 @@ namespace UnityRO.Core {
             var hasFound = entityCache.TryGetValue(data.AID, out var entity);
 
             if (!hasFound) {
-                entity = Instantiate(EntityPrefab, EntitiesParent);
+                entity = data.objecttype.GetEntityType() == EntityType.PC ? PCPool.Get() : MobPool.Get();
                 entity.gameObject.name = data.name;
                 entity.Spawn(GetBaseStatus(data), data.PosDir, forceNorthDirection);
 
@@ -69,13 +84,35 @@ namespace UnityRO.Core {
 
         public void HideEntity(uint AID) {
             if (!entityCache.TryGetValue(AID, out var entity)) return;
-            entity.gameObject.SetActive(false);
+            if (entity.Status.EntityType == EntityType.PC) {
+                PCPool.Release(entity);
+            } else {
+                MobPool.Release(entity);
+            }
         }
 
         public void DestroyEntity(uint AID) {
             if (!entityCache.TryGetValue(AID, out var entity)) return;
-            Destroy(entity.gameObject);
+            if (entity.Status.EntityType == EntityType.PC) {
+                PCPool.Release(entity);
+            } else {
+                MobPool.Release(entity);
+            }
             entityCache.Remove(AID);
+        }
+
+        public void DestroyEntityObject(CoreGameEntity entity) {
+            if (entity.Status.EntityType == EntityType.PC) {
+                PCPool.Release(entity);
+            } else {
+                MobPool.Release(entity);
+            }
+        } 
+
+        public void UnlinkEntity(uint AID) {
+            if (entityCache.ContainsKey(AID)) {
+                entityCache.Remove(AID);
+            }
         }
 
         private void OnEntitySpawned(ushort cmd, int size, ZC.NOTIFY_STANDENTRY11 packet) {
@@ -113,14 +150,14 @@ namespace UnityRO.Core {
                        actionRequest.targetAID == SessionManager.CurrentSession.Entity.GetEntityGID()) {
                 target = SessionManager.CurrentSession.Entity as CoreGameEntity;
             }
-            
+
             if (actionRequest.IsAttackAction() && target != null) {
                 source.LookTo(target.gameObject.transform.position);
             }
 
             source.SetAction(actionRequest, true);
             source.SetAttackSpeed(actionRequest.sourceSpeed);
-            
+
             target.SetAction(actionRequest, false);
             target.SetAttackSpeed(actionRequest.targetSpeed);
         }
