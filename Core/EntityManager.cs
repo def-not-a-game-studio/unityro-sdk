@@ -34,11 +34,11 @@ namespace UnityRO.Core {
         private void Start() {
             PCPool = new ObjectPool<CoreGameEntity>(() => Instantiate(PCPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
                 entity => entity.gameObject.SetActive(false),
-                Destroy, true, 100);
+                Destroy, true, 200);
             
             MobPool = new ObjectPool<CoreGameEntity>(() => Instantiate(MobPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
                 entity => entity.gameObject.SetActive(false),
-                Destroy, true, 100);
+                Destroy, true, 200);
         }
 
         private void OnDestroy() {
@@ -101,7 +101,7 @@ namespace UnityRO.Core {
             entityCache.Remove(AID);
         }
 
-        public void DestroyEntityObject(CoreGameEntity entity) {
+        public void RecycleEntity(CoreGameEntity entity) {
             if (entity.Status.EntityType == EntityType.PC) {
                 PCPool.Release(entity);
             } else {
@@ -157,6 +157,8 @@ namespace UnityRO.Core {
 
             source.SetAction(actionRequest, true);
             source.SetAttackSpeed(actionRequest.sourceSpeed);
+
+            if (target == null) return;
 
             target.SetAction(actionRequest, false);
             target.SetAttackSpeed(actionRequest.targetSpeed);

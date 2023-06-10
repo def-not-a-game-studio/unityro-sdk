@@ -68,6 +68,8 @@ namespace UnityRO.Core.Sprite {
         }
 
         public override void ManagedUpdate() {
+            if (SpriteData == null) return;
+            
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
@@ -233,10 +235,16 @@ namespace UnityRO.Core.Sprite {
             while (currentTime <= timeout && currentAlpha > 0f) {
                 currentTime += Time.deltaTime;
                 currentAlpha = Mathf.Lerp(currentAlpha, 0f, currentTime / timeout);
-                MeshRenderer.material.SetFloat("_Alpha", currentAlpha);
-
+                SetAlpha(currentAlpha);
+                foreach (var child in Children) {
+                    child.SetAlpha(currentAlpha);
+                }
                 yield return null;
             }
+        }
+
+        private void SetAlpha(float alpha) {
+            MeshRenderer.material.SetFloat("_Alpha", alpha);
         }
     }
 }
