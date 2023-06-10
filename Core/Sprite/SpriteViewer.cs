@@ -40,6 +40,7 @@ namespace UnityRO.Core.Sprite {
         private static readonly int UsePaletteProp = Shader.PropertyToID("_UsePalette");
         private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
         private static readonly int PaletteTexProp = Shader.PropertyToID("_PaletteTex");
+        private static readonly int AlphaProp = Shader.PropertyToID("_Alpha");
 
         public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity) {
             SpriteData = spriteData;
@@ -137,7 +138,7 @@ namespace UnityRO.Core.Sprite {
             };
 
             if (palette != null) {
-                MeshRenderer.material.SetTexture("_PaletteTex", palette);
+                MeshRenderer.material.SetTexture(PaletteTexProp, palette);
             }
         }
 
@@ -152,7 +153,7 @@ namespace UnityRO.Core.Sprite {
             Sprites = SpriteData.GetSprites();
             FramePaceCalculator = new FramePaceCalculator(Entity, ViewerType, SpriteData.act, CharacterCamera);
             MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
-            MeshRenderer.material.SetFloat("_Alpha", 1f);
+            MeshRenderer.material.SetFloat(AlphaProp, 1f);
 
             MeshRenderer.material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
             if (SpriteData.palettes.Length <= 0) {
@@ -230,7 +231,7 @@ namespace UnityRO.Core.Sprite {
         public IEnumerator FadeOutRenderer(float delay, float timeout) {
             yield return new WaitForSeconds(delay);
             var currentTime = 0f;
-            var currentAlpha = MeshRenderer.material.GetFloat("_Alpha");
+            var currentAlpha = MeshRenderer.material.GetFloat(AlphaProp);
 
             while (currentTime <= timeout && currentAlpha > 0f) {
                 currentTime += Time.deltaTime;
@@ -244,7 +245,16 @@ namespace UnityRO.Core.Sprite {
         }
 
         private void SetAlpha(float alpha) {
-            MeshRenderer.material.SetFloat("_Alpha", alpha);
+            MeshRenderer.material.SetFloat(AlphaProp, alpha);
+        }
+
+        public void Teardown() {
+            SpriteData = null;
+            Atlas = null;
+            Sprites = null;
+            foreach (var child in Children) {
+                child.Teardown();
+            }
         }
     }
 }
