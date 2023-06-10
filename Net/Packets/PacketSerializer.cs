@@ -103,9 +103,7 @@ public class PacketSerializer {
                 using var br = new MemoryStreamReader(data);
                 packet.Read(br, size - (isFixed ? 2 : 4));
 
-                ThreadManager.ExecuteOnMainThread(() => {
-                    PacketHandler.OnPacketReceived(packet);
-                });
+                NetworkClient.PacketBuffer.Enqueue(packet);
 
                 PacketReceived?.Invoke(cmd, size, packet);
                 DumpReceivedPacket(cmd, size, Memory.Length - Memory.Position);

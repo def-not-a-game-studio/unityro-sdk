@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DisruptorUnity3d;
 using UnityEngine;
 using UnityEngine.Events;
 using static PacketSerializer;
@@ -39,6 +40,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
 
     private Queue<OutPacket> OutPacketQueue;
     private Queue<InPacket> InPacketQueue;
+    public static RingBuffer<InPacket> PacketBuffer = new(16);
 
     #endregion
 
@@ -150,11 +152,15 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     private void TryHandleReceivedPacket() {
-        if (InPacketQueue.Count == 0 || CurrentConnection == null) {
+        if (CurrentConnection == null) {
             return;
         }
 
         while (InPacketQueue.TryDequeue(out var packet)) {
+            HandleIncomingPacket(packet);
+        }
+        
+        while (PacketBuffer.TryDequeue(out var packet)) {
             HandleIncomingPacket(packet);
         }
     }
