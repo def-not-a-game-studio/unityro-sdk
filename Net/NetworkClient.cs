@@ -35,6 +35,8 @@ public class NetworkClient : MonoBehaviour {
     private static Dictionary<ushort, PacketInfo> RegisteredPackets;
     private static Dictionary<short, int> ClientRegisteredPackets;
     private Dictionary<PacketHeader, List<Delegate>> PacketHooks { get; set; } = new();
+    public Action OnPingRequest;
+
     private bool IsPaused = false;
 
     public NetworkClientState State;
@@ -44,6 +46,7 @@ public class NetworkClient : MonoBehaviour {
 
     private Telepathy.Client _client;
     private ServerType _currentServerType = ServerType.Login;
+    private Coroutine _pingCoroutine;
 
     #endregion
 
@@ -74,7 +77,12 @@ public class NetworkClient : MonoBehaviour {
     private void SetupClient() {
         _client = new Client(DATA_BUFFER_SIZE);
         // hook up events
-        _client.OnConnected = () => Debug.Log($"# {_currentServerType} Client connected"); ;
+        _client.OnConnected = () => {
+            if (_currentServerType == ServerType.Zone) {
+                _pingCoroutine = StartCoroutine(ServerHeartBeat());
+            }
+            Debug.Log($"# {_currentServerType} Client connected");
+        };
         _client.OnData = OnDataReceived;
         _client.OnDisconnected = () => Debug.Log($"# {_currentServerType} Client disconnected");
     }
@@ -119,10 +127,6 @@ public class NetworkClient : MonoBehaviour {
 
         OutPacketQueue.Clear();
         InPacketQueue.Clear();
-    }
-
-    public void StartHeatBeat() {
-        StartCoroutine(ServerHeartBeat());
     }
 
     public void Disconnect() {
@@ -257,8 +261,9 @@ public class NetworkClient : MonoBehaviour {
     private IEnumerator ServerHeartBeat() {
         for (;;) {
             if (!IsConnected) yield break;
+            OnPingRequest?.Invoke();
             new CZ.REQUEST_TIME2().Send();
-            yield return new WaitForSeconds(10f);
+            yield return new WaitForSeconds(1f);
         }
     }
 
