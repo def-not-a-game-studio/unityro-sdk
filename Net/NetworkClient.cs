@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using DisruptorUnity3d;
+using System.Linq;
+using System.Reflection;
+using ROIO.Utils;
+using Telepathy;
 using UnityEngine;
 using UnityEngine.Events;
-using static PacketSerializer;
+using UnityRO.Net.Packets;
 
-public class NetworkClient : MonoBehaviour, IPacketHandler {
+public class NetworkClient : MonoBehaviour {
+    public const int DATA_BUFFER_SIZE = 2 * 1024;
     public static UnityAction<NetworkPacket, bool> OnPacketEvent;
 
     #region Singleton
 
     private static NetworkClient _instance;
-
     private static NetworkClient Instance {
         get {
             if (_instance == null) {
@@ -28,19 +30,20 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
 
     #region Members
 
-    public bool IsConnected => CurrentConnection.IsConnected();
-    public static int CLIENT_ID = new System.Random().Next();
+    public bool IsConnected => _client.Connected;
 
+    private static Dictionary<ushort, PacketInfo> RegisteredPackets;
+    private static Dictionary<short, int> ClientRegisteredPackets;
     private Dictionary<PacketHeader, List<Delegate>> PacketHooks { get; set; } = new();
-
     private bool IsPaused = false;
 
     public NetworkClientState State;
-    public Connection CurrentConnection;
 
     private Queue<OutPacket> OutPacketQueue;
     private Queue<InPacket> InPacketQueue;
-    public static RingBuffer<InPacket> PacketBuffer = new(16);
+
+    private Telepathy.Client _client;
+    private ServerType _currentServerType = ServerType.Login;
 
     #endregion
 
@@ -48,10 +51,35 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
 
     private void Awake() {
         DontDestroyOnLoad(this);
+        Application.runInBackground = true;
+        Telepathy.Log.Error = Debug.LogError;
+        Telepathy.Log.Info = Debug.Log;
+        Telepathy.Log.Warning = Debug.LogWarning;
+        
+        RegisteredPackets = new Dictionary<ushort, PacketInfo>();
+        ClientRegisteredPackets = new Dictionary<short, int>();
+
+        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(type => type.GetInterface("InPacket") != null)) {
+            var attributes = type.GetCustomAttributes(typeof(PacketHandlerAttribute), true); // get the attributes of the packet.
+            if (attributes.Length == 0)
+                return;
+            var ma = (PacketHandlerAttribute) attributes[0];
+            ClientRegisteredPackets.Add((short)ma.MethodId, ma.Size);
+            RegisteredPackets.Add(ma.MethodId, new PacketInfo { Size = ma.Size, Type = type });
+        }
+
+        SetupClient();
+    }
+
+    private void SetupClient() {
+        _client = new Client(DATA_BUFFER_SIZE);
+        // hook up events
+        _client.OnConnected = () => Debug.Log($"# {_currentServerType} Client connected"); ;
+        _client.OnData = OnDataReceived;
+        _client.OnDisconnected = () => Debug.Log($"# {_currentServerType} Client disconnected");
     }
 
     public void Start() {
-        CurrentConnection = new Connection(this);
         State = new NetworkClientState();
 
         OutPacketQueue = new Queue<OutPacket>();
@@ -59,12 +87,20 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     private void Update() {
-        if (IsPaused) {
+        // tick to process messages
+        // (even if not connected so we still process disconnect messages)
+        _client.Tick(100, CheckEnabled);
+
+        if (IsPaused || !_client.Connected) {
             return;
         }
 
         TrySendPacket();
         TryHandleReceivedPacket();
+    }
+
+    private bool CheckEnabled() {
+        return !IsPaused;
     }
 
     private void OnApplicationQuit() {
@@ -73,8 +109,13 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
 
     #endregion
 
-    public async Task ChangeServer(string ip, int port) {
-        await CurrentConnection.Connect(ip, port);
+    public void Connect(string ip, int port, ServerType serverType) {
+        if (_client.Connected) {
+            _client.Disconnect();
+        }
+        
+        _currentServerType = serverType;
+        _client.Connect(ip, port, ClientRegisteredPackets);
 
         OutPacketQueue.Clear();
         InPacketQueue.Clear();
@@ -85,7 +126,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     public void Disconnect() {
-        CurrentConnection?.Disconnect();
+        _client.Disconnect();
     }
 
     public void HookPacket<T>(PacketHeader cmd, OnPacketReceived<T> onPackedReceived) where T : InPacket {
@@ -102,11 +143,47 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         }
     }
 
-    public void SkipBytes(int bytesToSkip) {
-        CurrentConnection?.SkipBytes(bytesToSkip);
-    }
-
     #region Packet Handling
+
+    private MemoryStreamReader MemoryStream;
+    private byte[] commandBuffer = new byte[2];
+    private byte[] sizeBuffer = new byte[2];
+
+    private void OnDataReceived(ArraySegment<byte> byteArray) {
+        if (byteArray.Array == null) return;
+
+        MemoryStream = new MemoryStreamReader(byteArray.Array);
+
+        MemoryStream.Read(commandBuffer, 0, 2);
+        var cmd = BitConverter.ToUInt16(commandBuffer, 0);
+        if (RegisteredPackets.ContainsKey(cmd)) {
+            var size = RegisteredPackets[cmd].Size;
+            var isFixed = true;
+
+            if (size <= 0) {
+                isFixed = false;
+                if (MemoryStream.Length - MemoryStream.Position >= 2) {
+                    MemoryStream.Read(sizeBuffer, 0, 2);
+                    size = BitConverter.ToUInt16(sizeBuffer, 0);
+                }
+            }
+
+            var ci = RegisteredPackets[cmd].Type.GetConstructor(new Type[] { });
+            var packet = (InPacket)ci.Invoke(null);
+            packet.Read(MemoryStream, size - (isFixed ? 2 : 4));
+
+            OnDataReceived(packet);
+        } else if (ClientRegisteredPackets.ContainsKey((short)cmd)) {
+            // this is a hack
+            // the reason why we need this is because the server sends
+            // our account id back as a packet, so if we don't register
+            // the first two bytes of the account id's int, we'll get disconnected
+            
+            // do nothing
+        } else {
+            Debug.LogError($"Received invalid packet {cmd} ({cmd:x4})");
+        }
+    }
 
     public void PausePacketHandling() {
         IsPaused = true;
@@ -116,7 +193,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         IsPaused = false;
     }
 
-    public void OnPacketReceived(InPacket packet) {
+    public void OnDataReceived(InPacket packet) {
         if (IsPaused) {
             InPacketQueue.Enqueue(packet);
         } else {
@@ -125,7 +202,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     public static void SendPacket(OutPacket packet) {
-        if (Instance?.IsPaused == true) {
+        if (Instance?.IsPaused == true || Instance?.IsConnected == false) {
             Instance?.OutPacketQueue.Enqueue(packet);
         } else {
             Instance?.HandleOutPacket(packet);
@@ -133,7 +210,7 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     private void TrySendPacket() {
-        if (OutPacketQueue.Count == 0 || CurrentConnection == null) {
+        if (OutPacketQueue.Count == 0 || !IsConnected) {
             return;
         }
 
@@ -143,24 +220,12 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
     }
 
     private void HandleOutPacket(OutPacket packet) {
-        if (CurrentConnection.GetStream().CanWrite) {
-            OnPacketEvent?.Invoke(packet, false);
-            packet.Send(CurrentConnection.GetStream());
-            
-            OnPacketEvent?.Invoke(packet, true);
-        }
+        _client.Send(packet.AsArraySegment());
+        OnPacketEvent?.Invoke(packet, true);
     }
 
     private void TryHandleReceivedPacket() {
-        if (CurrentConnection == null) {
-            return;
-        }
-
         while (InPacketQueue.TryDequeue(out var packet)) {
-            HandleIncomingPacket(packet);
-        }
-        
-        while (PacketBuffer.TryDequeue(out var packet)) {
             HandleIncomingPacket(packet);
         }
     }
@@ -173,17 +238,25 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
                 d.DynamicInvoke((ushort)packet.Header, -1, packet);
             }
         }
-        
+
         OnPacketEvent?.Invoke(packet, isHandled);
 
         return isHandled;
+    }
+
+    // non orthodox alternative fix
+    // when we connect to rA charserv, they send the accountId back
+    // out of nowwhere, no header, just the plain 4bytes
+    public void SetAccountId(int AID) {
+        var bytes = BitConverter.GetBytes(AID);
+        ClientRegisteredPackets.Add(BitConverter.ToInt16(bytes, 0), 4);
     }
 
     #endregion
 
     private IEnumerator ServerHeartBeat() {
         for (;;) {
-            if (!CurrentConnection.IsConnected()) yield break;
+            if (!IsConnected) yield break;
             new CZ.REQUEST_TIME2().Send();
             yield return new WaitForSeconds(10f);
         }
@@ -196,4 +269,12 @@ public class NetworkClient : MonoBehaviour, IPacketHandler {
         public AC.ACCEPT_LOGIN3 LoginInfo;
         public HC.ACCEPT_ENTER CurrentCharactersInfo;
     }
+
+    public enum ServerType {
+        Login,
+        Char,
+        Zone
+    }
+
+    public delegate void OnPacketReceived<T>(ushort cmd, int size, T packet) where T : InPacket;
 }

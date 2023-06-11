@@ -22,16 +22,26 @@ public abstract class OutPacket : NetworkPacket {
     }
 
     public void Send(Stream stream) {
-        IEnumerable<byte> packet = BitConverter.GetBytes((ushort) Header);
-        if (!IsFixed) {
-            Size = buffer.Count() + 4;
-            packet = packet.Concat(BitConverter.GetBytes((short) Size));
-        }
-        packet = packet.Concat(buffer);
+        var packet = GetArray();
 
-        stream.Write(packet.ToArray(), 0, packet.Count());
+        stream.Write(packet, 0, packet.Length);
         stream.Flush();
         buffer = new List<byte>();
+    }
+
+    private byte[] GetArray() {
+        IEnumerable<byte> packet = BitConverter.GetBytes((ushort)Header);
+        if (!IsFixed) {
+            Size = buffer.Count() + 4;
+            packet = packet.Concat(BitConverter.GetBytes((short)Size));
+        }
+
+        packet = packet.Concat(buffer);
+        return packet.ToArray();
+    }
+
+    public ArraySegment<byte> AsArraySegment() {
+        return new ArraySegment<byte>(GetArray());
     }
 
     public void Write(int value) => buffer = buffer.Concat(BitConverter.GetBytes(value));
