@@ -98,6 +98,7 @@
     #endregion
 
     #region ZC
+    ZC_ACK_REQNAMEALL_NPC = 0xadf,
     ZC_NOTIFY_STANDENTRY11 = 0x9fe,
     ZC_NOTIFY_NEWENTRY11 = 0x9ff,
     ZC_NOTIFY_MOVEENTRY11 = 0x9fd,
@@ -212,6 +213,7 @@
     ZC_ATTACK_FAILURE_FOR_DISTANCE = 0x139,
     ZC_USE_SKILL = 0x9cb,
     ZC_NOTIFY_EFFECT = 0x19b,
+    ZC_NPC_CHAT = 0x2c1,
     #endregion
 
     #region SC
@@ -696,7 +698,6 @@
     //CZ_SRCRYPTOR2_START = 0x2be,
     //ZC_SRPACKETR2_INIT = 0x2bf,
     //CZ_SRPACKETR2_START = 0x2c0,
-    //ZC_NPC_CHAT = 0x2c1,
     //ZC_FORMATSTRING_MSG = 0x2c2,
     //UNUSED_CZ_FORMATSTRING_MSG_RES = 0x2c3,
     //CZ_PARTY_JOIN_REQ = 0x2c4,

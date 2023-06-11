@@ -34,5 +34,6 @@ namespace UnityRO.Core.GameEntity {
         public abstract void SetAction(EntityActionRequest actionRequest, bool isSource);
         public abstract void SetAttackSpeed(ushort actionRequestSourceSpeed);
         public abstract void ShowEmotion(byte emotionType);
+        public abstract void ChangeLook(LookType lookType, short packetValue, short packetValue2);
     }
 }
