@@ -10,7 +10,7 @@ using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Sprite {
     [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
-    public class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer {
+    public class SpriteEffectViewer : MonoBehaviour, ISpriteViewer {
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
         [field: SerializeField] public ViewerType ViewerType { get; private set; }
         [field: SerializeField] public SpriteState State { get; private set; }
@@ -57,7 +57,6 @@ namespace UnityRO.Core.Sprite {
 
         private void Start() {
             InitializeRenderers();
-            ChangeMotion(new MotionRequest { Motion = SpriteMotion.Idle });
         }
 
         public void SetParent(SpriteViewer parent) {
@@ -68,65 +67,12 @@ namespace UnityRO.Core.Sprite {
             Children.Add(child);
         }
 
-        public override void ManagedUpdate() {
+        void Update() {
             if (SpriteData == null) return;
             
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
-        }
-
-        public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
-            MeshRenderer.material.SetFloat("_Alpha", 1f);
-            Motion = motion.Motion;
-            var state = motion.Motion switch {
-                SpriteMotion.Idle => SpriteState.Idle,
-                SpriteMotion.Standby => SpriteState.Standby,
-                SpriteMotion.Walk => SpriteState.Walking,
-                SpriteMotion.Attack => SpriteState.Attack,
-                SpriteMotion.Attack1 => SpriteState.Attack,
-                SpriteMotion.Attack2 => SpriteState.Attack,
-                SpriteMotion.Attack3 => SpriteState.Attack,
-                SpriteMotion.Dead => SpriteState.Dead,
-                SpriteMotion.Hit => SpriteState.Hit,
-                SpriteMotion.Casting => SpriteState.Casting,
-                SpriteMotion.PickUp => SpriteState.PickUp,
-                SpriteMotion.Freeze1 => SpriteState.Frozen,
-                SpriteMotion.Freeze2 => SpriteState.Frozen,
-                SpriteMotion.Sit => SpriteState.Sit,
-                _ => SpriteState.Idle
-            };
-
-            if (state == State && !motion.forced) {
-                return;
-            }
-
-            if (motion.Motion == SpriteMotion.Attack) {
-                var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
-                    Entity.Status.Job,
-                    Entity.Status.IsMale ? 1 : 0,
-                    Entity.Status.Weapon,
-                    Entity.Status.Shield
-                );
-                var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
-                motion.Motion = attackMotion;
-            }
-
-            if (state == SpriteState.Dead) {
-                MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", false);
-            } else {
-                MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", true);
-            }
-
-            State = state;
-            ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, motion.Motion);
-            CurrentFrameIndex = 0;
-
-            FramePaceCalculator.OnMotionChanged(motion, nextMotion, ActionId);
-
-            foreach (var child in Children) {
-                child.ChangeMotion(motion, nextMotion);
-            }
         }
 
         public void UpdatePalette() {
@@ -244,7 +190,7 @@ namespace UnityRO.Core.Sprite {
             }
         }
 
-        public void SetAlpha(float alpha) {
+        private void SetAlpha(float alpha) {
             MeshRenderer.material.SetFloat(AlphaProp, alpha);
         }
 
@@ -264,7 +210,9 @@ namespace UnityRO.Core.Sprite {
         public ViewerType GetViewerType() => ViewerType;
 
         public void OnAnimationFinished() {
-            // do nothing
+            if (ViewerType == ViewerType.Emotion) {
+                Destroy(gameObject);
+            }
         }
     }
 }

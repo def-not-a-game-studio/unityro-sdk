@@ -12,7 +12,7 @@ namespace UnityRO.Core.Sprite {
         private const int MAX_ATTACK_SPEED = AVERAGE_ATTACKED_SPEED * 2;
 
         private CoreSpriteGameEntity Entity;
-        private ViewerType ViewerType;
+        private ISpriteViewer SpriteViewer;
         private CharacterCamera CharacterCamera;
 
         private int CurrentFrame = 0;
@@ -23,6 +23,7 @@ namespace UnityRO.Core.Sprite {
         private ACT CurrentACT;
         private ACT.Action CurrentAction;
         private int ActionId;
+        private int FixedActionIndex = -1;
 
         private float AttackMotion = 6f;
         private float MotionSpeed = 1f;
@@ -31,17 +32,21 @@ namespace UnityRO.Core.Sprite {
 
         public FramePaceCalculator(
             CoreSpriteGameEntity entity,
-            ViewerType viewerType,
+            ISpriteViewer viewer,
             ACT currentACT,
             CharacterCamera characterCamera
         ) {
             Entity = entity;
-            ViewerType = viewerType;
+            SpriteViewer = viewer;
             CurrentACT = currentACT;
             CharacterCamera = characterCamera;
         }
 
         public int GetActionIndex() {
+            if (FixedActionIndex >= 0) {
+                return FixedActionIndex;
+            }
+            
             var cameraDirection = (int)CharacterCamera.Direction;
             var entityDirection = (int)Entity.Direction + 8;
 
@@ -72,14 +77,15 @@ namespace UnityRO.Core.Sprite {
             }
 
             if (CurrentFrame >= maxFrame) {
-                if (AnimationHelper.IsLoopingMotion(CurrentMotion.Motion)) {
+                if (AnimationHelper.IsLoopingMotion(CurrentMotion.Motion) && SpriteViewer.GetViewerType() != ViewerType.Emotion) {
                     PCLog($"{CurrentMotion.Motion} Animation ended, looping");
                     CurrentFrame = 0;
-                } else if (NextMotion.HasValue && ViewerType == ViewerType.Body) {
+                } else if (NextMotion.HasValue && SpriteViewer.GetViewerType() == ViewerType.Body) {
                     PCLog($"{CurrentMotion.Motion} Animation ended, next is available, advancing");
                     // Since body is the main component, it's the only one "allowed" to ask for the next motion
                     Entity.ChangeMotion(NextMotion.Value);
                 } else {
+                    SpriteViewer.OnAnimationFinished();
                     PCLog($"{CurrentMotion.Motion} Animation ended, stopping");
                     CurrentFrame = maxFrame;
                 }
@@ -89,7 +95,7 @@ namespace UnityRO.Core.Sprite {
         }
 
         public float GetDelay() {
-            if (ViewerType == ViewerType.Body && CurrentMotion.Motion == SpriteMotion.Walk) {
+            if (SpriteViewer.GetViewerType() == ViewerType.Body && CurrentMotion.Motion == SpriteMotion.Walk) {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
 
@@ -178,7 +184,7 @@ namespace UnityRO.Core.Sprite {
 
             CurrentAction = CurrentACT.actions[GetActionIndex()];
             CurrentDelay = GetDelay();
-            PCLog($"{ViewerType} Current delay for {CurrentMotion.Motion} is {CurrentDelay}");
+            PCLog($"{SpriteViewer.GetViewerType()} Current delay for {CurrentMotion.Motion} is {CurrentDelay}");
         }
 
         private IEnumerator DelayCurrentMotion(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
@@ -196,9 +202,13 @@ namespace UnityRO.Core.Sprite {
         }
 
         private void PCLog(string message) {
-            if (Entity.GetEntityType() == (int)EntityType.PC && ViewerType == ViewerType.Body && !Entity.HasAuthority()) {
+            if (Entity.GetEntityType() == (int)EntityType.PC && SpriteViewer.GetViewerType() == ViewerType.Body && !Entity.HasAuthority()) {
                 //Debug.Log(message);
             }
+        }
+
+        public void SetActionIndex(int actionIndex) {
+            FixedActionIndex = actionIndex;
         }
     }
 }

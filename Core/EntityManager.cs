@@ -29,6 +29,7 @@ namespace UnityRO.Core {
             NetworkClient.HookPacket<ZC.NOTIFY_VANISH>(ZC.NOTIFY_VANISH.HEADER, OnEntityVanish);
             NetworkClient.HookPacket<ZC.NOTIFY_ACT>(ZC.NOTIFY_ACT.HEADER, OnEntityAct);
             NetworkClient.HookPacket<ZC.NOTIFY_ACT3>(ZC.NOTIFY_ACT3.HEADER, OnEntityAct3);
+            NetworkClient.HookPacket<ZC.EMOTION>(ZC.EMOTION.HEADER, OnEntityEmotion);
         }
 
         private void Start() {
@@ -71,6 +72,9 @@ namespace UnityRO.Core {
             if (hasFound) {
                 entity.gameObject.SetActive(true);
                 return entity;
+            } else if (AID == SessionManager.CurrentSession.AccountID ||
+                       AID == SessionManager.CurrentSession.Entity.GetEntityGID()) {
+                return SessionManager.CurrentSession.Entity as CoreGameEntity;
             } else {
                 //Debug.LogError($"No Entity found for given ID: {AID}");
                 return null;
@@ -162,6 +166,15 @@ namespace UnityRO.Core {
 
             target.SetAction(actionRequest, false);
             target.SetAttackSpeed(actionRequest.targetSpeed);
+        }
+        
+        private void OnEntityEmotion(ushort cmd, int size, ZC.EMOTION packet) {
+            var entity = GetEntity(packet.GID);
+            if (entity == null) {
+                return;
+            }
+
+            entity.ShowEmotion(packet.type);
         }
 
         public override void ManagedUpdate() { }
