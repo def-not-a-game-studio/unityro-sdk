@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Core.Path;
 using UnityEngine;
@@ -44,7 +45,14 @@ namespace UnityRO.Net {
 
             CurrentSession.SetCurrentMap(mapName);
 
-            await LoadScene(CurrentSession.CurrentMap, LoadSceneMode.Additive);
+            try {
+                NetworkClient.PausePacketHandling();
+                await LoadScene(CurrentSession.CurrentMap, LoadSceneMode.Additive);
+            } catch (Exception e) {
+                Debug.LogError($"Map not found on build index: {e.Message}");
+            } finally {
+                NetworkClient.ResumePacketHandling();
+            }
         }
 
         private void OnSceneLoaded(Scene currentScene, LoadSceneMode arg1) {
@@ -55,9 +63,8 @@ namespace UnityRO.Net {
             if (CurrentSession.CurrentMap != pkt.MapName) {
                 await SetCurrentMap(pkt.MapName);
             }
-
+            
             PathFinder = FindObjectOfType<PathFinder>();
-
             var height = PathFinder?.GetCellHeight(pkt.PosX, pkt.PosY) ?? 0f;
             var position = new Vector3(pkt.PosX, height, pkt.PosY);
             if (CurrentSession.Entity is CoreGameEntity gameEntity) {
