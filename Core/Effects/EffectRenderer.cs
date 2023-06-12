@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Core.Effects.EffectParts;
 using UnityEngine;
 
@@ -5,7 +6,7 @@ namespace Core.Effects {
     
     public class EffectRenderer : MonoBehaviour {
 
-        [SerializeField] private Effect Effect;
+        [SerializeField] public Effect Effect;
         [SerializeField] private bool autoStart = false;
 
         private void Start() {
@@ -56,6 +57,10 @@ namespace Core.Effects {
                     threeDRenderer.Init(param, instanceParam, initParam);
                 }
             }
+        }
+
+        public void Vanish() {
+            Destroy(gameObject);
         }
     }
 }
