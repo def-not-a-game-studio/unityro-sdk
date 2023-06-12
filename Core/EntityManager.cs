@@ -64,7 +64,7 @@ namespace UnityRO.Core {
 
                 entityCache.Add(data.AID, entity);
             } else {
-                entity.gameObject.SetActive(true);
+                entity.UpdateStatus(GetBaseStatus(data));
             }
 
             return entity;
