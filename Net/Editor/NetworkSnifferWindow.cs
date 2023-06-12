@@ -32,6 +32,7 @@ namespace UnityRO.Net.Editor {
                     GUILayout.Button($">> {Out.Header}");
                 }
             }
+
             EditorGUILayout.EndScrollView();
         }
 
@@ -43,7 +44,12 @@ namespace UnityRO.Net.Editor {
             if (_networkPackets.Count > 50) {
                 _networkPackets.RemoveAt(0);
             }
-            _networkPackets.Add(new KeyValuePair<NetworkPacket, bool>(packet, isHandled));
+
+            if (packet is InPacket In && In.Header != PacketHeader.ZC_NOTIFY_TIME) {
+                _networkPackets.Add(new KeyValuePair<NetworkPacket, bool>(packet, isHandled));
+            } else if (packet is OutPacket Out && Out.Header != PacketHeader.CZ_REQUEST_TIME2) {
+                _networkPackets.Add(new KeyValuePair<NetworkPacket, bool>(packet, isHandled));
+            }
         }
     }
 }
