@@ -56,9 +56,7 @@ namespace UnityRO.Net {
                 await SetCurrentMap(pkt.MapName);
             }
 
-            if (PathFinder == null) {
-                PathFinder = FindObjectOfType<PathFinder>();
-            }
+            PathFinder = FindObjectOfType<PathFinder>();
 
             var height = PathFinder?.GetCellHeight(pkt.PosX, pkt.PosY) ?? 0f;
             var position = new Vector3(pkt.PosX, height, pkt.PosY);
