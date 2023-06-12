@@ -11,7 +11,7 @@ namespace UnityRO.Core.Database {
         private EmotionDatabase EmotionDb = new();
 
         public Job GetJobById(int id) {
-            return JobDb.Values.FirstOrDefault(it => it.JobId == id) ?? throw new Exception($"Job not found {id}");
+            return JobDb.Values.FirstOrDefault(it => it.JobId == id) ?? JobDb.Values.FirstOrDefault(it => it.JobId == 1002);
         }
 
         public SpriteHead GetHeadById(int id) {
