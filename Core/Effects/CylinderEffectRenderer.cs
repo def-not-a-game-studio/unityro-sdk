@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityRO.Core;
 
 namespace Core.Effects {
-    public class CylinderEffectRenderer : ManagedMonoBehaviour {
+    public class CylinderEffectRenderer : MonoBehaviour {
         public CylinderEffectPart Part;
 
         [SerializeField] private float RotationSpeed = 40f;
@@ -68,7 +68,7 @@ namespace Core.Effects {
         public float updateRate = 30f;
         private float nextUpdate = 0f;
 
-        public override void  ManagedUpdate() {
+        void Update() {
             var timeInterval = Time.time - nextUpdate;
             if (timeInterval <= 1f / updateRate)
             {

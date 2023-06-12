@@ -7,7 +7,7 @@ using UnityRO.core.Effects;
 using Random = UnityEngine.Random;
 
 namespace Core.Effects {
-    public class ThreeDEffectRenderer : ManagedMonoBehaviour {
+    public class ThreeDEffectRenderer : MonoBehaviour {
         [SerializeField] public ThreeDEffect Effect;
 
         private ThreeDEffectPart _part;
@@ -345,7 +345,7 @@ namespace Core.Effects {
 
         private bool isReady = false;
 
-        public override void ManagedUpdate() {
+        void Update() {
             if (_part.startTick > GameManager.Tick || !isReady) return;
 
             if (GameManager.Tick > _part.endTick) {
