@@ -106,9 +106,23 @@ namespace UnityRO.Core.Sprite {
                 }
 
                 return delayTime / CurrentAction.frames.Length;
+            } else if (CurrentMotion.Motion is SpriteMotion.Hit) {
+                CurrentAction = CurrentACT.actions[GetActionIndex()];
+                var multiplier = Entity.Status.AttackedSpeed / (float)AVERAGE_ATTACKED_SPEED;
+                var motionSpeed = CurrentAction.delay * multiplier;
+                return motionSpeed;
             }
 
             return CurrentAction.delay;
+        }
+
+        public float GetAttackDelay() {
+            var delayTime = AttackMotion * GetMotionSpeed();
+            if (delayTime < 0) {
+                delayTime = 0;
+            }
+
+            return delayTime;
         }
 
         public void OnMotionChanged(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
@@ -117,63 +131,13 @@ namespace UnityRO.Core.Sprite {
                 MotionQueueCoroutine = null;
             }
 
-            if (currentMotion.delay > GameManager.Tick) {
+            if (currentMotion.delay > 0f) {
                 MotionQueueCoroutine = Entity.StartCoroutine(DelayCurrentMotion(currentMotion, nextMotion, actionId));
                 return;
             }
 
             if (CurrentMotion.Motion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
-                if ((EntityType)Entity.GetEntityType() == EntityType.PC) {
-                    MotionSpeed = GetMotionSpeed();
-                    AttackMotion = 6f;
-
-                    var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
-                        Entity.Status.Job,
-                        Entity.Status.IsMale ? 1 : 0,
-                        Entity.Status.Weapon,
-                        Entity.Status.Shield
-                    );
-
-                    if (isSecondAttack) {
-                        if ((JobType)Entity.Status.Job is JobType.JT_NOVICE or JobType.JT_SUPERNOVICE or JobType.JT_SUPERNOVICE_B) {
-                            if (Entity.Status.IsMale) {
-                                AttackMotion = 5.85f;
-                            }
-                        } else if ((JobType)Entity.Status.Job is JobType.JT_ASSASSIN or JobType.JT_ASSASSIN_H or JobType.JT_ASSASSIN_B) {
-                            switch ((WeaponType)Entity.Status.Weapon) {
-                                case WeaponType.CATARRH:
-                                case WeaponType.SHORTSWORD_SHORTSWORD:
-                                case WeaponType.SWORD_SWORD:
-                                case WeaponType.AXE_AXE:
-                                case WeaponType.SHORTSWORD_SWORD:
-                                case WeaponType.SHORTSWORD_AXE:
-                                case WeaponType.SWORD_AXE:
-                                    AttackMotion = 3.0f;
-                                    break;
-                            }
-                        }
-                    } else {
-                        AttackMotion = (JobType)Entity.Status.Job switch {
-                            JobType.JT_THIEF => 5.75f,
-                            JobType.JT_MERCHANT => 5.85f,
-                            _ => AttackMotion
-                        };
-                    }
-
-                    var usingArrow = WeaponTypeDatabase.IsWeaponUsingArrow(Entity.Status.Weapon);
-                    if (usingArrow) {
-                        //TODO some additional checks see Pc.cpp line 847
-                        // Dividing by 25f to get rid of the mult we do when reading the act delays...
-                        AttackMotion += 8 / (MotionSpeed / 25f);
-                    }
-                } else {
-                    for (var index = 0; index < CurrentACT.sounds.Length; index++) {
-                        var sound = CurrentACT.sounds[index];
-                        if (sound == "atk") {
-                            AttackMotion = index;
-                        }
-                    }
-                }
+                ProcessAttackMotion();
             }
 
             AnimationStart = GameManager.Tick;
@@ -187,8 +151,64 @@ namespace UnityRO.Core.Sprite {
             PCLog($"{SpriteViewer.GetViewerType()} Current delay for {CurrentMotion.Motion} is {CurrentDelay}");
         }
 
+        private void ProcessAttackMotion() {
+            MotionSpeed = GetMotionSpeed();
+            AttackMotion = 6f;
+            if ((EntityType)Entity.GetEntityType() == EntityType.PC) {
+                var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
+                                                                       Entity.Status.Job,
+                                                                       Entity.Status.IsMale ? 1 : 0,
+                                                                       Entity.Status.Weapon,
+                                                                       Entity.Status.Shield
+                                                                      );
+
+                if (isSecondAttack) {
+                    if ((JobType)Entity.Status.Job is JobType.JT_NOVICE or JobType.JT_SUPERNOVICE or JobType.JT_SUPERNOVICE_B) {
+                        if (Entity.Status.IsMale) {
+                            AttackMotion = 5.85f;
+                        }
+                    } else if ((JobType)Entity.Status.Job is JobType.JT_ASSASSIN or JobType.JT_ASSASSIN_H
+                               or JobType.JT_ASSASSIN_B) {
+                        switch ((WeaponType)Entity.Status.Weapon) {
+                            case WeaponType.CATARRH:
+                            case WeaponType.SHORTSWORD_SHORTSWORD:
+                            case WeaponType.SWORD_SWORD:
+                            case WeaponType.AXE_AXE:
+                            case WeaponType.SHORTSWORD_SWORD:
+                            case WeaponType.SHORTSWORD_AXE:
+                            case WeaponType.SWORD_AXE:
+                                AttackMotion = 3.0f;
+                                break;
+                        }
+                    }
+                } else {
+                    AttackMotion = (JobType)Entity.Status.Job switch {
+                                       JobType.JT_THIEF => 5.75f,
+                                       JobType.JT_MERCHANT => 5.85f,
+                                       _ => AttackMotion
+                                   };
+                }
+
+                var usingArrow = WeaponTypeDatabase.IsWeaponUsingArrow(Entity.Status.Weapon);
+                if (usingArrow) {
+                    //TODO some additional checks see Pc.cpp line 847
+                    // Dividing by 25f to get rid of the mult we do when reading the act delays...
+                    AttackMotion += 8 / (MotionSpeed / 25f);
+                }
+            } else {
+                // todo figure this out
+                // for (var index = 0; index < CurrentACT.sounds.Length; index++) {
+                //     var sound = CurrentACT.sounds[index];
+                //     if (sound == "atk") {
+                //         AttackMotion = index;
+                //     }
+                // }
+            }
+        }
+
         private IEnumerator DelayCurrentMotion(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
-            yield return new WaitUntil(() => GameManager.Tick > currentMotion.delay);
+            yield return new WaitForSeconds(currentMotion.delay);
+            currentMotion.delay = 0f;
             OnMotionChanged(currentMotion, nextMotion, actionId);
         }
 

@@ -20,6 +20,7 @@ public class GameEntityBaseStatus {
 
     public int MoveSpeed;
     public int AttackSpeed;
+    public int AttackedSpeed;
 
     public int Weapon;
     public int Shield;

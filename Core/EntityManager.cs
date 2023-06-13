@@ -38,7 +38,7 @@ namespace UnityRO.Core {
             PCPool = new ObjectPool<CoreGameEntity>(() => Instantiate(PCPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
                 entity => entity.gameObject.SetActive(false),
                 Destroy, true, 200);
-            
+
             MobPool = new ObjectPool<CoreGameEntity>(() => Instantiate(MobPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
                 entity => entity.gameObject.SetActive(false),
                 Destroy, true, 200);
@@ -114,7 +114,7 @@ namespace UnityRO.Core {
             } else {
                 MobPool.Release(entity);
             }
-        } 
+        }
 
         public void UnlinkEntity(uint AID) {
             if (entityCache.ContainsKey(AID)) {
@@ -167,10 +167,10 @@ namespace UnityRO.Core {
 
             if (target == null) return;
 
-            target.SetAction(actionRequest, false);
-            target.SetAttackSpeed(actionRequest.targetSpeed);
+            target.SetAction(actionRequest, false, source.GetActionDelay(actionRequest) / 1000f);
+            target.SetAttackedSpeed(actionRequest.targetSpeed);
         }
-        
+
         private void OnEntityEmotion(ushort cmd, int size, ZC.EMOTION packet) {
             var entity = GetEntity(packet.GID);
             if (entity == null) {
@@ -179,7 +179,7 @@ namespace UnityRO.Core {
 
             entity.ShowEmotion(packet.type);
         }
-        
+
         private void OnSpriteChange(ushort cmd, int size, ZC.SPRITE_CHANGE2 packet) {
             var entity = GetEntity(packet.GID);
             if (entity == null) {
@@ -188,13 +188,13 @@ namespace UnityRO.Core {
 
             entity.ChangeLook((LookType)packet.type, packet.value, packet.value2);
         }
-        
+
         private void OnNpcSpriteChange(ushort cmd, int size, ZC.NPCSPRITE_CHANGE packet) {
             var entity = GetEntity(packet.GID);
             if (entity == null) {
                 return;
             }
-            
+
             entity.ChangeLook(LookType.LOOK_BASE, (short)packet.value, 0);
         }
 

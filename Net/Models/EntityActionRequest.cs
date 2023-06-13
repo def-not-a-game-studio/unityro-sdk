@@ -18,6 +18,11 @@
             or ActionRequestType.ATTACK_NOMOTION
             or ActionRequestType.ATTACK_MULTIPLE_NOMOTION;
     }
+
+    public override string ToString() {
+        return
+            $"AID {AID}\ntargetAID {targetAID}\nstartTime {startTime}\nsourceSpeed {sourceSpeed}\ntargetSpeed {targetSpeed}\ndamage {damage}\ncount {count}\naction {action}\nleftDamage {leftDamage}";
+    }
 }
 
 public enum ActionRequestType : byte {

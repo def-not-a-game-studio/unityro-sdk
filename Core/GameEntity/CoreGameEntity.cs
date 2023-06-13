@@ -31,10 +31,14 @@ namespace UnityRO.Core.GameEntity {
         public abstract void RequestMovement(Vector2 destination);
 
         public abstract void Vanish(VanishType vanishType);
-        public abstract void SetAction(EntityActionRequest actionRequest, bool isSource);
+        public abstract void SetAction(EntityActionRequest actionRequest, bool isSource, float delay = 0f);
+        public abstract float GetActionDelay(EntityActionRequest actionRequest);
         public abstract void SetAttackSpeed(ushort actionRequestSourceSpeed);
         public abstract void ShowEmotion(byte emotionType);
         public abstract void ChangeLook(LookType lookType, short packetValue, short packetValue2);
         public abstract void UpdateStatus(GameEntityBaseStatus getBaseStatus);
+        public abstract void RequestAction(CoreGameEntity target);
+        public abstract void TalkToNpc(CoreSpriteGameEntity target);
+        public abstract void SetAttackedSpeed(ushort actionRequestTargetSpeed);
     }
 }

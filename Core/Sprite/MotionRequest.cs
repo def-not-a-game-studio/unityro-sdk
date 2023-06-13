@@ -2,6 +2,6 @@
 
 public struct MotionRequest {
 	public SpriteMotion Motion;
-	public double delay;
+	public float delay;
 	public bool forced;
 }

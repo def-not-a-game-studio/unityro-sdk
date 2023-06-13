@@ -27,9 +27,13 @@ namespace UnityRO.Net.Editor {
             foreach (var keypair in _networkPackets) {
                 GUI.contentColor = keypair.Value ? defaultColor : Color.yellow;
                 if (keypair.Key is InPacket In) {
-                    GUILayout.Button($"<< {In.Header}");
+                    if (GUILayout.Button($"<< {In.Header}")) {
+                        Debug.Log(In);
+                    }
                 } else if (keypair.Key is OutPacket Out) {
-                    GUILayout.Button($">> {Out.Header}");
+                    if (GUILayout.Button($">> {Out.Header}")) {
+                        Debug.Log(Out);
+                    }
                 }
             }
 

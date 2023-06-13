@@ -70,7 +70,7 @@ namespace UnityRO.Core.Sprite {
 
         public override void ManagedUpdate() {
             if (SpriteData == null) return;
-            
+
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
@@ -80,22 +80,22 @@ namespace UnityRO.Core.Sprite {
             MeshRenderer.material.SetFloat("_Alpha", 1f);
             Motion = motion.Motion;
             var state = motion.Motion switch {
-                SpriteMotion.Idle => SpriteState.Idle,
-                SpriteMotion.Standby => SpriteState.Standby,
-                SpriteMotion.Walk => SpriteState.Walking,
-                SpriteMotion.Attack => SpriteState.Attack,
-                SpriteMotion.Attack1 => SpriteState.Attack,
-                SpriteMotion.Attack2 => SpriteState.Attack,
-                SpriteMotion.Attack3 => SpriteState.Attack,
-                SpriteMotion.Dead => SpriteState.Dead,
-                SpriteMotion.Hit => SpriteState.Hit,
-                SpriteMotion.Casting => SpriteState.Casting,
-                SpriteMotion.PickUp => SpriteState.PickUp,
-                SpriteMotion.Freeze1 => SpriteState.Frozen,
-                SpriteMotion.Freeze2 => SpriteState.Frozen,
-                SpriteMotion.Sit => SpriteState.Sit,
-                _ => SpriteState.Idle
-            };
+                            SpriteMotion.Idle => SpriteState.Idle,
+                            SpriteMotion.Standby => SpriteState.Standby,
+                            SpriteMotion.Walk => SpriteState.Walking,
+                            SpriteMotion.Attack => SpriteState.Attack,
+                            SpriteMotion.Attack1 => SpriteState.Attack,
+                            SpriteMotion.Attack2 => SpriteState.Attack,
+                            SpriteMotion.Attack3 => SpriteState.Attack,
+                            SpriteMotion.Dead => SpriteState.Dead,
+                            SpriteMotion.Hit => SpriteState.Hit,
+                            SpriteMotion.Casting => SpriteState.Casting,
+                            SpriteMotion.PickUp => SpriteState.PickUp,
+                            SpriteMotion.Freeze1 => SpriteState.Frozen,
+                            SpriteMotion.Freeze2 => SpriteState.Frozen,
+                            SpriteMotion.Sit => SpriteState.Sit,
+                            _ => SpriteState.Idle
+                        };
 
             if (state == State && !motion.forced) {
                 return;
@@ -103,11 +103,11 @@ namespace UnityRO.Core.Sprite {
 
             if (motion.Motion == SpriteMotion.Attack) {
                 var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
-                    Entity.Status.Job,
-                    Entity.Status.IsMale ? 1 : 0,
-                    Entity.Status.Weapon,
-                    Entity.Status.Shield
-                );
+                                                                       Entity.Status.Job,
+                                                                       Entity.Status.IsMale ? 1 : 0,
+                                                                       Entity.Status.Weapon,
+                                                                       Entity.Status.Shield
+                                                                      );
                 var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
                 motion.Motion = attackMotion;
             }
@@ -132,10 +132,10 @@ namespace UnityRO.Core.Sprite {
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
-                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                _ => throw new ArgumentOutOfRangeException()
-            };
+                              ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+                              ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+                              _ => throw new ArgumentOutOfRangeException()
+                          };
 
             if (palette != null) {
                 MeshRenderer.material.SetTexture(PaletteTexProp, palette);
@@ -147,7 +147,7 @@ namespace UnityRO.Core.Sprite {
             MeshFilter = GetComponent<MeshFilter>();
             MeshCollider = GetComponent<MeshCollider>();
             Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
-            
+
             if (SpriteData == null) return;
 
             Sprites = SpriteData.GetSprites();
@@ -240,6 +240,7 @@ namespace UnityRO.Core.Sprite {
                 foreach (var child in Children) {
                     child.SetAlpha(currentAlpha);
                 }
+
                 yield return null;
             }
         }
@@ -266,5 +267,8 @@ namespace UnityRO.Core.Sprite {
         public void OnAnimationFinished() {
             // do nothing
         }
+
+        public float GetAttackDelay() => FramePaceCalculator.GetAttackDelay();
+        public float GetDelay() => FramePaceCalculator.GetDelay();
     }
 }

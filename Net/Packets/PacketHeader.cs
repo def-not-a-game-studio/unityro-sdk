@@ -214,6 +214,8 @@
     ZC_USE_SKILL = 0x9cb,
     ZC_NOTIFY_EFFECT = 0x19b,
     ZC_NPC_CHAT = 0x2c1,
+    ZC_STATE_CHANGE3 = 0x229,
+    ZC_SHOW_IMAGE2 = 0x1b3,
     #endregion
 
     #region SC
@@ -440,7 +442,6 @@
     //CZ_REQ_CHANGECART = 0x1af,
     //ZC_SHOWDIGIT = 0x1b1,
     //CZ_REQ_OPENSTORE2 = 0x1b2,
-    //ZC_SHOW_IMAGE2 = 0x1b3,
     //ZC_CHANGE_GUILD = 0x1b4,
     //SC_BILLING_INFO = 0x1b5,
     //ZC_GUILD_INFO2 = 0x1b6,
@@ -551,7 +552,6 @@
     //ZC_TAEKWON_RANK = 0x226,
     //ZC_GAME_GUARD = 0x227,
     //CZ_ACK_GAME_GUARD = 0x228,
-    //ZC_STATE_CHANGE3 = 0x229,
     //ZC_NOTIFY_STANDENTRY3 = 0x22a,
     //ZC_NOTIFY_NEWENTRY3 = 0x22b,
     //ZC_NOTIFY_MOVEENTRY3 = 0x22c,
