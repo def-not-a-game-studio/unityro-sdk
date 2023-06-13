@@ -46,7 +46,7 @@ namespace UnityRO.Core.Sprite {
             if (FixedActionIndex >= 0) {
                 return FixedActionIndex;
             }
-            
+
             var cameraDirection = (int)CharacterCamera.Direction;
             var entityDirection = (int)Entity.Direction + 8;
 
@@ -100,7 +100,7 @@ namespace UnityRO.Core.Sprite {
             }
 
             if (CurrentMotion.Motion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
-                var delayTime = AttackMotion * MotionSpeed;
+                var delayTime = AttackMotion * GetMotionSpeed();
                 if (delayTime < 0) {
                     delayTime = 0;
                 }
@@ -156,11 +156,11 @@ namespace UnityRO.Core.Sprite {
             AttackMotion = 6f;
             if ((EntityType)Entity.GetEntityType() == EntityType.PC) {
                 var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
-                                                                       Entity.Status.Job,
-                                                                       Entity.Status.IsMale ? 1 : 0,
-                                                                       Entity.Status.Weapon,
-                                                                       Entity.Status.Shield
-                                                                      );
+                    Entity.Status.Job,
+                    Entity.Status.IsMale ? 1 : 0,
+                    Entity.Status.Weapon,
+                    Entity.Status.Shield
+                );
 
                 if (isSecondAttack) {
                     if ((JobType)Entity.Status.Job is JobType.JT_NOVICE or JobType.JT_SUPERNOVICE or JobType.JT_SUPERNOVICE_B) {

@@ -162,13 +162,14 @@ namespace UnityRO.Core {
                 source.LookTo(target.gameObject.transform.position);
             }
 
-            source.SetAction(actionRequest, true);
             source.SetAttackSpeed(actionRequest.sourceSpeed);
+            source.SetAction(actionRequest, true);
 
             if (target == null) return;
 
-            target.SetAction(actionRequest, false, source.GetActionDelay(actionRequest) / 1000f);
+            var delay = (int)source.GetActionDelay(actionRequest);
             target.SetAttackedSpeed(actionRequest.targetSpeed);
+            target.SetAction(actionRequest, false, delay / 1000f);
         }
 
         private void OnEntityEmotion(ushort cmd, int size, ZC.EMOTION packet) {
