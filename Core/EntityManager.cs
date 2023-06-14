@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityRO.Core.Effects;
 using UnityRO.Core.GameEntity;
 using UnityRO.Net;
 
@@ -10,9 +11,11 @@ namespace UnityRO.Core {
         [SerializeField] private Transform EntitiesParent;
         [SerializeField] private CoreGameEntity PCPrefab;
         [SerializeField] private CoreGameEntity MobPrefab;
+        [SerializeField] private FloatingText FloatingTextPrefab;
 
         private ObjectPool<CoreGameEntity> PCPool;
         private ObjectPool<CoreGameEntity> MobPool;
+        private ObjectPool<FloatingText> FloatingTextPool;
 
         private Dictionary<uint, CoreGameEntity> entityCache = new();
 
@@ -41,6 +44,15 @@ namespace UnityRO.Core {
 
             MobPool = new ObjectPool<CoreGameEntity>(() => Instantiate(MobPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
                 entity => entity.gameObject.SetActive(false),
+                Destroy, true, 200);
+
+            FloatingTextPool = new ObjectPool<FloatingText>(
+                () => Instantiate(FloatingTextPrefab),
+                obj => obj.gameObject.SetActive(true),
+                obj => {
+                    obj.transform.SetParent(null);
+                    obj.gameObject.SetActive(false);
+                },
                 Destroy, true, 200);
         }
 
@@ -148,28 +160,62 @@ namespace UnityRO.Core {
 
         private void OnEntityAction(EntityActionRequest actionRequest) {
             var source = GetEntity(actionRequest.AID);
-            var target = actionRequest.action is not (ActionRequestType.SIT or ActionRequestType.STAND) ? GetEntity(actionRequest.targetAID) : null;
+            var destination = actionRequest.action is not (ActionRequestType.SIT or ActionRequestType.STAND) ? GetEntity(actionRequest.targetAID) : null;
+            var target = actionRequest.damage > 0 ? destination : source;
 
             if (actionRequest.AID == SessionManager.CurrentSession.AccountID ||
                 actionRequest.AID == SessionManager.CurrentSession.Entity.GetEntityGID()) {
                 source = SessionManager.CurrentSession.Entity as CoreGameEntity;
             } else if (actionRequest.targetAID == SessionManager.CurrentSession.AccountID ||
                        actionRequest.targetAID == SessionManager.CurrentSession.Entity.GetEntityGID()) {
-                target = SessionManager.CurrentSession.Entity as CoreGameEntity;
-            }
-
-            if (actionRequest.IsAttackAction() && target != null) {
-                source.LookTo(target.gameObject.transform.position);
+                destination = SessionManager.CurrentSession.Entity as CoreGameEntity;
             }
 
             source.SetAttackSpeed(actionRequest.sourceSpeed);
             source.SetAction(actionRequest, true);
 
-            if (target == null) return;
+            if (actionRequest.IsAttackAction() && destination != null) {
+                FloatingTextPool.Get(out var floatingText);
+                floatingText.transform.SetParent(target.transform, false);
+                switch (actionRequest.action) {
+                    case ActionRequestType.ATTACK_MULTIPLE_NOMOTION:
+                    case ActionRequestType.ATTACK:
+                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        //target.Damage(pkt.damage, GameManager.Tick + pkt.sourceSpeed);
+                        break;
 
-            var delay = (int)source.GetActionDelay(actionRequest);
-            target.SetAttackedSpeed(actionRequest.targetSpeed);
-            target.SetAction(actionRequest, false, delay / 1000f);
+                    // double attack
+                    case ActionRequestType.ATTACK_MULTIPLE:
+                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        // Display combo only if entity is mob and the attack don't miss
+                        // if (dstEntity.Type == EntityType.MOB && pkt.damage > 0) {
+                        //     dstEntity.Damage(pkt.damage / 2, GameManager.Tick + pkt.sourceSpeed * 1, DamageType.COMBO);
+                        //     dstEntity.Damage(pkt.damage, GameManager.Tick + pkt.sourceSpeed * 2, DamageType.COMBO | DamageType.COMBO_FINAL);
+                        // }
+
+                        // target.Damage(pkt.damage / 2, GameManager.Tick + pkt.sourceSpeed * 1);
+                        // target.Damage(pkt.damage / 2, GameManager.Tick + pkt.sourceSpeed * 2);
+                        break;
+
+                    // TODO: critical damage
+                    case ActionRequestType.ATTACK_CRITICAL:
+                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        // target.Damage(pkt.damage, GameManager.Tick + pkt.sourceSpeed);
+                        break;
+
+                    // TODO: lucky miss
+                    case ActionRequestType.ATTACK_LUCKY:
+                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        // target.Damage(0, GameManager.Tick + pkt.sourceSpeed);
+                        break;
+                }
+
+                source.LookTo(destination.gameObject.transform.position);
+
+                var delay = (int)source.GetActionDelay(actionRequest);
+                destination.SetAttackedSpeed(actionRequest.targetSpeed);
+                destination.SetAction(actionRequest, false, 0f);
+            }
         }
 
         private void OnEntityEmotion(ushort cmd, int size, ZC.EMOTION packet) {

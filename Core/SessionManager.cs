@@ -19,6 +19,7 @@ namespace UnityRO.Net {
 
         private void Start() {
             NetworkClient.HookPacket<ZC.NPCACK_MAPMOVE>(ZC.NPCACK_MAPMOVE.HEADER, OnEntityMoved);
+            //NetworkClient.HookPacket<ZC.PAR_CHANGE>(ZC.NPCACK_MAPMOVE.HEADER, OnParamChanged);
         }
 
         private void OnEnable() {
@@ -59,6 +60,7 @@ namespace UnityRO.Net {
             CurrentScene = currentScene;
         }
 
+        #region Session Entity Packets
         private async void OnEntityMoved(ushort cmd, int size, ZC.NPCACK_MAPMOVE pkt) {
             if (CurrentSession.CurrentMap != pkt.MapName) {
                 await SetCurrentMap(pkt.MapName);
@@ -72,7 +74,9 @@ namespace UnityRO.Net {
                 new CZ.NOTIFY_ACTORINIT().Send();
             }
         }
-
+        #endregion
+        
+        #region Scene Extension
         private Task<bool> LoadScene(string sceneName, LoadSceneMode mode) {
             var t = new TaskCompletionSource<bool>();
 
@@ -88,5 +92,6 @@ namespace UnityRO.Net {
 
             return t.Task;
         }
+        #endregion
     }
 }
