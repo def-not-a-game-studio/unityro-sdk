@@ -212,7 +212,7 @@ namespace UnityRO.Core {
 
                 source.LookTo(destination.gameObject.transform.position);
 
-                var delay = GameManager.Tick + source.GetActionDelay(actionRequest);
+                var delay = GameManager.Tick + (long)source.GetActionDelay(actionRequest);
                 destination.SetAttackedSpeed(actionRequest.targetSpeed);
                 destination.SetAction(actionRequest, false, delay);
             }

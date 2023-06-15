@@ -14,7 +14,6 @@ namespace UnityRO.Core.Sprite {
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
         [field: SerializeField] public ViewerType ViewerType { get; private set; }
         [field: SerializeField] public SpriteState State { get; private set; }
-        [field: SerializeField] public SpriteMotion Motion { get; private set; }
 
         [SerializeField] private SpriteData SpriteData;
         [SerializeField] private Texture2D Atlas;
@@ -31,10 +30,12 @@ namespace UnityRO.Core.Sprite {
 
         public UnityEngine.Sprite[] Sprites;
 
-        private int ActionId;
         private ACT.Action CurrentAction;
         private int CurrentFrameIndex;
         private FramePaceCalculator FramePaceCalculator;
+
+        private MotionRequest CurrentMotionRequest;
+        private MotionRequest? NextMotionRequest;
 
         private static readonly int OffsetProp = Shader.PropertyToID("_Offset");
         private static readonly int UsePaletteProp = Shader.PropertyToID("_UsePalette");
@@ -70,16 +71,31 @@ namespace UnityRO.Core.Sprite {
 
         public override void ManagedUpdate() {
             if (SpriteData == null) return;
-            FramePaceCalculator.Update();
+
+            UpdateFrames();
+            CheckMotionQueue();
+        }
+        private void UpdateFrames() {
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
         }
+        private void CheckMotionQueue() {
+            if (CurrentMotionRequest.startTime <= 0 || GameManager.Tick <= CurrentMotionRequest.startTime)
+                return;
+            CurrentMotionRequest.startTime = 0;
+            ChangeMotion(CurrentMotionRequest, NextMotionRequest);
+        }
 
-        public void ChangeMotion(MotionRequest motion, MotionRequest? nextMotion = null) {
+        public void ChangeMotion(MotionRequest motionRequest, MotionRequest? nextMotionRequest = null) {
+            if (motionRequest.startTime > GameManager.Tick) {
+                CurrentMotionRequest = motionRequest;
+                NextMotionRequest = nextMotionRequest;
+                return;
+            }
+            
             MeshRenderer.material.SetFloat("_Alpha", 1f);
-            Motion = motion.Motion;
-            var state = motion.Motion switch {
+            var state = motionRequest.Motion switch {
                             SpriteMotion.Idle => SpriteState.Idle,
                             SpriteMotion.Standby => SpriteState.Standby,
                             SpriteMotion.Walk => SpriteState.Walking,
@@ -97,11 +113,11 @@ namespace UnityRO.Core.Sprite {
                             _ => SpriteState.Idle
                         };
 
-            if (state == State && !motion.forced) {
+            if (state == State && !motionRequest.forced) {
                 return;
             }
 
-            if (motion.Motion == SpriteMotion.Attack) {
+            if (motionRequest.Motion == SpriteMotion.Attack) {
                 var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
                                                                        Entity.Status.Job,
                                                                        Entity.Status.IsMale ? 1 : 0,
@@ -109,7 +125,7 @@ namespace UnityRO.Core.Sprite {
                                                                        Entity.Status.Shield
                                                                       );
                 var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
-                motion.Motion = attackMotion;
+                motionRequest.Motion = attackMotion;
             }
 
             if (state == SpriteState.Dead) {
@@ -119,14 +135,12 @@ namespace UnityRO.Core.Sprite {
             }
 
             State = state;
-            ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, motion.Motion);
             CurrentFrameIndex = 0;
 
-            motion.actionId = ActionId;
-            FramePaceCalculator.OnMotionChanged(motion, nextMotion, ActionId);
+            FramePaceCalculator.OnMotionChanged(motionRequest, nextMotionRequest);
 
             foreach (var child in Children) {
-                child.ChangeMotion(motion, nextMotion);
+                child.ChangeMotion(motionRequest, nextMotionRequest);
             }
         }
 

@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityRO.Core.Sprite;
 
-namespace _3rdparty.unityro_core.Editor {
+namespace UnityRO.Core.Editor {
     [CustomEditor(typeof(SpriteViewer))]
     public class EntityViewerEditor : UnityEditor.Editor {
         public override void OnInspectorGUI() {
@@ -15,7 +15,7 @@ namespace _3rdparty.unityro_core.Editor {
 
             if (GUILayout.Button("Delay Hit > Standby")) {
                 component.ChangeMotion(
-                    new MotionRequest { Motion = SpriteMotion.Hit, forced = true, startTime = 0.693f },
+                    new MotionRequest { Motion = SpriteMotion.Hit, forced = true, startTime = GameManager.Tick + 693 },
                     new MotionRequest { Motion = SpriteMotion.Standby }
                 );
             }

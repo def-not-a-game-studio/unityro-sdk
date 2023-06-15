@@ -5,15 +5,11 @@ using System.Globalization;
 using System.Linq;
 using UnityEngine;
 
-namespace ROIO.Loaders
-{
-    public class ActionLoader
-    {
-        public static ACT Load(MemoryStreamReader data)
-        {
+namespace ROIO.Loaders {
+    public class ActionLoader {
+        public static ACT Load(MemoryStreamReader data) {
             string header = data.ReadBinaryString(2);
-            if (!header.Equals(ACT.Header))
-            {
+            if (!header.Equals(ACT.Header)) {
                 throw new Exception("ActionLoader.Load: Header \"" + header + "\" is not \"AC\"");
             }
 
@@ -28,22 +24,18 @@ namespace ROIO.Loaders
 
             ReadActions(act, data);
 
-            if (dversion >= 2.1)
-            {
+            if (dversion >= 2.1) {
                 //sounds
                 var count = data.ReadInt();
                 act.sounds = new string[count];
 
-                for (int i = 0; i < count; i++)
-                {
+                for (int i = 0; i < count; i++) {
                     act.sounds[i] = data.ReadBinaryString(40);
                 }
 
                 //delay
-                if (dversion >= 2.2)
-                {
-                    for (int i = 0; i < act.actions.Length; i++)
-                    {
+                if (dversion >= 2.2) {
+                    for (int i = 0; i < act.actions.Length; i++) {
                         act.actions[i].delay = data.ReadFloat() * 25;
                     }
                 }
@@ -52,29 +44,24 @@ namespace ROIO.Loaders
             return act;
         }
 
-        private static void ReadActions(ACT act, MemoryStreamReader data)
-        {
+        private static void ReadActions(ACT act, MemoryStreamReader data) {
             var count = data.ReadUShort();
             data.Seek(10, System.IO.SeekOrigin.Current);
 
             act.actions = new ACT.Action[count];
-            for (int i = 0; i < count; i++)
-            {
-                act.actions[i] = new ACT.Action()
-                {
+            for (int i = 0; i < count; i++) {
+                act.actions[i] = new ACT.Action() {
                     frames = ReadMotions(act, data),
                     delay = 150f
                 };
             }
         }
 
-        private static ACT.Frame[] ReadMotions(ACT act, MemoryStreamReader data)
-        {
+        private static ACT.Frame[] ReadMotions(ACT act, MemoryStreamReader data) {
             var count = data.ReadUInt();
             var motions = new ACT.Frame[count];
 
-            for (int i = 0; i < count; i++)
-            {
+            for (int i = 0; i < count; i++) {
                 data.Seek(32, System.IO.SeekOrigin.Current);
                 motions[i] = ReadLayers(act, data);
             }
@@ -82,16 +69,13 @@ namespace ROIO.Loaders
             return motions;
         }
 
-        private static ACT.Frame ReadLayers(ACT act, MemoryStreamReader data)
-        {
+        private static ACT.Frame ReadLayers(ACT act, MemoryStreamReader data) {
             var count = data.ReadUInt();
             var layers = new ACT.Layer[count];
             var version = double.Parse(act.version, CultureInfo.InvariantCulture);
 
-            for (int i = 0; i < count; i++)
-            {
-                var layer = layers[i] = new ACT.Layer()
-                {
+            for (int i = 0; i < count; i++) {
+                var layer = layers[i] = new ACT.Layer() {
                     pos = new Vector2Int(data.ReadInt(), data.ReadInt()),
                     index = data.ReadInt(),
                     isMirror = data.ReadInt() != 0,
@@ -100,8 +84,7 @@ namespace ROIO.Loaders
                 };
 
                 // RoRebuild checks if only if it's greater
-                if (version > 2.0)
-                {
+                if (version > 2.0) {
                     layer.color[0] = data.ReadByte() / 255f; //r
                     layer.color[1] = data.ReadByte() / 255f; //g
                     layer.color[2] = data.ReadByte() / 255f; //b
@@ -113,8 +96,7 @@ namespace ROIO.Loaders
                     layer.angle = data.ReadInt();
                     layer.sprType = data.ReadInt();
 
-                    if (version >= 2.5)
-                    {
+                    if (version >= 2.5) {
                         layer.width = data.ReadInt();
                         layer.height = data.ReadInt();
                     }
@@ -124,19 +106,16 @@ namespace ROIO.Loaders
             var soundId = version >= 2.0 ? data.ReadInt() : -1;
             Vector2Int[] pos = null;
 
-            if (version >= 2.3)
-            {
+            if (version >= 2.3) {
                 pos = new Vector2Int[data.ReadInt()];
-                for (int i = 0; i < pos.Length; i++)
-                {
+                for (int i = 0; i < pos.Length; i++) {
                     data.Seek(4, System.IO.SeekOrigin.Current);
                     pos[i] = new Vector2Int(data.ReadInt(), data.ReadInt());
                     data.Seek(4, System.IO.SeekOrigin.Current);
                 }
             }
 
-            return new ACT.Frame()
-            {
+            return new ACT.Frame() {
                 layers = layers.Where(t => t.index >= 0).ToArray(),
                 soundId = soundId,
                 pos = pos

@@ -31,7 +31,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract void RequestMovement(Vector2 destination);
 
         public abstract void Vanish(VanishType vanishType);
-        public abstract void SetAction(EntityActionRequest actionRequest, bool isSource, float delay = 0f);
+        public abstract void SetAction(EntityActionRequest actionRequest, bool isSource, long delay = 0);
         public abstract float GetActionDelay(EntityActionRequest actionRequest);
         public abstract void SetAttackSpeed(ushort actionRequestSourceSpeed);
         public abstract void ShowEmotion(byte emotionType);
