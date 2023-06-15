@@ -15,11 +15,13 @@ namespace UnityRO.Core.Sprite {
         private ISpriteViewer SpriteViewer;
         private CharacterCamera CharacterCamera;
 
+        private SpriteMotion CurrentSpriteMotion;
+
         private int CurrentFrame = 0;
         private long AnimationStart = GameManager.Tick;
         private float CurrentDelay = 0f;
-        private MotionRequest CurrentMotion;
-        private MotionRequest? NextMotion;
+        private MotionRequest CurrentMotionRequest;
+        private MotionRequest? NextMotionRequest;
         private ACT CurrentACT;
         private ACT.Action CurrentAction;
         private int ActionId;
@@ -27,8 +29,6 @@ namespace UnityRO.Core.Sprite {
 
         private float AttackMotion = 6f;
         private float MotionSpeed = 1f;
-
-        private Coroutine MotionQueueCoroutine;
 
         public FramePaceCalculator(
             CoreSpriteGameEntity entity,
@@ -40,6 +40,13 @@ namespace UnityRO.Core.Sprite {
             SpriteViewer = viewer;
             CurrentACT = currentACT;
             CharacterCamera = characterCamera;
+        }
+
+        public void Update() {
+            if (CurrentMotionRequest.startTime > 0 && GameManager.Tick > CurrentMotionRequest.startTime) {
+                CurrentMotionRequest.startTime = 0;
+                OnMotionChanged(CurrentMotionRequest, NextMotionRequest, CurrentMotionRequest.actionId);
+            }
         }
 
         public int GetActionIndex() {
@@ -56,7 +63,7 @@ namespace UnityRO.Core.Sprite {
         public int GetCurrentFrame() {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
 
-            var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentMotion.Motion is SpriteMotion.Idle or SpriteMotion.Sit);
+            var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentSpriteMotion is SpriteMotion.Idle or SpriteMotion.Sit);
             var frameCount = CurrentAction.frames.Length;
             var deltaSinceMotionStart = (GameManager.Tick - AnimationStart);
 
@@ -68,7 +75,7 @@ namespace UnityRO.Core.Sprite {
 
             CurrentDelay = GetDelay();
             if (deltaSinceMotionStart >= CurrentDelay) {
-                PCLog($"{CurrentMotion.Motion} Frame delay passed {deltaSinceMotionStart} {CurrentDelay}, advancing frame");
+                PCLog($"{CurrentSpriteMotion} Frame delay passed {deltaSinceMotionStart} {CurrentDelay}, advancing frame");
                 AnimationStart = GameManager.Tick;
 
                 if (CurrentFrame < maxFrame && !isIdle) {
@@ -77,16 +84,16 @@ namespace UnityRO.Core.Sprite {
             }
 
             if (CurrentFrame >= maxFrame) {
-                if (AnimationHelper.IsLoopingMotion(CurrentMotion.Motion) && SpriteViewer.GetViewerType() != ViewerType.Emotion) {
-                    PCLog($"{CurrentMotion.Motion} Animation ended, looping");
+                if (AnimationHelper.IsLoopingMotion(CurrentSpriteMotion) && SpriteViewer.GetViewerType() != ViewerType.Emotion) {
+                    PCLog($"{CurrentSpriteMotion} Animation ended, looping");
                     CurrentFrame = 0;
-                } else if (NextMotion.HasValue && SpriteViewer.GetViewerType() == ViewerType.Body) {
-                    PCLog($"{CurrentMotion.Motion} Animation ended, next is available, advancing");
+                } else if (NextMotionRequest.HasValue && SpriteViewer.GetViewerType() == ViewerType.Body) {
+                    PCLog($"{CurrentSpriteMotion} Animation ended, next is available, advancing");
                     // Since body is the main component, it's the only one "allowed" to ask for the next motion
-                    Entity.ChangeMotion(NextMotion.Value);
+                    Entity.ChangeMotion(NextMotionRequest.Value);
                 } else {
                     SpriteViewer.OnAnimationFinished();
-                    PCLog($"{CurrentMotion.Motion} Animation ended, stopping");
+                    PCLog($"{CurrentSpriteMotion} Animation ended, stopping");
                     CurrentFrame = maxFrame;
                 }
             }
@@ -95,18 +102,18 @@ namespace UnityRO.Core.Sprite {
         }
 
         public float GetDelay() {
-            if (SpriteViewer.GetViewerType() == ViewerType.Body && CurrentMotion.Motion == SpriteMotion.Walk) {
+            if (SpriteViewer.GetViewerType() == ViewerType.Body && CurrentSpriteMotion == SpriteMotion.Walk) {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
 
-            if (CurrentMotion.Motion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
+            if (CurrentSpriteMotion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
                 var delayTime = AttackMotion * GetMotionSpeed();
                 if (delayTime < 0) {
                     delayTime = 0;
                 }
 
                 return delayTime / CurrentAction.frames.Length;
-            } else if (CurrentMotion.Motion is SpriteMotion.Hit) {
+            } else if (CurrentSpriteMotion is SpriteMotion.Hit) {
                 CurrentAction = CurrentACT.actions[GetActionIndex()];
                 var multiplier = Entity.Status.AttackedSpeed / (float)AVERAGE_ATTACKED_SPEED;
                 var motionSpeed = CurrentAction.delay * multiplier;
@@ -125,30 +132,24 @@ namespace UnityRO.Core.Sprite {
             return delayTime;
         }
 
-        public void OnMotionChanged(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
-            if (MotionQueueCoroutine != null) {
-                Entity.StopCoroutine(MotionQueueCoroutine);
-                MotionQueueCoroutine = null;
-            }
-
-            if (currentMotion.delay > 0f) {
-                MotionQueueCoroutine = Entity.StartCoroutine(DelayCurrentMotion(currentMotion, nextMotion, actionId));
+        public void OnMotionChanged(MotionRequest motionRequest, MotionRequest? nextMotionRequest, int actionId) {
+            if (motionRequest.startTime > GameManager.Tick) {
                 return;
             }
 
-            if (CurrentMotion.Motion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
+            if (CurrentSpriteMotion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
                 ProcessAttackMotion();
             }
 
             AnimationStart = GameManager.Tick;
             CurrentFrame = 0;
-            CurrentMotion = currentMotion;
-            NextMotion = nextMotion;
+            CurrentSpriteMotion = motionRequest.Motion;
+            NextMotionRequest = nextMotionRequest;
             ActionId = actionId;
 
             CurrentAction = CurrentACT.actions[GetActionIndex()];
             CurrentDelay = GetDelay();
-            PCLog($"{SpriteViewer.GetViewerType()} Current delay for {CurrentMotion.Motion} is {CurrentDelay}");
+            PCLog($"{SpriteViewer.GetViewerType()} Current delay for {CurrentSpriteMotion} is {CurrentDelay}");
         }
 
         private void ProcessAttackMotion() {
@@ -207,8 +208,8 @@ namespace UnityRO.Core.Sprite {
         }
 
         private IEnumerator DelayCurrentMotion(MotionRequest currentMotion, MotionRequest? nextMotion, int actionId) {
-            yield return new WaitForSeconds(currentMotion.delay);
-            currentMotion.delay = 0f;
+            yield return new WaitForSeconds(currentMotion.startTime);
+            currentMotion.startTime = 0f;
             OnMotionChanged(currentMotion, nextMotion, actionId);
         }
 

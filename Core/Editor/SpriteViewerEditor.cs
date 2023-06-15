@@ -15,7 +15,7 @@ namespace _3rdparty.unityro_core.Editor {
 
             if (GUILayout.Button("Delay Hit > Standby")) {
                 component.ChangeMotion(
-                    new MotionRequest { Motion = SpriteMotion.Hit, forced = true, delay = 0.693f },
+                    new MotionRequest { Motion = SpriteMotion.Hit, forced = true, startTime = 0.693f },
                     new MotionRequest { Motion = SpriteMotion.Standby }
                 );
             }

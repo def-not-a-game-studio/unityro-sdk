@@ -70,7 +70,7 @@ namespace UnityRO.Core.Sprite {
 
         public override void ManagedUpdate() {
             if (SpriteData == null) return;
-
+            FramePaceCalculator.Update();
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
@@ -122,6 +122,7 @@ namespace UnityRO.Core.Sprite {
             ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, motion.Motion);
             CurrentFrameIndex = 0;
 
+            motion.actionId = ActionId;
             FramePaceCalculator.OnMotionChanged(motion, nextMotion, ActionId);
 
             foreach (var child in Children) {
