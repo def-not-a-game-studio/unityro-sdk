@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,8 +16,8 @@ namespace UnityRO.Core {
     }
 
     public static class UpdateManager {
-
         static HashSet<ManagedMonoBehaviour> _updateables = new();
+        static ManagedMonoBehaviour[] _copyUpdateables;
         static UpdateManagerInnerMonoBehaviour _innerMonoBehaviour;
 
         static UpdateManager() {
@@ -30,11 +31,17 @@ namespace UnityRO.Core {
         }
 
         public static void Add(ManagedMonoBehaviour managedMonoBehaviour) {
-            _updateables.Add(managedMonoBehaviour);
+            lock (_updateables) {
+                _updateables.Add(managedMonoBehaviour);
+                Array.Resize(ref _copyUpdateables, _updateables.Count);
+            }
         }
 
         public static void Remove(ManagedMonoBehaviour managedMonoBehaviour) {
-            _updateables.Remove(managedMonoBehaviour);
+            lock (_updateables) {
+                _updateables.Remove(managedMonoBehaviour);
+                Array.Resize(ref _copyUpdateables, _updateables.Count);
+            }
         }
 
         class UpdateManagerInnerMonoBehaviour : MonoBehaviour {
@@ -43,8 +50,12 @@ namespace UnityRO.Core {
             }
 
             private void Update() {
-                foreach (var mover in _updateables) {
-                    mover.ManagedUpdate();
+                lock (_updateables) {
+                    _updateables.CopyTo(_copyUpdateables);
+                }
+
+                for (int i = 0; i < _copyUpdateables.Length; i++) {
+                    _copyUpdateables[i]?.ManagedUpdate();
                 }
             }
         }
