@@ -38,6 +38,10 @@ namespace UnityRO.Core {
         }
 
         class UpdateManagerInnerMonoBehaviour : MonoBehaviour {
+            private void Awake() {
+                DontDestroyOnLoad(this);
+            }
+
             private void Update() {
                 foreach (var mover in _updateables) {
                     mover.ManagedUpdate();
