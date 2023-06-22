@@ -65,14 +65,6 @@ namespace UnityRO.Net {
             if (CurrentSession.CurrentMap != pkt.MapName) {
                 await SetCurrentMap(pkt.MapName);
             }
-            
-            PathFinder = FindObjectOfType<PathFinder>();
-            var height = PathFinder?.GetCellHeight(pkt.PosX, pkt.PosY) ?? 0f;
-            var position = new Vector3(pkt.PosX, height, pkt.PosY);
-            if (CurrentSession.Entity is CoreGameEntity gameEntity) {
-                gameEntity.transform.position = position;
-                new CZ.NOTIFY_ACTORINIT().Send();
-            }
         }
         #endregion
         
