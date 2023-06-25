@@ -311,6 +311,21 @@ namespace Core.Path {
             return Direction.South;
         }
 
+        public static Vector3 GetOffsetForDirection(Direction dir) {
+            return dir switch {
+                Direction.South => new Vector3(0, 0, -1),
+                Direction.SouthWest => new Vector3(-1, 0, -1),
+                Direction.West => new Vector3(-1, 0, 0),
+                Direction.NorthWest => new Vector3(-1, 0, 1),
+                Direction.North => new Vector3(0, 0, 1),
+                Direction.NorthEast => new Vector3(1, 0, 1),
+                Direction.East => new Vector3(1, 0, 0),
+                Direction.SouthEast => new Vector3(1, 0, -1),
+                Direction.None => Vector3.zero,
+                _ => throw new ArgumentOutOfRangeException(nameof(dir), dir, null)
+            };
+        }
+
         public static bool IsDiagonal(Vector3 v1, Vector3 v2) {
             return IsDiagonal(GetDirectionForOffset(v1, v2));
         }

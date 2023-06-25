@@ -23,6 +23,8 @@ namespace UnityRO.Core {
         private SessionManager SessionManager;
 
         private void Awake() {
+            DontDestroyOnLoad(this);
+            
             NetworkClient = FindObjectOfType<NetworkClient>();
             SessionManager = FindObjectOfType<SessionManager>();
 

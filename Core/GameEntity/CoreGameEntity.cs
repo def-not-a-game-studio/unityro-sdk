@@ -9,7 +9,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract void LookTo(Vector3 position);
 
         public abstract void Init(GameEntityBaseStatus gameEntityBaseStatus);
-        public abstract void Spawn(GameEntityBaseStatus gameEntityBaseStatus, int[] PosDir, bool forceNorthDirection);
+        public abstract void Spawn(GameEntityBaseStatus status, int[] PosDir, bool forceNorthDirection);
 
         public abstract bool HasAuthority();
         public int GetEntityType() => (int)Status.EntityType;
@@ -33,12 +33,12 @@ namespace UnityRO.Core.GameEntity {
         public abstract void Vanish(VanishType vanishType);
         public abstract void SetAction(EntityActionRequest actionRequest, bool isSource, long delay = 0);
         public abstract float GetActionDelay(EntityActionRequest actionRequest);
-        public abstract void SetAttackSpeed(ushort actionRequestSourceSpeed);
+        public abstract void SetAttackSpeed(ushort attackSpeed);
         public abstract void ShowEmotion(byte emotionType);
         public abstract void ChangeLook(LookType lookType, short packetValue, short packetValue2);
-        public abstract void UpdateStatus(GameEntityBaseStatus getBaseStatus);
+        public abstract void UpdateStatus(GameEntityBaseStatus status);
         public abstract void RequestAction(CoreGameEntity target);
         public abstract void TalkToNpc(CoreSpriteGameEntity target);
-        public abstract void SetAttackedSpeed(ushort actionRequestTargetSpeed);
+        public abstract void SetAttackedSpeed(ushort attackedSpeed);
     }
 }
