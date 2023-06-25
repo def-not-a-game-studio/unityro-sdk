@@ -3,6 +3,7 @@ using UnityEngine;
 namespace UnityRO.Core.GameEntity {
     public abstract class CoreGameEntity : ManagedMonoBehaviour, INetworkEntity {
         public abstract GameEntityBaseStatus Status { get; }
+        public abstract EntityState State { get; }
 
         public abstract void ChangeMotion(MotionRequest request, MotionRequest? nextRequest = null);
         public abstract void ChangeDirection(Direction direction);
@@ -40,5 +41,6 @@ namespace UnityRO.Core.GameEntity {
         public abstract void RequestAction(CoreGameEntity target);
         public abstract void TalkToNpc(CoreSpriteGameEntity target);
         public abstract void SetAttackedSpeed(ushort attackedSpeed);
+        public abstract void SetState(EntityState state);
     }
 }

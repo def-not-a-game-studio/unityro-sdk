@@ -13,7 +13,7 @@ namespace UnityRO.Core.Sprite {
     public class SpriteEffectViewer : MonoBehaviour, ISpriteViewer {
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
         [field: SerializeField] public ViewerType ViewerType { get; private set; }
-        [field: SerializeField] public SpriteState State { get; private set; }
+        [field: SerializeField] public EntityState State { get; private set; }
         [field: SerializeField] public SpriteMotion Motion { get; private set; }
 
         [SerializeField] private SpriteData SpriteData;

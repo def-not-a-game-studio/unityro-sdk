@@ -13,7 +13,6 @@ namespace UnityRO.Core.Sprite {
     public class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer {
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
         [field: SerializeField] public ViewerType ViewerType { get; private set; }
-        [field: SerializeField] public SpriteState State { get; private set; }
 
         [SerializeField] private SpriteData SpriteData;
         [SerializeField] private Texture2D Atlas;
@@ -58,7 +57,6 @@ namespace UnityRO.Core.Sprite {
 
         private void Start() {
             InitializeRenderers();
-            ChangeMotion(new MotionRequest { Motion = SpriteMotion.Idle });
         }
 
         public void SetParent(SpriteViewer parent) {
@@ -95,27 +93,6 @@ namespace UnityRO.Core.Sprite {
             }
             
             MeshRenderer.material.SetFloat("_Alpha", 1f);
-            var state = motionRequest.Motion switch {
-                            SpriteMotion.Idle => SpriteState.Idle,
-                            SpriteMotion.Standby => SpriteState.Standby,
-                            SpriteMotion.Walk => SpriteState.Walking,
-                            SpriteMotion.Attack => SpriteState.Attack,
-                            SpriteMotion.Attack1 => SpriteState.Attack,
-                            SpriteMotion.Attack2 => SpriteState.Attack,
-                            SpriteMotion.Attack3 => SpriteState.Attack,
-                            SpriteMotion.Dead => SpriteState.Dead,
-                            SpriteMotion.Hit => SpriteState.Hit,
-                            SpriteMotion.Casting => SpriteState.Casting,
-                            SpriteMotion.PickUp => SpriteState.PickUp,
-                            SpriteMotion.Freeze1 => SpriteState.Frozen,
-                            SpriteMotion.Freeze2 => SpriteState.Frozen,
-                            SpriteMotion.Sit => SpriteState.Sit,
-                            _ => SpriteState.Idle
-                        };
-
-            if (state == State && !motionRequest.forced) {
-                return;
-            }
 
             if (motionRequest.Motion == SpriteMotion.Attack) {
                 var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
@@ -128,13 +105,12 @@ namespace UnityRO.Core.Sprite {
                 motionRequest.Motion = attackMotion;
             }
 
-            if (state == SpriteState.Dead) {
+            if (Entity.State == EntityState.Dead) {
                 MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", false);
             } else {
                 MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", true);
             }
-
-            State = state;
+            
             CurrentFrameIndex = 0;
 
             FramePaceCalculator.OnMotionChanged(motionRequest, nextMotionRequest);

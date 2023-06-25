@@ -40,22 +40,9 @@ namespace UnityRO.Core {
         }
 
         private void Start() {
-            PCPool = new ObjectPool<CoreGameEntity>(() => Instantiate(PCPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
-                entity => entity.gameObject.SetActive(false),
-                Destroy, true, 200);
-
-            MobPool = new ObjectPool<CoreGameEntity>(() => Instantiate(MobPrefab, EntitiesParent), entity => entity.gameObject.SetActive(true),
-                entity => entity.gameObject.SetActive(false),
-                Destroy, true, 200);
-
-            FloatingTextPool = new ObjectPool<FloatingText>(
-                () => Instantiate(FloatingTextPrefab),
-                obj => obj.gameObject.SetActive(true),
-                obj => {
-                    obj.transform.SetParent(null);
-                    obj.gameObject.SetActive(false);
-                },
-                Destroy, true, 200);
+            PCPool = CreateDefaultObjectPool(PCPrefab, EntitiesParent, 200);
+            MobPool = CreateDefaultObjectPool(MobPrefab, EntitiesParent, 200);
+            FloatingTextPool = CreateDefaultObjectPool(FloatingTextPrefab, null, 200);
         }
 
         private void OnDestroy() {
@@ -269,5 +256,16 @@ namespace UnityRO.Core {
                 Shield = (int)data.Shield
             };
         }
+        
+        private ObjectPool<T> CreateDefaultObjectPool<T>(T prefab, Transform parent, int defaultCapacity) where T : MonoBehaviour {
+            return new ObjectPool<T>(
+                createFunc: () => parent != null ? Instantiate(prefab) : Instantiate(prefab, parent),
+                actionOnGet: (it) => it.gameObject.SetActive(true),
+                actionOnRelease: (it) => it.gameObject.SetActive(false),
+                actionOnDestroy: Destroy,
+                collectionCheck: true,
+                defaultCapacity: defaultCapacity
+            );
+        } 
     }
 }
