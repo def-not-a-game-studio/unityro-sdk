@@ -24,7 +24,7 @@ namespace UnityRO.Core {
 
         private void Awake() {
             DontDestroyOnLoad(this);
-            
+
             NetworkClient = FindObjectOfType<NetworkClient>();
             SessionManager = FindObjectOfType<SessionManager>();
 
@@ -106,6 +106,7 @@ namespace UnityRO.Core {
             } else {
                 MobPool.Release(entity);
             }
+
             entityCache.Remove(AID);
         }
 
@@ -149,7 +150,9 @@ namespace UnityRO.Core {
 
         private void OnEntityAction(EntityActionRequest actionRequest) {
             var source = GetEntity(actionRequest.AID);
-            var destination = actionRequest.action is not (ActionRequestType.SIT or ActionRequestType.STAND) ? GetEntity(actionRequest.targetAID) : null;
+            var destination = actionRequest.action is not (ActionRequestType.SIT or ActionRequestType.STAND)
+                ? GetEntity(actionRequest.targetAID)
+                : null;
             var target = actionRequest.damage > 0 ? destination : source;
 
             if (actionRequest.AID == SessionManager.CurrentSession.AccountID ||
@@ -256,16 +259,16 @@ namespace UnityRO.Core {
                 Shield = (int)data.Shield
             };
         }
-        
+
         private ObjectPool<T> CreateDefaultObjectPool<T>(T prefab, Transform parent, int defaultCapacity) where T : MonoBehaviour {
             return new ObjectPool<T>(
-                createFunc: () => parent != null ? Instantiate(prefab) : Instantiate(prefab, parent),
+                createFunc: () => parent != null ? Instantiate(prefab, parent) : Instantiate(prefab),
                 actionOnGet: (it) => it.gameObject.SetActive(true),
                 actionOnRelease: (it) => it.gameObject.SetActive(false),
                 actionOnDestroy: Destroy,
                 collectionCheck: true,
                 defaultCapacity: defaultCapacity
             );
-        } 
+        }
     }
 }

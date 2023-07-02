@@ -50,7 +50,7 @@ namespace UnityRO.Core.Sprite {
             return (ActionId + (cameraDirection + entityDirection) % 8) % CurrentACT.actions.Length;
         }
 
-        public int GetCurrentFrame() {
+        public ACT.Frame GetCurrentFrame() {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
 
             var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentSpriteMotion is SpriteMotion.Idle or SpriteMotion.Sit);
@@ -80,14 +80,16 @@ namespace UnityRO.Core.Sprite {
                 } else { //might need to check if it's body to call the animation finished
                     SpriteViewer.OnAnimationFinished();
                     PCLog($"{CurrentSpriteMotion} Animation ended, stopping");
-                    CurrentFrame = maxFrame;
+                    CurrentFrame = maxFrame - 1;
                 }
             }
 
-            return CurrentFrame;
+            return CurrentAction.frames[CurrentFrame];
         }
 
         public float GetDelay() {
+            CurrentAction ??= CurrentACT.actions[GetActionIndex()];
+            
             if (SpriteViewer.GetViewerType() == ViewerType.Body && CurrentSpriteMotion == SpriteMotion.Walk) {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
@@ -124,7 +126,6 @@ namespace UnityRO.Core.Sprite {
             CurrentSpriteMotion = motionRequest.Motion;
             ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, CurrentSpriteMotion);
 
-            CurrentAction = CurrentACT.actions[GetActionIndex()];
             CurrentDelay = GetDelay();
             PCLog($"{SpriteViewer.GetViewerType()} Current delay for {CurrentSpriteMotion} is {CurrentDelay}");
         }
@@ -144,6 +145,7 @@ namespace UnityRO.Core.Sprite {
 
             return r;
         }
+
         private void ProcessAttackMotion() {
             MotionSpeed = GetMotionSpeed();
             AttackMotion = GetAttackMotion();
@@ -176,10 +178,10 @@ namespace UnityRO.Core.Sprite {
                 }
             } else {
                 AttackMotion = (JobType)Entity.Status.Job switch {
-                                   JobType.JT_THIEF => 5.75f,
-                                   JobType.JT_MERCHANT => 5.85f,
-                                   _ => AttackMotion
-                               };
+                    JobType.JT_THIEF => 5.75f,
+                    JobType.JT_MERCHANT => 5.85f,
+                    _ => AttackMotion
+                };
             }
 
             var usingArrow = WeaponTypeDatabase.IsWeaponUsingArrow(Entity.Status.Weapon);
@@ -193,10 +195,10 @@ namespace UnityRO.Core.Sprite {
         private float GetMotionSpeed() {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
             var motionSpeed = CurrentSpriteMotion switch {
-                                  SpriteMotion.Hit => Entity.Status.AttackedSpeed,
-                                  SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3 => Entity.Status.AttackSpeed,
-                                  _ => 0
-                              };
+                SpriteMotion.Hit => Entity.Status.AttackedSpeed,
+                SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3 => Entity.Status.AttackSpeed,
+                _ => 0
+            };
             motionSpeed = motionSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : motionSpeed;
             var multiplier = motionSpeed / (float)AVERAGE_ATTACK_SPEED;
             var finalSpeed = (CurrentAction.delay / 25) * multiplier;

@@ -5,7 +5,6 @@ using System.Linq;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityRO.Core.Camera;
-using UnityRO.Core.Database;
 using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Sprite {
@@ -31,9 +30,6 @@ namespace UnityRO.Core.Sprite {
 
         public UnityEngine.Sprite[] Sprites;
 
-        private int ActionId;
-        private ACT.Action CurrentAction;
-        private int CurrentFrameIndex;
         private FramePaceCalculator FramePaceCalculator;
 
         private static readonly int OffsetProp = Shader.PropertyToID("_Offset");
@@ -114,10 +110,6 @@ namespace UnityRO.Core.Sprite {
         }
 
         public Vector2 GetAnimationAnchor() {
-            if (CurrentAction == null) {
-                return Vector2.zero;
-            }
-
             var frame = UpdateFrame();
 
             return frame.pos.Length > 0 ? frame.pos[0] : Vector2.zero;
@@ -141,10 +133,7 @@ namespace UnityRO.Core.Sprite {
         }
 
         private ACT.Frame UpdateFrame() {
-            CurrentAction = SpriteData.act.actions[FramePaceCalculator.GetActionIndex()];
-            CurrentFrameIndex = FramePaceCalculator.GetCurrentFrame();
-            var frame = CurrentAction.frames[CurrentFrameIndex];
-            return frame;
+            return  FramePaceCalculator.GetCurrentFrame();
         }
 
         private void UpdateMesh(ACT.Frame frame) {

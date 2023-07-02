@@ -29,8 +29,6 @@ namespace UnityRO.Core.Sprite {
 
         public UnityEngine.Sprite[] Sprites;
 
-        private ACT.Action CurrentAction;
-        private int CurrentFrameIndex;
         private FramePaceCalculator FramePaceCalculator;
 
         private MotionRequest CurrentMotionRequest;
@@ -112,8 +110,6 @@ namespace UnityRO.Core.Sprite {
                 MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", true);
             }
 
-            CurrentFrameIndex = 0;
-
             FramePaceCalculator.OnMotionChanged(motionRequest);
 
             foreach (var child in Children) {
@@ -160,10 +156,6 @@ namespace UnityRO.Core.Sprite {
         }
 
         public Vector2 GetAnimationAnchor() {
-            if (CurrentAction == null) {
-                return Vector2.zero;
-            }
-
             var frame = UpdateFrame();
 
             return frame.pos.Length > 0 ? frame.pos[0] : Vector2.zero;
@@ -187,10 +179,7 @@ namespace UnityRO.Core.Sprite {
         }
 
         private ACT.Frame UpdateFrame() {
-            CurrentAction = SpriteData.act.actions[FramePaceCalculator.GetActionIndex()];
-            CurrentFrameIndex = FramePaceCalculator.GetCurrentFrame();
-            var frame = CurrentAction.frames[CurrentFrameIndex];
-            return frame;
+            return FramePaceCalculator.GetCurrentFrame();
         }
 
         private void UpdateMesh(ACT.Frame frame) {
@@ -257,6 +246,10 @@ namespace UnityRO.Core.Sprite {
         public ViewerType GetViewerType() => ViewerType;
 
         public void OnAnimationFinished() {
+            if (Entity.State is EntityState.Dead or EntityState.Freeze or EntityState.Sit) {
+                return;
+            }
+            
             var request = Entity.State switch {
                 EntityState.Hit => new MotionRequest { Motion = SpriteMotion.Standby },
                 EntityState.Attack => new MotionRequest { Motion = SpriteMotion.Standby },
