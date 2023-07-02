@@ -15,8 +15,7 @@ namespace UnityRO.Core.Editor {
 
             if (GUILayout.Button("Delay Hit > Standby")) {
                 component.ChangeMotion(
-                    new MotionRequest { Motion = SpriteMotion.Hit, forced = true, startTime = GameManager.Tick + 693 },
-                    new MotionRequest { Motion = SpriteMotion.Standby }
+                    new MotionRequest { Motion = SpriteMotion.Hit, forced = true, startTime = GameManager.Tick + 693 }
                 );
             }
 
@@ -26,29 +25,25 @@ namespace UnityRO.Core.Editor {
 
             if (GUILayout.Button("Attack 1 > Standby")) {
                 component.ChangeMotion(
-                    new MotionRequest { Motion = SpriteMotion.Attack1 },
-                    new MotionRequest { Motion = SpriteMotion.Standby }
+                    new MotionRequest { Motion = SpriteMotion.Attack1 }
                 );
             }
 
             if (GUILayout.Button("Attack 2 > Standby")) {
                 component.ChangeMotion(
-                    new MotionRequest { Motion = SpriteMotion.Attack2 },
-                    new MotionRequest { Motion = SpriteMotion.Standby }
+                    new MotionRequest { Motion = SpriteMotion.Attack2 }
                 );
             }
 
             if (GUILayout.Button("Attack 3 > Standby")) {
                 component.ChangeMotion(
-                    new MotionRequest { Motion = SpriteMotion.Attack3 },
-                    new MotionRequest { Motion = SpriteMotion.Standby }
+                    new MotionRequest { Motion = SpriteMotion.Attack3 }
                 );
             }
 
             if (GUILayout.Button("Hit > Standby")) {
                 component.ChangeMotion(
-                    new MotionRequest { Motion = SpriteMotion.Hit },
-                    new MotionRequest { Motion = SpriteMotion.Standby }
+                    new MotionRequest { Motion = SpriteMotion.Hit }
                 );
             }
 

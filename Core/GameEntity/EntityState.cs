@@ -9,6 +9,7 @@ namespace UnityRO.Core.GameEntity {
         Cast,
         PickUp,
         Freeze,
-        Sit
+        Sit,
+        Vanish
     }
 }

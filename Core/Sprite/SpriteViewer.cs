@@ -73,34 +73,35 @@ namespace UnityRO.Core.Sprite {
             UpdateFrames();
             CheckMotionQueue();
         }
+
         private void UpdateFrames() {
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
         }
+
         private void CheckMotionQueue() {
             if (CurrentMotionRequest.startTime <= 0 || GameManager.Tick <= CurrentMotionRequest.startTime)
                 return;
             CurrentMotionRequest.startTime = 0;
-            ChangeMotion(CurrentMotionRequest, NextMotionRequest);
+            ChangeMotion(CurrentMotionRequest);
         }
 
-        public void ChangeMotion(MotionRequest motionRequest, MotionRequest? nextMotionRequest = null) {
+        public void ChangeMotion(MotionRequest motionRequest) {
             if (motionRequest.startTime > GameManager.Tick) {
                 CurrentMotionRequest = motionRequest;
-                NextMotionRequest = nextMotionRequest;
                 return;
             }
-            
+
             MeshRenderer.material.SetFloat("_Alpha", 1f);
 
             if (motionRequest.Motion == SpriteMotion.Attack) {
                 var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
-                                                                       Entity.Status.Job,
-                                                                       Entity.Status.IsMale ? 1 : 0,
-                                                                       Entity.Status.Weapon,
-                                                                       Entity.Status.Shield
-                                                                      );
+                    Entity.Status.Job,
+                    Entity.Status.IsMale ? 1 : 0,
+                    Entity.Status.Weapon,
+                    Entity.Status.Shield
+                );
                 var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
                 motionRequest.Motion = attackMotion;
             }
@@ -110,23 +111,23 @@ namespace UnityRO.Core.Sprite {
             } else {
                 MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", true);
             }
-            
+
             CurrentFrameIndex = 0;
 
-            FramePaceCalculator.OnMotionChanged(motionRequest, nextMotionRequest);
+            FramePaceCalculator.OnMotionChanged(motionRequest);
 
             foreach (var child in Children) {
-                child.ChangeMotion(motionRequest, nextMotionRequest);
+                child.ChangeMotion(motionRequest);
             }
         }
 
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
-                              ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                              ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                              _ => throw new ArgumentOutOfRangeException()
-                          };
+                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             if (palette != null) {
                 MeshRenderer.material.SetTexture(PaletteTexProp, palette);
@@ -256,7 +257,13 @@ namespace UnityRO.Core.Sprite {
         public ViewerType GetViewerType() => ViewerType;
 
         public void OnAnimationFinished() {
-            // do nothing
+            var request = Entity.State switch {
+                EntityState.Hit => new MotionRequest { Motion = SpriteMotion.Standby },
+                EntityState.Attack => new MotionRequest { Motion = SpriteMotion.Standby },
+                _ => new MotionRequest { Motion = SpriteMotion.Idle }
+            };
+
+            Entity.ChangeMotion(request);
         }
 
         public float GetAttackDelay() => FramePaceCalculator.GetAttackDelay();

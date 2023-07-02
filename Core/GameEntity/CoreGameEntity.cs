@@ -5,7 +5,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract GameEntityBaseStatus Status { get; }
         public abstract EntityState State { get; }
 
-        public abstract void ChangeMotion(MotionRequest request, MotionRequest? nextRequest = null);
+        public abstract void ChangeMotion(MotionRequest request);
         public abstract void ChangeDirection(Direction direction);
         public abstract void LookTo(Vector3 position);
 

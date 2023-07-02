@@ -1,6 +1,4 @@
-using System.Collections;
 using ROIO.Models.FileTypes;
-using UnityEngine;
 using UnityRO.Core.Camera;
 using UnityRO.Core.Database;
 using UnityRO.Core.GameEntity;
@@ -21,7 +19,6 @@ namespace UnityRO.Core.Sprite {
         private long AnimationStart = GameManager.Tick;
         private float CurrentDelay = 0f;
         private MotionRequest CurrentMotionRequest;
-        private MotionRequest? NextMotionRequest;
         private ACT CurrentACT;
         private ACT.Action CurrentAction;
         private int ActionId;
@@ -80,11 +77,7 @@ namespace UnityRO.Core.Sprite {
                 if (AnimationHelper.IsLoopingMotion(CurrentSpriteMotion) && SpriteViewer.GetViewerType() != ViewerType.Emotion) {
                     PCLog($"{CurrentSpriteMotion} Animation ended, looping");
                     CurrentFrame = 0;
-                } else if (NextMotionRequest.HasValue && SpriteViewer.GetViewerType() == ViewerType.Body) {
-                    PCLog($"{CurrentSpriteMotion} Animation ended, next is available, advancing");
-                    // Since body is the main component, it's the only one "allowed" to ask for the next motion
-                    Entity.ChangeMotion(NextMotionRequest.Value);
-                } else {
+                } else { //might need to check if it's body to call the animation finished
                     SpriteViewer.OnAnimationFinished();
                     PCLog($"{CurrentSpriteMotion} Animation ended, stopping");
                     CurrentFrame = maxFrame;
@@ -121,7 +114,7 @@ namespace UnityRO.Core.Sprite {
             return delayTime;
         }
 
-        public void OnMotionChanged(MotionRequest motionRequest, MotionRequest? nextMotionRequest) {
+        public void OnMotionChanged(MotionRequest motionRequest) {
             if (CurrentSpriteMotion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3) {
                 ProcessAttackMotion();
             }
@@ -129,7 +122,6 @@ namespace UnityRO.Core.Sprite {
             AnimationStart = GameManager.Tick;
             CurrentFrame = 0;
             CurrentSpriteMotion = motionRequest.Motion;
-            NextMotionRequest = nextMotionRequest;
             ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, CurrentSpriteMotion);
 
             CurrentAction = CurrentACT.actions[GetActionIndex()];
