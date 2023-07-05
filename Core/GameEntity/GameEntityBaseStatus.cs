@@ -25,5 +25,9 @@ public class GameEntityBaseStatus {
     public int Weapon;
     public int Shield;
 
-    public float attackMotion = 6f;
+    public long HP;
+    public long MaxHP;
+    public long SP;
+    public long MaxSP;
+    public long Money;
 }
