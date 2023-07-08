@@ -10,7 +10,7 @@ public partial class ZC {
         public const int SIZE = 13;
         public PacketHeader Header => HEADER;
 
-        public int Tick;
+        public uint Tick;
         public int PosX;
         public int PosY;
         public int Dir;
@@ -18,7 +18,7 @@ public partial class ZC {
         public int Sex;
 
         public void Read(MemoryStreamReader br, int size) {
-            Tick = br.ReadInt();
+            Tick = br.ReadUInt();
             var posDir = br.ReadPos();
             PosX = posDir[0];
             PosY = posDir[1];
