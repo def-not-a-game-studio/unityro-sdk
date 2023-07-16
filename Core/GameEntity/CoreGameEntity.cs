@@ -39,7 +39,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract void ChangeLook(LookType lookType, short packetValue, short packetValue2);
         public abstract void UpdateStatus(GameEntityBaseStatus status);
         public abstract void RequestAction(CoreGameEntity target);
-        public abstract void TalkToNpc(CoreSpriteGameEntity target);
+        public abstract void TalkToNpc(CoreGameEntity target);
         public abstract void SetAttackedSpeed(ushort attackedSpeed);
         public abstract void SetState(EntityState state);
     }
