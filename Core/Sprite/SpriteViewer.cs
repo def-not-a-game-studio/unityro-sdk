@@ -19,6 +19,13 @@ namespace UnityRO.Core.Sprite {
         [SerializeField] private List<SpriteViewer> Children = new();
         [SerializeField] private SpriteViewer Parent;
 
+        private const float shadeForShadow = 0.80f;
+        private Light directionalLight;
+        public float CurrentShade = 1f;
+        public float TargetShade;
+        public float ShadeLevel = 0.85f;
+        private Color Color;
+
         private Dictionary<ACT.Frame, Mesh> ColliderCache = new();
         private Dictionary<ACT.Frame, Mesh> MeshCache = new();
 
@@ -39,6 +46,7 @@ namespace UnityRO.Core.Sprite {
         private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
         private static readonly int PaletteTexProp = Shader.PropertyToID("_PaletteTex");
         private static readonly int AlphaProp = Shader.PropertyToID("_Alpha");
+        private static readonly int ColorProp = Shader.PropertyToID("_Color");
 
         public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity) {
             SpriteData = spriteData;
@@ -70,12 +78,49 @@ namespace UnityRO.Core.Sprite {
 
             UpdateFrames();
             CheckMotionQueue();
+
+            if (Parent == null) {
+                UpdateShade();
+
+                CurrentShade = Mathf.Lerp(CurrentShade, TargetShade, Time.deltaTime * 10f);
+                UpdateColor(CurrentShade);
+                foreach (var child in Children) {
+                    child.UpdateColor(CurrentShade);
+                }
+            }
         }
 
         private void UpdateFrames() {
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
+        }
+
+        private void UpdateShade() {
+            if (directionalLight == null) {
+                directionalLight = FindObjectOfType<GameMap>()?.DirectionalLight;
+
+                if (directionalLight == null) {
+                    return;
+                }
+
+                var color = directionalLight.color;
+                var lightPower = (color.r + color.g + color.b) / 3f;
+                lightPower = (lightPower * directionalLight.intensity + 1) / 2f * directionalLight.shadowStrength;
+                ShadeLevel = lightPower;
+            }
+
+            var srcPos = transform.position + new Vector3(0, 0.2f, 0);
+            var destDir = directionalLight.transform.rotation * Vector3.forward * -1;
+            var mask = ~LayerMask.GetMask("Player") | ~LayerMask.GetMask("Monster") | ~LayerMask.GetMask("NPC") | ~LayerMask.GetMask("Item");
+            var ray = new Ray(srcPos, destDir);
+            TargetShade = Physics.Raycast(ray, out var hit, 50f, mask) ? ShadeLevel : 1f;
+        }
+
+        public void UpdateColor(float currentShade) {
+            var color = Color * currentShade;
+            color.a = MeshRenderer.material.GetFloat(AlphaProp);
+            MeshRenderer.material.SetColor(ColorProp, color);
         }
 
         private void CheckMotionQueue() {
@@ -91,7 +136,7 @@ namespace UnityRO.Core.Sprite {
                 return;
             }
 
-            MeshRenderer.material.SetFloat("_Alpha", 1f);
+            MeshRenderer.material.SetFloat(AlphaProp, 1f);
 
             if (motionRequest.Motion == SpriteMotion.Attack) {
                 var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
@@ -120,10 +165,10 @@ namespace UnityRO.Core.Sprite {
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
-                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                _ => throw new ArgumentOutOfRangeException()
-            };
+                              ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
+                              ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
+                              _ => throw new ArgumentOutOfRangeException()
+                          };
 
             if (palette != null) {
                 MeshRenderer.material.SetTexture(PaletteTexProp, palette);
@@ -135,6 +180,7 @@ namespace UnityRO.Core.Sprite {
             MeshFilter = GetComponent<MeshFilter>();
             MeshCollider = GetComponent<MeshCollider>();
             Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
+            Color = Color.white;
 
             if (SpriteData == null) return;
 
@@ -249,12 +295,12 @@ namespace UnityRO.Core.Sprite {
             if (Entity.State is EntityState.Dead or EntityState.Freeze or EntityState.Sit) {
                 return;
             }
-            
+
             var request = Entity.State switch {
-                EntityState.Hit => new MotionRequest { Motion = SpriteMotion.Standby },
-                EntityState.Attack => new MotionRequest { Motion = SpriteMotion.Standby },
-                _ => new MotionRequest { Motion = SpriteMotion.Idle }
-            };
+                              EntityState.Hit => new MotionRequest { Motion = SpriteMotion.Standby },
+                              EntityState.Attack => new MotionRequest { Motion = SpriteMotion.Standby },
+                              _ => new MotionRequest { Motion = SpriteMotion.Idle }
+                          };
 
             Entity.ChangeMotion(request);
         }

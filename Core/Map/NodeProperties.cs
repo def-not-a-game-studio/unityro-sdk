@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
+[RequireComponent(typeof(MeshCollider))]
 public class NodeProperties : MonoBehaviour {
     //hierarchy
     public int nodeId;

@@ -8,11 +8,10 @@ using UnityEngine;
 public class GameMap : MonoBehaviour {
     [SerializeField] private Vector2Int _size;
     public Vector2Int Size => _size;
-    
-    [SerializeField] [HideInInspector] private Light DirectionalLight;
 
+    [SerializeField] [HideInInspector] public Light DirectionalLight;
     [SerializeField] [HideInInspector] private RSW.LightInfo LightInfo;
-    [HideInInspector] [SerializeField] private Altitude Altitude;
+    [SerializeField] [HideInInspector] private Altitude Altitude;
     
     private PathFinder PathFinder;
 
@@ -27,12 +26,12 @@ public class GameMap : MonoBehaviour {
     }
 
     private void InitWorldLight() {
-        if (DirectionalLight != null)
-            return;
+        if (DirectionalLight == null) {
+            var worldLightGameObject = new GameObject("Light");
+            worldLightGameObject.transform.SetParent(gameObject.transform);
+            DirectionalLight = worldLightGameObject.GetOrAddComponent<Light>();
+        }
 
-        var worldLightGameObject = new GameObject("Light");
-        worldLightGameObject.transform.SetParent(gameObject.transform);
-        DirectionalLight = worldLightGameObject.GetOrAddComponent<Light>();
         SetupWorldLight();
     }
 
@@ -53,12 +52,14 @@ public class GameMap : MonoBehaviour {
             var ambient = new Color(LightInfo.ambient[0], LightInfo.ambient[1], LightInfo.ambient[2]);
             RenderSettings.ambientLight = ambient * LightInfo.intensity;
             RenderSettings.ambientIntensity = LightInfo.intensity;
+            Shader.SetGlobalColor("_RoAmbientColor", ambient);
         }
 
         if (LightInfo.diffuse.Length > 0) {
             var diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             DirectionalLight.color = diffuse;
+            Shader.SetGlobalColor("_RoDiffuseColor", diffuse);
         }
     }
 
