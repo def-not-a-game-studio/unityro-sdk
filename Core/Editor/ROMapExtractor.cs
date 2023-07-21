@@ -363,6 +363,10 @@ public class ROMapExtractor : EditorWindow {
             }
         } else {
             try {
+                if (mesh.TryGetComponent<MeshCollider>(out var collider)) {
+                    AssetDatabase.CreateAsset(collider.sharedMesh, $"{meshPath}_collider.asset");
+                }
+
                 var nodes = mesh.GetComponentsInChildren<NodeProperties>();
                 foreach (var node in nodes) {
                     if (!node.TryGetComponent<NodeAnimation>(out var anim)) {

@@ -112,7 +112,7 @@ namespace UnityRO.Core.Sprite {
 
             var srcPos = transform.position + new Vector3(0, 0.2f, 0);
             var destDir = directionalLight.transform.rotation * Vector3.forward * -1;
-            var mask = ~LayerMask.GetMask("Player") | ~LayerMask.GetMask("Monster") | ~LayerMask.GetMask("NPC") | ~LayerMask.GetMask("Item");
+            var mask = ~LayerMask.GetMask("Player", "Monster", "NPC", "Item");
             var ray = new Ray(srcPos, destDir);
             TargetShade = Physics.Raycast(ray, out var hit, 50f, mask) ? ShadeLevel : 1f;
         }
