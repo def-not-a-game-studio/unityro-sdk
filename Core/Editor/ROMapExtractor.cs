@@ -160,7 +160,7 @@ public class ROMapExtractor : EditorWindow {
             var renderers = mesh.GetComponentsInChildren<MeshRenderer>();
             for (int k = 0; k < filters.Length; k++) {
                 var filter = filters[k];
-                var material = renderers[k].material;
+                var material = renderers[k].sharedMaterial;
                 var mainTex = material.GetTexture("_MainTex") as Texture2D;
 
                 if (mainTex != null) {
@@ -216,7 +216,7 @@ public class ROMapExtractor : EditorWindow {
 
                 var partPath =
                     AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath, $"{filter.gameObject.name.SanitizeForAddressables()}.asset"));
-                AssetDatabase.CreateAsset(filter.mesh, partPath);
+                AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
 
                 var prefabPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
                     $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
@@ -389,7 +389,7 @@ public class ROMapExtractor : EditorWindow {
                     nodeTexturesPath.Add(texturePath);
                     File.WriteAllBytes(texturePath, texture.EncodeToPNG());
 
-                    AssetDatabase.CreateAsset(filter.mesh, partPath);
+                    AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
                     AssetDatabase.CreateAsset(material, materialPath);
                 }
 
