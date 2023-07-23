@@ -65,7 +65,7 @@ namespace UnityRO.Core {
 
                 entityCache.Add(data.AID, entity);
             } else {
-                entity.UpdateStatus(GetBaseStatus(data));
+                entity.UpdateStatus(GetBaseStatus(data), data.PosDir, forceNorthDirection);
             }
 
             return entity;

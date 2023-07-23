@@ -39,7 +39,6 @@ namespace UnityRO.Core.Sprite {
         private FramePaceCalculator FramePaceCalculator;
 
         private MotionRequest CurrentMotionRequest;
-        private MotionRequest? NextMotionRequest;
 
         private static readonly int OffsetProp = Shader.PropertyToID("_Offset");
         private static readonly int UsePaletteProp = Shader.PropertyToID("_UsePalette");
@@ -147,12 +146,6 @@ namespace UnityRO.Core.Sprite {
                 );
                 var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
                 motionRequest.Motion = attackMotion;
-            }
-
-            if (Entity.State == EntityState.Dead) {
-                MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", false);
-            } else {
-                MeshRenderer.material.SetShaderPassEnabled("ShadowCaster", true);
             }
 
             FramePaceCalculator.OnMotionChanged(motionRequest);

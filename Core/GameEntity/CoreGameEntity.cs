@@ -37,7 +37,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract void SetAttackSpeed(ushort attackSpeed);
         public abstract void ShowEmotion(byte emotionType);
         public abstract void ChangeLook(LookType lookType, short packetValue, short packetValue2);
-        public abstract void UpdateStatus(GameEntityBaseStatus status);
+        public abstract void UpdateStatus(GameEntityBaseStatus status, int[] PosDir, bool forceNorthDirection);
         public abstract void RequestAction(CoreGameEntity target);
         public abstract void TalkToNpc(CoreGameEntity target);
         public abstract void SetAttackedSpeed(ushort attackedSpeed);
