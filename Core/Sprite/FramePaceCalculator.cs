@@ -1,5 +1,4 @@
 using ROIO.Models.FileTypes;
-using UnityEngine;
 using UnityRO.Core.Camera;
 using UnityRO.Core.Database;
 using UnityRO.Core.GameEntity;
@@ -209,7 +208,7 @@ namespace UnityRO.Core.Sprite {
 
         private void PCLog(string message) {
             if (Entity.GetEntityType() == (int)EntityType.PC && SpriteViewer.GetViewerType() == ViewerType.Body && !Entity.HasAuthority()) {
-                Debug.Log(message);
+                //Debug.Log(message);
             }
         }
 

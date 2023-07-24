@@ -1,8 +1,8 @@
-﻿using ROIO.Models.FileTypes;
-using System;
+﻿using System;
 using Core.Path;
+using ROIO.Models.FileTypes;
 using UnityEngine;
-
+using UnityEngine.Rendering;
 
 [Serializable]
 public class GameMap : MonoBehaviour {
@@ -12,7 +12,7 @@ public class GameMap : MonoBehaviour {
     [SerializeField] [HideInInspector] public Light DirectionalLight;
     [SerializeField] [HideInInspector] private RSW.LightInfo LightInfo;
     [SerializeField] [HideInInspector] private Altitude Altitude;
-    
+
     private PathFinder PathFinder;
 
     private void Awake() {
@@ -42,25 +42,29 @@ public class GameMap : MonoBehaviour {
 
         DirectionalLight.type = LightType.Directional;
         DirectionalLight.shadows = LightShadows.Soft;
-        DirectionalLight.shadowStrength = 0.6f;
-        DirectionalLight.intensity = 1;
+        DirectionalLight.shadowStrength = 1f;
+        DirectionalLight.intensity = 1f + LightInfo.intensity;
 
-        var rotation = Quaternion.Euler(90 - LightInfo.longitude, LightInfo.latitude, 0);
+        var rotation = Quaternion.Euler(LightInfo.longitude, LightInfo.latitude, 0);
         DirectionalLight.transform.rotation = rotation;
 
+        var ambient = Color.white;
+        var diffuse = Color.white;
         if (LightInfo.ambient.Length > 0) {
-            var ambient = new Color(LightInfo.ambient[0], LightInfo.ambient[1], LightInfo.ambient[2]);
-            RenderSettings.ambientLight = ambient * LightInfo.intensity;
-            RenderSettings.ambientIntensity = LightInfo.intensity;
-            Shader.SetGlobalColor("_RoAmbientColor", ambient);
+            ambient = new Color(LightInfo.ambient[0], LightInfo.ambient[1], LightInfo.ambient[2]);
         }
 
         if (LightInfo.diffuse.Length > 0) {
-            var diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            DirectionalLight.color = diffuse;
-            Shader.SetGlobalColor("_RoDiffuseColor", diffuse);
+            diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
         }
+
+        RenderSettings.ambientMode = AmbientMode.Skybox;
+        RenderSettings.ambientIntensity = 1f;
+        RenderSettings.sun = DirectionalLight;
+        DirectionalLight.color = ambient;
+
+        Shader.SetGlobalColor("_RoAmbientColor", ambient);
+        Shader.SetGlobalColor("_RoDiffuseColor", diffuse);
     }
 
     public void SetMapSize(int width, int height) {
