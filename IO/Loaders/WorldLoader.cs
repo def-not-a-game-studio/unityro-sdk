@@ -1,8 +1,8 @@
-﻿using ROIO.Models.FileTypes;
-using ROIO.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using ROIO.Models.FileTypes;
+using ROIO.Utils;
 
 namespace ROIO.Loaders {
     /// <summary>
@@ -140,7 +140,7 @@ namespace ROIO.Loaders {
                     case 3: //load sound
                         var sound = new RSW.Sound();
                         sound.name = data.ReadBinaryString(80);
-                        sound.file = "data/wav/" + data.ReadBinaryString(80);
+                        sound.file = data.ReadBinaryString(80);
                         sound.pos = new float[3];
                         for (int j = 0; j < sound.pos.Length; j++) {
                             sound.pos[j] = data.ReadFloat() / 5;

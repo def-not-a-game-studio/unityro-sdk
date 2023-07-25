@@ -19,7 +19,7 @@ namespace UnityRO.Core.Sprite {
         [SerializeField] private List<SpriteViewer> Children = new();
         [SerializeField] private SpriteViewer Parent;
 
-        private const float shadeForShadow = 0.7f;
+        private const float shadeForShadow = 0.8f;
         private Light directionalLight;
         public float CurrentShade = 1f;
         public float TargetShade;

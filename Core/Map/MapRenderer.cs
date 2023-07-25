@@ -1,9 +1,9 @@
-﻿using ROIO;
-using ROIO.Loaders;
-using ROIO.Models.FileTypes;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using ROIO;
+using ROIO.Loaders;
+using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -73,6 +73,7 @@ public class MapRenderer {
         await new Models(gameMapData.CompiledModels.ToList()).BuildMeshesAsync(null, true, gameMap.Size);
 
         InitializeSounds(gameMapData.World);
+        gameMap.SetMapSounds(sounds.playing);
         MaybeInitSky(gameMap.transform, mapName);
         CreateLightPoints(gameMap.transform, gameMapData.World, gameMap.Size);
 

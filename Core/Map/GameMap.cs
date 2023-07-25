@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Core.Path;
 using ROIO.Models.FileTypes;
 using UnityEngine;
@@ -12,6 +13,7 @@ public class GameMap : MonoBehaviour {
     [SerializeField] [HideInInspector] public Light DirectionalLight;
     [SerializeField] [HideInInspector] private RSW.LightInfo LightInfo;
     [SerializeField] [HideInInspector] private Altitude Altitude;
+    [SerializeField] [HideInInspector] private List<MapSound> Sounds;
 
     private PathFinder PathFinder;
 
@@ -42,7 +44,7 @@ public class GameMap : MonoBehaviour {
 
         DirectionalLight.type = LightType.Directional;
         DirectionalLight.shadows = LightShadows.Soft;
-        DirectionalLight.shadowStrength = 1f;
+        DirectionalLight.shadowStrength = LightInfo.intensity;
         DirectionalLight.intensity = 1f + LightInfo.intensity;
 
         var rotation = Quaternion.Euler(LightInfo.longitude, LightInfo.latitude, 0);
@@ -86,11 +88,26 @@ public class GameMap : MonoBehaviour {
         PathFinder?.SetMap(Altitude);
     }
 
+    public void SetMapSounds(List<MapSound> sounds) {
+        Sounds = sounds;
+    }
+
     public PathFinder GetPathFinder() {
         if (PathFinder == null) {
             InitPathFinder();
         }
 
         return PathFinder;
+    }
+    
+    public void Update() {
+        var now = Time.realtimeSinceStartup;
+
+        foreach (var p in Sounds) {
+            if (p.playAt <= now && p.source != null) {
+                p.source.Play();
+                p.playAt = now + p.info.cycle;
+            }
+        }
     }
 }

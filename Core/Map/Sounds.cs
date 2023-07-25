@@ -1,32 +1,26 @@
-﻿using ROIO;
+﻿using System.Collections.Generic;
+using System.IO;
+using ROIO;
 using ROIO.Models.FileTypes;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
+using UnityEngine.Audio;
 
-public class Sounds
-{
-    private List<Playing> playing;
+public class Sounds {
+    public List<MapSound> playing;
     private GameObject _parent = null;
-    
-    private class Playing
-    {
-        public AudioClip clip;
-        public AudioSource source;
-        public float playAt;
-        public RSW.Sound info;
-    }
-        
+    private AudioMixerGroup _mixer;
+
     public Sounds() {
-        playing = new List<Playing>();
+        playing = new List<MapSound>();
     }
 
     public void Clear() {
         _parent = null;
-        foreach(Playing p in playing) {
+        foreach (MapSound p in playing) {
             FileCache.Remove(p.info.file);
-            GameObject.Destroy(p.clip);
+            //GameObject.Destroy(p.clip);
         }
+
         playing.Clear();
     }
 
@@ -35,33 +29,30 @@ public class Sounds
     }
 
     public void Add(RSW.Sound sound, GameObject parent) {
-        if(_parent == null) {
+        if (_parent == null) {
             _parent = new GameObject("_sounds");
             _parent.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
+            _mixer = GameObject.FindObjectOfType<GameManager>().AudioMixerGroup;
         }
-        var clip = Addressables.LoadAssetAsync<AudioClip>(sound.file.SanitizeForAddressables()).WaitForCompletion();
 
-        Playing p = new Playing();
+        var clip = Resources.Load<AudioClip>(Path.Combine("Wav", sound.file.Replace(".wav", "")));
+
+        var p = new GameObject(sound.file + "[" + sound.name + "]" + sound.cycle).AddComponent<MapSound>();
         p.playAt = 0;
         p.info = sound;
-        p.clip = clip;
 
-        if(parent == null) {//static sound
-            var obj = new GameObject(sound.file + "[" + sound.name + "]" + sound.cycle);
-            obj.transform.parent = _parent.transform;
-            p.source = obj.AddComponent<AudioSource>();
-            p.source.transform.position = new Vector3(sound.pos[0], sound.pos[1], sound.pos[2]);
-        } else {//sound is attached to an entity
-            p.source = parent.GetComponent<AudioSource>();
-        }
+        p.gameObject.transform.parent = _parent.transform;
+        p.source = p.gameObject.AddComponent<AudioSource>();
+        p.source.transform.position = new Vector3(sound.pos[0], sound.pos[1], sound.pos[2]);
 
+        p.source.clip = clip;
         p.source.loop = false;
         p.source.playOnAwake = false;
         p.source.volume = Mathf.Clamp(sound.vol, 0, 1);
         p.source.spatialBlend = 1;
         p.source.rolloffMode = AudioRolloffMode.Linear;
         p.source.spatialize = true;
-        p.source.outputAudioMixerGroup = MapRenderer.SoundsMixerGroup;
+        p.source.outputAudioMixerGroup = _mixer;
         p.source.dopplerLevel = 0;
         p.source.minDistance = p.info.width;
         p.source.maxDistance = sound.range + sound.height;
@@ -72,9 +63,9 @@ public class Sounds
     public void Update() {
         float now = Time.realtimeSinceStartup;
 
-        foreach(Playing p in playing) {
-            if(p.playAt <= now && p.source != null) {
-                p.source.PlayOneShot(p.clip);
+        foreach (MapSound p in playing) {
+            if (p.playAt <= now && p.source != null) {
+                p.source.Play();
                 p.playAt = now + p.info.cycle;
             }
         }

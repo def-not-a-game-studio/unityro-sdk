@@ -1,7 +1,11 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class GameManager : MonoBehaviour {
+
+    [SerializeField] public AudioMixerGroup AudioMixerGroup;
+
     public static bool IsOffline = false;
 
     #region Time
