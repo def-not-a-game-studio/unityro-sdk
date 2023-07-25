@@ -19,7 +19,7 @@ namespace UnityRO.Core.Sprite {
         [SerializeField] private List<SpriteViewer> Children = new();
         [SerializeField] private SpriteViewer Parent;
 
-        private const float shadeForShadow = 0.80f;
+        private const float shadeForShadow = 0.7f;
         private Light directionalLight;
         public float CurrentShade = 1f;
         public float TargetShade;
@@ -106,7 +106,7 @@ namespace UnityRO.Core.Sprite {
                 var color = directionalLight.color;
                 var lightPower = (color.r + color.g + color.b) / 3f;
                 lightPower = (lightPower * directionalLight.intensity + 1) / 2f * directionalLight.shadowStrength;
-                ShadeLevel = lightPower;
+                ShadeLevel = shadeForShadow;
             }
 
             var srcPos = transform.position + new Vector3(0, 0.2f, 0);

@@ -272,7 +272,9 @@ public class Models {
                     canCombine = false;
                     var collider = nodeObj.AddComponent<MeshCollider>();
                     collider.sharedMesh = mesh;
-                    collider.convex = true;
+                    if (mesh.vertexCount / 3 >= 3) {
+                        collider.convex = true;
+                    }
 
                     var nodeAnimation = nodeObj.AddComponent<NodeAnimation>();
                     nodeAnimation.nodeId = nodeId;
@@ -311,9 +313,9 @@ public class Models {
             mesh.CombineMeshes(combineInstances);
             var collider = modelObj.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
-            try {
+            if (mesh.vertexCount / 3 >= 3) {
                 collider.convex = true;
-            } catch (Exception e) { }
+            }
         }
 
         return nodeId;
