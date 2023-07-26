@@ -42,10 +42,15 @@ public class GameMap : MonoBehaviour {
             return;
         }
 
+        GraphicsSettings.lightsUseColorTemperature = true;
+        GraphicsSettings.lightsUseLinearIntensity = true;
+
         DirectionalLight.type = LightType.Directional;
         DirectionalLight.shadows = LightShadows.Soft;
-        DirectionalLight.shadowStrength = LightInfo.intensity;
+        DirectionalLight.shadowStrength = .3f + LightInfo.intensity;
         DirectionalLight.intensity = 1f + LightInfo.intensity;
+        DirectionalLight.colorTemperature = 4800;
+        DirectionalLight.useColorTemperature = true;
 
         var rotation = Quaternion.Euler(LightInfo.longitude, LightInfo.latitude, 0);
         DirectionalLight.transform.rotation = rotation;
@@ -61,7 +66,7 @@ public class GameMap : MonoBehaviour {
         }
 
         RenderSettings.ambientMode = AmbientMode.Skybox;
-        RenderSettings.ambientIntensity = 1f;
+        RenderSettings.ambientIntensity = 1f + LightInfo.intensity;
         RenderSettings.sun = DirectionalLight;
         DirectionalLight.color = ambient;
 
@@ -99,7 +104,7 @@ public class GameMap : MonoBehaviour {
 
         return PathFinder;
     }
-    
+
     public void Update() {
         var now = Time.realtimeSinceStartup;
 
