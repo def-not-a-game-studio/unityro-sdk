@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Core.Path;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityRO.Core.GameEntity;
+using UnityRO.Core;
 
 namespace UnityRO.Net {
     public class SessionManager : MonoBehaviour {
@@ -12,9 +12,11 @@ namespace UnityRO.Net {
 
         private NetworkClient NetworkClient;
         private PathFinder PathFinder;
+        private EntityManager EntityManager;
 
         private void Awake() {
             NetworkClient = FindObjectOfType<NetworkClient>();
+            EntityManager = FindObjectOfType<EntityManager>();
         }
 
         private void Start() {
@@ -63,6 +65,7 @@ namespace UnityRO.Net {
         #region Session Entity Packets
         private async void OnEntityMoved(ushort cmd, int size, ZC.NPCACK_MAPMOVE pkt) {
             if (CurrentSession.CurrentMap != pkt.MapName) {
+                EntityManager.ClearEntities();
                 await SetCurrentMap(pkt.MapName);
             }
         }

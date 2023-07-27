@@ -86,7 +86,13 @@ namespace UnityRO.Core {
         }
 
         public void ClearEntities() {
-            entityCache.Values.ToList().ForEach(Destroy);
+            entityCache.Values.ToList().ForEach(it => {
+                if (it.Status.EntityType == EntityType.PC) {
+                    PCPool.Release(it);
+                } else {
+                    MobPool.Release(it);
+                }
+            });
             entityCache.Clear();
         }
 
