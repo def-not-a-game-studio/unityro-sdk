@@ -50,7 +50,6 @@ public class GameMap : MonoBehaviour {
 
         DirectionalLight.type = LightType.Directional;
         DirectionalLight.shadows = LightShadows.Soft;
-        DirectionalLight.shadowStrength = LightInfo.intensity;
 
         var rotation = Quaternion.Euler(LightInfo.longitude, LightInfo.latitude, 0);
         DirectionalLight.transform.rotation = rotation;
