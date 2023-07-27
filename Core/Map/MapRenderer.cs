@@ -110,8 +110,8 @@ public class MapRenderer {
             Transform transform;
             (transform = lightObj.transform).SetParent(lightsParent.transform, false);
             lightObj.color = new Color(light.color[0], light.color[1], light.color[2]);
-            lightObj.range = light.range / 5;
-            lightObj.intensity = 5f;
+            lightObj.range = light.range;
+            lightObj.intensity = 1f;
             lightObj.shadows = LightShadows.Soft;
             var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1], light.pos[2] + mapSize.y);
             transform.position = position;
