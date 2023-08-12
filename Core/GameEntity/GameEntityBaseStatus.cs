@@ -30,4 +30,5 @@ public class GameEntityBaseStatus {
     public long SP;
     public long MaxSP;
     public long Money;
+    public int Level;
 }
