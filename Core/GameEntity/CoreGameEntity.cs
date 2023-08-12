@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace UnityRO.Core.GameEntity {
@@ -32,7 +33,7 @@ namespace UnityRO.Core.GameEntity {
         public abstract void RequestMovement(Vector2 destination);
 
         public abstract void Vanish(VanishType vanishType);
-        public abstract void SetAction(EntityActionRequest actionRequest, bool isSource, long delay = 0);
+        public abstract void SetAction(EntityActionRequest actionRequest, bool isSource, CoreGameEntity target, float delay = 0);
         public abstract float GetActionDelay(EntityActionRequest actionRequest);
         public abstract void SetAttackSpeed(ushort attackSpeed);
         public abstract void ShowEmotion(byte emotionType);
