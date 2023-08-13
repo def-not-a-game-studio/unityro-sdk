@@ -1,21 +1,26 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using ROIO.Utils;
 using Telepathy;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityRO.Net.Editor;
 using UnityRO.Net.Packets;
 
 public class NetworkClient : MonoBehaviour {
+
     public const int DATA_BUFFER_SIZE = 2 * 1024;
     public static UnityAction<NetworkPacket, bool> OnPacketEvent;
 
     #region Singleton
 
     private static NetworkClient _instance;
+
     private static NetworkClient Instance {
         get {
             if (_instance == null) {
@@ -39,6 +44,9 @@ public class NetworkClient : MonoBehaviour {
 
     private bool IsPaused = false;
 
+    public bool IsRecording { get; private set; } = false;
+    private List<ArraySegment<byte>> RecordedTraffic = new();
+
     public NetworkClientState State;
 
     private Queue<OutPacket> OutPacketQueue;
@@ -58,7 +66,7 @@ public class NetworkClient : MonoBehaviour {
         Telepathy.Log.Error = Debug.LogError;
         Telepathy.Log.Info = Debug.Log;
         Telepathy.Log.Warning = Debug.LogWarning;
-        
+
         RegisteredPackets = new Dictionary<ushort, PacketInfo>();
         ClientRegisteredPackets = new Dictionary<short, int>();
 
@@ -66,7 +74,7 @@ public class NetworkClient : MonoBehaviour {
             var attributes = type.GetCustomAttributes(typeof(PacketHandlerAttribute), true); // get the attributes of the packet.
             if (attributes.Length == 0)
                 return;
-            var ma = (PacketHandlerAttribute) attributes[0];
+            var ma = (PacketHandlerAttribute)attributes[0];
             ClientRegisteredPackets.Add((short)ma.MethodId, ma.Size);
             RegisteredPackets.Add(ma.MethodId, new PacketInfo { Size = ma.Size, Type = type });
         }
@@ -81,6 +89,7 @@ public class NetworkClient : MonoBehaviour {
             if (_currentServerType == ServerType.Zone) {
                 _pingCoroutine = StartCoroutine(ServerHeartBeat());
             }
+
             Debug.Log($"# {_currentServerType} Client connected");
         };
         _client.OnData = OnDataReceived;
@@ -121,7 +130,7 @@ public class NetworkClient : MonoBehaviour {
         if (_client.Connected) {
             _client.Disconnect();
         }
-        
+
         _currentServerType = serverType;
         _client.Connect(ip, port, ClientRegisteredPackets);
 
@@ -147,6 +156,27 @@ public class NetworkClient : MonoBehaviour {
         }
     }
 
+#if UNITY_EDITOR
+    public void StartRecording() {
+        IsRecording = true;
+        RecordedTraffic = new List<ArraySegment<byte>>();
+    }
+
+    public void StopRecording(string fileName) {
+        IsRecording = false;
+        var recorded = ScriptableObject.CreateInstance<RecordedNetworkTraffic>();
+
+        recorded.Packets = RecordedTraffic.Select(it => new RecordedNetworkPacket { Data = it.Array }).ToArray();
+        RecordedTraffic.Clear();
+
+        if (!Directory.Exists("Assets/Misc/Replays/")) {
+            Directory.CreateDirectory("Assets/Misc/Replays/");
+        }
+
+        AssetDatabase.CreateAsset(recorded, AssetDatabase.GenerateUniqueAssetPath($"Assets/Misc/Replays/{fileName}.asset"));
+    }
+#endif
+
     #region Packet Handling
 
     private MemoryStreamReader MemoryStream;
@@ -156,9 +186,13 @@ public class NetworkClient : MonoBehaviour {
     private void OnDataReceived(ArraySegment<byte> byteArray) {
         if (byteArray.Array == null) return;
 
-        MemoryStream = new MemoryStreamReader(byteArray.Array);
+        if (IsRecording) {
+            RecordedTraffic.Add(byteArray);
+        }
 
+        MemoryStream = new MemoryStreamReader(byteArray.Array);
         MemoryStream.Read(commandBuffer, 0, 2);
+
         var cmd = BitConverter.ToUInt16(commandBuffer, 0);
         if (RegisteredPackets.ContainsKey(cmd)) {
             var size = RegisteredPackets[cmd].Size;
@@ -182,7 +216,7 @@ public class NetworkClient : MonoBehaviour {
             // the reason why we need this is because the server sends
             // our account id back as a packet, so if we don't register
             // the first two bytes of the account id's int, we'll get disconnected
-            
+
             // do nothing
         } else {
             Debug.LogError($"Received invalid packet {cmd} ({cmd:x4})");
@@ -224,7 +258,12 @@ public class NetworkClient : MonoBehaviour {
     }
 
     private void HandleOutPacket(OutPacket packet) {
-        _client.Send(packet.AsArraySegment());
+        var byteArray = packet.AsArraySegment();
+        if (IsRecording) {
+            RecordedTraffic.Add(byteArray);
+        }
+
+        _client.Send(byteArray);
         OnPacketEvent?.Invoke(packet, true);
     }
 
