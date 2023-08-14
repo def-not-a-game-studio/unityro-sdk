@@ -28,6 +28,12 @@ namespace UnityRO.Net.Editor {
                     component.StartRecording();
                 }
             }
+
+            if (component.ReplayFile != null) {
+                if (GUILayout.Button("Restart replay")) {
+                    component.StartReplay();
+                }
+            }
         }
     }
 }

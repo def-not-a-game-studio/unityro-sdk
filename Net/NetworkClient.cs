@@ -13,7 +13,6 @@ using UnityRO.Net.Editor;
 using UnityRO.Net.Packets;
 
 public class NetworkClient : MonoBehaviour {
-
     public const int DATA_BUFFER_SIZE = 2 * 1024;
     public static UnityAction<NetworkPacket, bool> OnPacketEvent;
 
@@ -44,8 +43,13 @@ public class NetworkClient : MonoBehaviour {
 
     private bool IsPaused = false;
 
-    public bool IsRecording { get; private set; } = false;
-    private List<ArraySegment<byte>> RecordedTraffic = new();
+    [field: SerializeField] public bool IsRecording { get; private set; }
+    [SerializeField] public RecordedNetworkTraffic ReplayFile;
+
+    private bool IsReplay;
+    private bool IsInitialized;
+    private Queue<RecordedNetworkPacket> ReplayQueue;
+    private List<RecordedNetworkPacket> RecordedTraffic = new();
 
     public NetworkClientState State;
 
@@ -61,6 +65,7 @@ public class NetworkClient : MonoBehaviour {
     #region Lifecycle
 
     private void Awake() {
+        IsInitialized = false;
         DontDestroyOnLoad(this);
         Application.runInBackground = true;
         Telepathy.Log.Error = Debug.LogError;
@@ -101,10 +106,37 @@ public class NetworkClient : MonoBehaviour {
 
         OutPacketQueue = new Queue<OutPacket>();
         InPacketQueue = new Queue<InPacket>();
+
+        IsReplay = ReplayFile != null;
+        if (IsReplay) {
+            ReplayQueue = new Queue<RecordedNetworkPacket>(ReplayFile.Packets);
+        }
     }
 
     private void Update() {
-        // tick to process messages
+        if (!IsInitialized) return;
+        
+        if (IsReplay) {
+            HandleReplay();
+        } else {
+            HandleLive();
+        }
+    }
+
+    private void HandleReplay() {
+        if (ReplayQueue.TryPeek(out var nextPacket)) {
+            if (Time.realtimeSinceStartup >= nextPacket.Time) {
+                var p = ReplayQueue.Dequeue();
+                if (p.IsOut) {
+                    // do nothing, cant really send it anywhere
+                } else {
+                    OnDataReceived(new ArraySegment<byte>(p.Data));
+                }
+            }
+        }
+    }
+
+    private void HandleLive() { // tick to process messages
         // (even if not connected so we still process disconnect messages)
         _client.Tick(100, CheckEnabled);
 
@@ -127,6 +159,14 @@ public class NetworkClient : MonoBehaviour {
     #endregion
 
     public void Connect(string ip, int port, ServerType serverType) {
+        if (!IsInitialized) {
+            IsInitialized = true;
+        }
+        
+        if (IsReplay && IsInitialized) {
+            return;
+        }
+
         if (_client.Connected) {
             _client.Disconnect();
         }
@@ -155,18 +195,22 @@ public class NetworkClient : MonoBehaviour {
             delegates.Remove(onPackedReceived);
         }
     }
+    
 
 #if UNITY_EDITOR
+    public void StartReplay() {
+        ReplayQueue = new Queue<RecordedNetworkPacket>(ReplayFile.Packets);
+    } 
     public void StartRecording() {
         IsRecording = true;
-        RecordedTraffic = new List<ArraySegment<byte>>();
+        RecordedTraffic = new List<RecordedNetworkPacket>();
     }
 
     public void StopRecording(string fileName) {
         IsRecording = false;
         var recorded = ScriptableObject.CreateInstance<RecordedNetworkTraffic>();
 
-        recorded.Packets = RecordedTraffic.Select(it => new RecordedNetworkPacket { Data = it.Array }).ToArray();
+        recorded.Packets = RecordedTraffic.ToArray();
         RecordedTraffic.Clear();
 
         if (!Directory.Exists("Assets/Misc/Replays/")) {
@@ -185,15 +229,19 @@ public class NetworkClient : MonoBehaviour {
 
     private void OnDataReceived(ArraySegment<byte> byteArray) {
         if (byteArray.Array == null) return;
-
+        
         if (IsRecording) {
-            RecordedTraffic.Add(byteArray);
+            using var ms = new MemoryStream(byteArray.Array);
+            var recordedPacket = new RecordedNetworkPacket
+                { Time = Time.realtimeSinceStartup, Data = ms.ToArray(), IsOut = false };
+            RecordedTraffic.Add(recordedPacket);
         }
 
         MemoryStream = new MemoryStreamReader(byteArray.Array);
         MemoryStream.Read(commandBuffer, 0, 2);
 
         var cmd = BitConverter.ToUInt16(commandBuffer, 0);
+
         if (RegisteredPackets.ContainsKey(cmd)) {
             var size = RegisteredPackets[cmd].Size;
             var isFixed = true;
@@ -210,7 +258,11 @@ public class NetworkClient : MonoBehaviour {
             var packet = (InPacket)ci.Invoke(null);
             packet.Read(MemoryStream, size - (isFixed ? 2 : 4));
 
-            OnDataReceived(packet);
+            if (IsReplay) {
+                HandleIncomingPacket(packet);
+            } else {
+                OnDataReceived(packet);
+            }
         } else if (ClientRegisteredPackets.ContainsKey((short)cmd)) {
             // this is a hack
             // the reason why we need this is because the server sends
@@ -260,7 +312,8 @@ public class NetworkClient : MonoBehaviour {
     private void HandleOutPacket(OutPacket packet) {
         var byteArray = packet.AsArraySegment();
         if (IsRecording) {
-            RecordedTraffic.Add(byteArray);
+            RecordedTraffic.Add(new RecordedNetworkPacket
+                { Time = Time.realtimeSinceStartup, Data = byteArray.Array, IsOut = true });
         }
 
         _client.Send(byteArray);
