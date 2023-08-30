@@ -43,12 +43,16 @@ public class NetworkClient : MonoBehaviour {
 
     private bool IsPaused = false;
 
+#if UNITY_EDITOR
     [field: SerializeField] public bool IsRecording { get; private set; }
-    [SerializeField] public RecordedNetworkTraffic ReplayFile;
+    public RecordedNetworkTraffic ReplayFile { get; private set; }
+    public int ReplayPosition = 0;
+    public bool IsReplayStepping;
+#endif
 
-    private bool IsReplay;
     private bool IsInitialized;
-    private Queue<RecordedNetworkPacket> ReplayQueue;
+    private bool IsReplay;
+    private List<RecordedNetworkPacket> ReplayQueue;
     private List<RecordedNetworkPacket> RecordedTraffic = new();
 
     public NetworkClientState State;
@@ -106,16 +110,11 @@ public class NetworkClient : MonoBehaviour {
 
         OutPacketQueue = new Queue<OutPacket>();
         InPacketQueue = new Queue<InPacket>();
-
-        IsReplay = ReplayFile != null;
-        if (IsReplay) {
-            ReplayQueue = new Queue<RecordedNetworkPacket>(ReplayFile.Packets);
-        }
     }
 
     private void Update() {
         if (!IsInitialized) return;
-        
+
         if (IsReplay) {
             HandleReplay();
         } else {
@@ -124,14 +123,28 @@ public class NetworkClient : MonoBehaviour {
     }
 
     private void HandleReplay() {
-        if (ReplayQueue.TryPeek(out var nextPacket)) {
-            if (Time.realtimeSinceStartup >= nextPacket.Time) {
-                var p = ReplayQueue.Dequeue();
-                if (p.IsOut) {
-                    // do nothing, cant really send it anywhere
-                } else {
-                    OnDataReceived(new ArraySegment<byte>(p.Data));
-                }
+        if (IsReplayStepping) return;
+        NextReplayPacket();
+    }
+
+    public void NextReplayPacket() {
+        HandleCurrentReplayPacket();
+        ReplayPosition++;
+    }
+    
+    public void PreviousReplayPacket() {
+        if (ReplayPosition <= 0) return;
+        ReplayPosition--;
+        HandleCurrentReplayPacket();
+    }
+
+    private void HandleCurrentReplayPacket() {
+        if (ReplayPosition < ReplayQueue.Count - 1) {
+            var packet = ReplayQueue[ReplayPosition];
+            if (packet.IsOut) {
+                // do nothing, cant really send it anywhere
+            } else {
+                OnDataReceived(new ArraySegment<byte>(packet.Data));
             }
         }
     }
@@ -162,7 +175,7 @@ public class NetworkClient : MonoBehaviour {
         if (!IsInitialized) {
             IsInitialized = true;
         }
-        
+
         if (IsReplay && IsInitialized) {
             return;
         }
@@ -195,12 +208,17 @@ public class NetworkClient : MonoBehaviour {
             delegates.Remove(onPackedReceived);
         }
     }
-    
+
 
 #if UNITY_EDITOR
-    public void StartReplay() {
-        ReplayQueue = new Queue<RecordedNetworkPacket>(ReplayFile.Packets);
-    } 
+    public void StartReplay(RecordedNetworkTraffic replayFile, bool isReplayStepping = false) {
+        ReplayFile = replayFile;
+        IsReplayStepping = isReplayStepping;
+        IsReplay = true;
+        ReplayPosition = 0;
+        ReplayQueue = new List<RecordedNetworkPacket>(ReplayFile.Packets);
+    }
+
     public void StartRecording() {
         IsRecording = true;
         RecordedTraffic = new List<RecordedNetworkPacket>();
@@ -229,7 +247,7 @@ public class NetworkClient : MonoBehaviour {
 
     private void OnDataReceived(ArraySegment<byte> byteArray) {
         if (byteArray.Array == null) return;
-        
+
         if (IsRecording) {
             using var ms = new MemoryStream(byteArray.Array);
             var recordedPacket = new RecordedNetworkPacket
