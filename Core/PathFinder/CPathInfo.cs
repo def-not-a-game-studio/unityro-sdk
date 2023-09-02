@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
 namespace Core.Path {
     public class CPathInfo {
         public List<PathCell> PathData { get; set; } = new List<PathCell>();
@@ -14,9 +13,9 @@ namespace Core.Path {
             StartCell = 0;
         }
 
-        public bool IsInPath(int pos_x, int pos_y) {
-            for (int i = 0; i < PathData.Count; i++) {
-                if (PathData[i].X == pos_x && PathData[i].Y == pos_y) {
+        public bool IsInPath(int posX, int posY) {
+            for (var i = 0; i < PathData.Count; i++) {
+                if (PathData[i].X == posX && PathData[i].Y == posY) {
                     return true;
                 }
             }
@@ -24,71 +23,68 @@ namespace Core.Path {
             return false;
         }
 
-        public void SetNewPathInfo(PathCell[] pBuf, int count) {
-            int cc = 3;
+        public void SetNewPathInfo(PathCell[] cells, int count) {
+            var cc = 3;
 
             if (count < cc) {
                 cc = count;
             }
 
-            bool clear_flag = false;
+            var clearFlag = false;
 
-            int j = (int)PathData.Count - 1;
-            for (int i = count - 1; (i >= cc && j >= cc); i--, j--) {
-                if (pBuf[i].X != PathData[j].X || pBuf[i].Y != PathData[j].Y
-                                               || Math.Abs((int)pBuf[j].Time - (int)PathData[j].Time) > 200) {
-                    clear_flag = true;
+            var j = (int)PathData.Count - 1;
+            for (var i = count - 1; (i >= cc && j >= cc); i--, j--) {
+                if (cells[i].X != PathData[j].X || cells[i].Y != PathData[j].Y
+                                                || Math.Abs((int)cells[j].Time - (int)PathData[j].Time) > 200) {
+                    clearFlag = true;
                 }
             }
 
-            var clear_time = pBuf[count - cc].Time;
+            var clearTime = cells[count - cc].Time;
 
-            if (clear_flag) {
-                PathData.RemoveAll(x => x.Time > clear_time);
+            if (clearFlag) {
+                PathData.RemoveAll(x => x.Time > clearTime);
 
                 //m_pathData.clear() ;
-                for (int i = 0; i < count; i++) {
-                    if (!IsInPath(pBuf[i].X, pBuf[i].Y)) {
-                        PathCell temp = new PathCell();
-                        temp.X = pBuf[i].X;
-                        temp.Y = pBuf[i].Y;
-                        temp.Direction = pBuf[i].Direction;
-                        temp.Time = pBuf[i].Time;
+                for (var i = 0; i < count; i++) {
+                    if (!IsInPath(cells[i].X, cells[i].Y)) {
+                        var temp = new PathCell {
+                            X = cells[i].X,
+                            Y = cells[i].Y,
+                            Direction = cells[i].Direction,
+                            Time = cells[i].Time
+                        };
                         PathData.Add(temp);
                     }
                 }
             }
         }
 
-        public void FixPathTime(long dest_arrived_time) {
+        public void FixPathTime(long destArrivedTime) {
             if (PathData.Count == 0)
                 return;
 
-            if (dest_arrived_time == 0)
+            if (destArrivedTime == 0)
                 return;
 
-            float sub = (float)((int)dest_arrived_time - (int)(PathData[PathData.Count - 1].Time));
+            var sub = (float)((int)destArrivedTime - (int)(PathData.Last().Time));
 
-            float sub_div = sub / (float)PathData.Count;
-            if (sub_div != 0) {
-                for (int i = 0; i < PathData.Count - 1; i++) {
-                    PathData[i].Time += (uint)(sub_div * i);
+            var subDiv = sub / (float)PathData.Count;
+            if (subDiv != 0) {
+                for (var i = 0; i < PathData.Count - 1; i++) {
+                    PathData[i].Time += (uint)(subDiv * i);
                 }
             }
 
-            PathData.Last().Time = dest_arrived_time;
+            PathData.Last().Time = destArrivedTime;
         }
 
         public bool IsPathWillEnd(long time, int delay) {
             if (PathData.Count == 0)
                 return true;
 
-            var sub = PathData[PathData.Count - 1].Time - time;
-            if (sub < delay) {
-                return true;
-            } else {
-                return false;
-            }
+            var sub = PathData.Last().Time - time;
+            return sub < delay;
         }
 
         public int GetPos(int speedFactor, int time, ref float xPos, ref float yPos, ref int dir) {
@@ -147,30 +143,17 @@ namespace Core.Path {
             return -1;
         }
 
-        public int GetStartCellNumber() {
-            return StartCell;
-        }
+        public int GetStartCellNumber() => StartCell;
 
-        public void SetStartCellNumber(int num) {
-            StartCell = num;
-        }
+        public void SetStartCellNumber(int num) => StartCell = num;
 
-        public float GetStartPointX() {
-            return StartPointX;
-        }
+        public float GetStartPointX() => StartPointX;
 
-        float GetStartPointY() {
-            return StartPointY;
-        }
+        public float GetStartPointY() => StartPointY;
 
-        public long GetTotalExpectedMovingTime() {
-            int size = PathData.Count;
-            return PathData[size - 1].Time - PathData[0].Time;
-        }
+        public long GetTotalExpectedMovingTime() => PathData.Last().Time - PathData[0].Time;
 
-        public void GetLastCellTime(ref long lastCellTime) {
-            lastCellTime = PathData[PathData.Count - 1].Time;
-        }
+        public long GetLastCellTime() => PathData.Last().Time;
 
         public int GetPrevCellInfo(long currentTime,
             ref long time,
@@ -179,7 +162,7 @@ namespace Core.Path {
             Func<Vector2, float> getCellHeight) {
             var x = 0;
             var y = 0;
-            
+
             if (PathData.Count == 0) {
                 direction = 0;
                 return -1;
