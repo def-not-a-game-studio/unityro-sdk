@@ -6,7 +6,7 @@ public static class SpriteMeshBuilder {
     private static List<Vector3> outVertices = new List<Vector3>(512);
     private static List<Vector3> outNormals = new List<Vector3>(512);
     private static List<int> outTris = new List<int>(1024);
-    private static List<Vector2> outUvs = new List<Vector2>(512);
+    private static List<Vector3> outUvs = new List<Vector3>(512);
     private static List<Color> outColors = new List<Color>(512);
 
     private static int meshBuildCount = 0;
@@ -137,7 +137,7 @@ public static class SpriteMeshBuilder {
             for(var j = 0; j < verts.Length; j++) {
                 var v = rotation * (verts[j] * scale);
                 outVertices.Add(v + new Vector3(layer.pos.x - offsetX, -(layer.pos.y) + offsetY) / SPR.PIXELS_PER_UNIT);
-                outUvs.Add(uvs[j]);
+                outUvs.Add(new Vector3(uvs[j].x, uvs[j].y, i));
 
                 var c = new Color(layer.color.r, layer.color.g, layer.color.b, layer.color.a * alpha);
 
@@ -168,7 +168,7 @@ public static class SpriteMeshBuilder {
         //Debug.Log($"{outVertices.Count} {outColors.Count}");
 
         mesh.vertices = outVertices.ToArray();
-        mesh.uv = outUvs.ToArray();
+        mesh.SetUVs(0,outUvs.ToArray());
         mesh.triangles = outTris.ToArray();
         mesh.colors = outColors.ToArray();
         mesh.normals = outNormals.ToArray();

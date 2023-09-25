@@ -18,12 +18,8 @@ namespace UnityRO.Core.Sprite {
         [SerializeField] private Texture2D Atlas;
         [SerializeField] private List<SpriteViewer> Children = new();
         [SerializeField] private SpriteViewer Parent;
-
-        private const float shadeForShadow = 0.8f;
+        
         private Light directionalLight;
-        public float CurrentShade = 1f;
-        public float TargetShade;
-        public float ShadeLevel = 0.85f;
         private Color Color;
 
         private Dictionary<ACT.Frame, Mesh> ColliderCache = new();
@@ -77,49 +73,12 @@ namespace UnityRO.Core.Sprite {
 
             UpdateFrames();
             CheckMotionQueue();
-
-            if (Parent == null) {
-                UpdateShade();
-
-                CurrentShade = Mathf.Lerp(CurrentShade, TargetShade, Time.deltaTime * 10f);
-                UpdateColor(CurrentShade);
-                foreach (var child in Children) {
-                    child.UpdateColor(CurrentShade);
-                }
-            }
         }
 
         private void UpdateFrames() {
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
-        }
-
-        private void UpdateShade() {
-            if (directionalLight == null) {
-                directionalLight = FindObjectOfType<GameMap>()?.DirectionalLight;
-
-                if (directionalLight == null) {
-                    return;
-                }
-
-                var color = directionalLight.color;
-                var lightPower = (color.r + color.g + color.b) / 3f;
-                lightPower = (lightPower * directionalLight.intensity + 1) / 2f * directionalLight.shadowStrength;
-                ShadeLevel = shadeForShadow;
-            }
-
-            var srcPos = transform.position + new Vector3(0, 0.2f, 0);
-            var destDir = directionalLight.transform.rotation * Vector3.forward * -1;
-            var mask = ~LayerMask.GetMask("Player", "Monster", "NPC", "Item");
-            var ray = new Ray(srcPos, destDir);
-            TargetShade = Physics.Raycast(ray, out var hit, 50f, mask) ? ShadeLevel : 1f;
-        }
-
-        public void UpdateColor(float currentShade) {
-            var color = Color * currentShade;
-            color.a = MeshRenderer.material.GetFloat(AlphaProp);
-            MeshRenderer.material.SetColor(ColorProp, color);
         }
 
         private void CheckMotionQueue() {
@@ -182,6 +141,14 @@ namespace UnityRO.Core.Sprite {
             MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
             MeshRenderer.material.SetFloat(AlphaProp, 1f);
 
+            var rendererIndex = ViewerType switch {
+                                    ViewerType.Head => 1,
+                                    ViewerType.Body => 0,
+                                    ViewerType.Emotion => 0,
+                                    _ => 0
+                                };
+            MeshRenderer.material.renderQueue += rendererIndex;
+
             MeshRenderer.material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
             if (SpriteData.palettes.Length <= 0) {
                 Atlas.filterMode = FilterMode.Bilinear;
@@ -213,7 +180,7 @@ namespace UnityRO.Core.Sprite {
             }
 
             var diff = parentAnchor - ourAnchor;
-            var localPosition = new Vector3(diff.x, -diff.y, 0f) / SPR.PIXELS_PER_UNIT;
+            var localPosition = new Vector3(diff.x, -diff.y, 0) / SPR.PIXELS_PER_UNIT;
             MeshRenderer.material.SetVector(OffsetProp, localPosition);
         }
 

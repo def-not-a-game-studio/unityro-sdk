@@ -146,7 +146,7 @@ namespace UnityRO.Core.Sprite {
 
             MeshCache.TryGetValue(frame, out Mesh rendererMesh);
             if (rendererMesh == null) {
-                rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites);
+                rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites, 0);
                 MeshCache.Add(frame, rendererMesh);
             }
 
