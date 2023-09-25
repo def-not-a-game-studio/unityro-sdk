@@ -53,7 +53,7 @@ namespace UnityRO.Core.Sprite {
         public ACT.Frame GetCurrentFrame() {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
 
-            var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentSpriteMotion is SpriteMotion.Idle or SpriteMotion.Sit);
+            var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentSpriteMotion is SpriteMotion.Idle or SpriteMotion.Sit or SpriteMotion.Dead);
             var frameCount = CurrentAction.frames.Length;
             var deltaSinceMotionStart = (GameManager.Tick - AnimationStart);
 
@@ -80,7 +80,9 @@ namespace UnityRO.Core.Sprite {
                 } else { //might need to check if it's body to call the animation finished
                     SpriteViewer.OnAnimationFinished();
                     PCLog($"{CurrentSpriteMotion} Animation ended, stopping");
-                    CurrentFrame = maxFrame - 1;
+                    if (CurrentFrame > 0) {
+                        CurrentFrame = maxFrame - 1;
+                    }
                 }
             }
 
