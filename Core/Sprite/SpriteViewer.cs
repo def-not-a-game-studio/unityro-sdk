@@ -1,14 +1,14 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using ROIO.Models.FileTypes;
-using UnityEngine;
-using UnityRO.Core.Camera;
-using UnityRO.Core.Database;
-using UnityRO.Core.GameEntity;
-
 namespace UnityRO.Core.Sprite {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using ROIO.Models.FileTypes;
+    using UnityEngine;
+    using UnityRO.Core.Camera;
+    using UnityRO.Core.Database;
+    using UnityRO.Core.GameEntity;
+
     [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
     public class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer {
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
@@ -19,9 +19,6 @@ namespace UnityRO.Core.Sprite {
         [SerializeField] private List<SpriteViewer> Children = new();
         [SerializeField] private SpriteViewer Parent;
         
-        private Light directionalLight;
-        private Color Color;
-
         private Dictionary<ACT.Frame, Mesh> ColliderCache = new();
         private Dictionary<ACT.Frame, Mesh> MeshCache = new();
 
@@ -132,7 +129,6 @@ namespace UnityRO.Core.Sprite {
             MeshFilter = GetComponent<MeshFilter>();
             MeshCollider = GetComponent<MeshCollider>();
             Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
-            Color = Color.white;
 
             if (SpriteData == null) return;
 
@@ -142,8 +138,8 @@ namespace UnityRO.Core.Sprite {
             MeshRenderer.material.SetFloat(AlphaProp, 1f);
 
             var rendererIndex = ViewerType switch {
-                                    ViewerType.Head => 1,
-                                    ViewerType.Body => 0,
+                                    ViewerType.Head => 2,
+                                    ViewerType.Body => 1,
                                     ViewerType.Emotion => 0,
                                     _ => 0
                                 };

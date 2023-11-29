@@ -101,7 +101,6 @@ public class MapRenderer {
     }
 
     private void CreateLightPoints(Transform parent, RSW world, Vector2Int mapSize) {
-        //add lights
         GameObject lightsParent = new GameObject("_lights");
         lightsParent.transform.SetParent(parent, false);
 
@@ -110,11 +109,15 @@ public class MapRenderer {
             Transform transform;
             (transform = lightObj.transform).SetParent(lightsParent.transform, false);
             lightObj.color = new Color(light.color[0], light.color[1], light.color[2]);
-            lightObj.range = light.range;
-            lightObj.intensity = 1f;
+            lightObj.range = light.range / 5f; //?? whatsup doddler?
+            lightObj.intensity = 5f;
             lightObj.shadows = LightShadows.Soft;
+#if UNITY_EDITOR
+            lightObj.lightmapBakeType = LightmapBakeType.Baked;
+#endif
             var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1], light.pos[2] + mapSize.y);
             transform.position = position;
+            lightObj.gameObject.isStatic = true;
         }
     }
 

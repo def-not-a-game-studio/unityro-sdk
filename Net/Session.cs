@@ -4,8 +4,6 @@ public class Session {
 
     public const int PC_ENTITY_TYPE = 3;
 
-    public static Action<string> OnMapChanged;
-
     public int AccountID;
     public INetworkEntity Entity { get; private set; }
     public string CurrentMap { get; private set; }
@@ -21,6 +19,5 @@ public class Session {
 
     public void SetCurrentMap(string mapname) {
         CurrentMap = mapname;
-        OnMapChanged?.Invoke(mapname);
     }
 }

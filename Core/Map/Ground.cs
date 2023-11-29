@@ -64,6 +64,7 @@ public class Ground {
         gameObject.transform.Translate(0, -0.002f, 0);
         gameObject.AddComponent<MeshCollider>();
         gameObject.layer = LayerMask.NameToLayer("Ground");
+        gameObject.isStatic = true;
 
         var meshSplitController = gameObject.AddComponent<MeshSplitController>();
         meshSplitController.Parameters = new MeshSplitParameters {

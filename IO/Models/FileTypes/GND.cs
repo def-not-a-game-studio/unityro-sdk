@@ -1,7 +1,7 @@
-﻿using UnityEngine;
-
-namespace ROIO.Models.FileTypes
+﻿namespace ROIO.Models.FileTypes
 {
+    using UnityEngine;
+
     public class GND
     {
         public static string Header = "GRGN";
@@ -55,6 +55,8 @@ namespace ROIO.Models.FileTypes
             public int perCell;
             public uint count;
             public byte[][] data;
+            public int width;
+            public int height;
         }
 
         public GND(string version)

@@ -1,10 +1,10 @@
-﻿using ROIO.Models.FileTypes;
-using ROIO.Utils;
-using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿namespace ROIO.Loaders {
+    using System;
+    using System.Collections.Generic;
+    using ROIO.Models.FileTypes;
+    using ROIO.Utils;
+    using UnityEngine;
 
-namespace ROIO.Loaders {
     public class GroundLoader {
         public static GND Load(MemoryStreamReader data) {
             string header = data.ReadBinaryString(4);
@@ -66,6 +66,8 @@ namespace ROIO.Loaders {
 
 
             var lightmap = gnd.lightmap = new GND.Lightmap();
+            lightmap.width = lightmapWidth;
+            lightmap.height = lightmapHeight;
             lightmap.count = lightmapCount;
             //lightmap.perCell = perCell;
             lightmap.data = new byte[lightmapCount][];

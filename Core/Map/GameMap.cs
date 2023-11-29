@@ -16,6 +16,7 @@ public class GameMap : MonoBehaviour {
     [SerializeField] private RSW.LightInfo LightInfo;
     [SerializeField] private Color Ambient;
     [SerializeField] private Color Diffuse;
+    [field: SerializeField] public Texture2D ROLightMap { get; private set; }
 
     private PathFinder PathFinder;
 
@@ -36,8 +37,6 @@ public class GameMap : MonoBehaviour {
             DirectionalLight = worldLightGameObject.GetOrAddComponent<Light>();
         }
         SetupWorldLight();
-        Shader.SetGlobalColor("_RoAmbientColor", Ambient);
-        Shader.SetGlobalColor("_RoDiffuseColor", Diffuse);
     }
 
     private void SetupWorldLight() {
@@ -45,10 +44,17 @@ public class GameMap : MonoBehaviour {
             return;
         }
 
+        if (this.ROLightMap != null) {
+            Shader.SetGlobalTexture("_RoLightmap", ROLightMap);
+            Shader.SetGlobalVector("_RoMapSize", new Vector4(this._size.x, this._size.y));
+        }
         GraphicsSettings.lightsUseColorTemperature = true;
         GraphicsSettings.lightsUseLinearIntensity = true;
 
         DirectionalLight.type = LightType.Directional;
+#if UNITY_EDITOR
+            DirectionalLight.lightmapBakeType = LightmapBakeType.Mixed;
+#endif
         DirectionalLight.shadows = LightShadows.Soft;
 
         var rotation = Quaternion.Euler(LightInfo.longitude, LightInfo.latitude, 0);

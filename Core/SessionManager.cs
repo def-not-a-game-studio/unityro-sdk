@@ -1,17 +1,20 @@
-using System;
-using System.Threading.Tasks;
-using Core.Path;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityRO.Core;
-
 namespace UnityRO.Net {
-    public class SessionManager : MonoBehaviour {
+    using System;
+    using System.Threading.Tasks;
+    using UnityEngine;
+    using UnityEngine.Events;
+    using UnityEngine.SceneManagement;
+    using UnityRO.Core;
+
+    public class SessionManager : MonoBehaviour
+    {
+
+        public static UnityAction<GameMap> OnSessionMapChanged;
+        
         public Session CurrentSession { get; private set; }
         private Scene CurrentScene;
 
         private NetworkClient NetworkClient;
-        private PathFinder PathFinder;
         private EntityManager EntityManager;
 
         private void Awake() {
@@ -47,6 +50,10 @@ namespace UnityRO.Net {
             }
 
             CurrentSession.SetCurrentMap(mapName);
+            var gameMap = FindObjectOfType<GameMap>();
+            if (gameMap != null) {
+                OnSessionMapChanged?.Invoke(gameMap);
+            }
 
             try {
                 NetworkClient.PausePacketHandling();
