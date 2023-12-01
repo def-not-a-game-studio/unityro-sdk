@@ -1,8 +1,10 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using ROIO;
 using ROIO.Loaders;
 using UnityEditor;
@@ -10,7 +12,6 @@ using UnityEditor.SceneManagement;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
 [InitializeOnLoad]
 public class ROMapExtractor : EditorWindow {
     [SerializeField] private string grfRootPath = "C:/foo";
@@ -136,6 +137,14 @@ public class ROMapExtractor : EditorWindow {
         } finally {
             EditorUtility.ClearProgressBar();
         }
+    }
+
+    public async void ExportGroundObj()
+    {
+        AsyncMapLoader.GameMapData gameMapData = await new AsyncMapLoader().Load($"{mapName}.rsw");
+        var ground = new Ground();
+        ground.BuildMesh(gameMapData.CompiledGround);
+        ExportToOBJ(ground.meshes[0], mapName);
     }
 
     private static void ExtractWater(GameObject mapObject, string mapName) {
@@ -500,6 +509,10 @@ public class ROMapExtractor : EditorWindow {
         if (GUILayout.Button("Save Map") && CurrentGameMap != null) {
             SaveMap(CurrentGameMap.gameObject);
         }
+        
+        if (GUILayout.Button("Export ground obj")) {
+            ExportGroundObj();
+        }
 
         EditorGUILayout.EndHorizontal();
     }
@@ -512,6 +525,44 @@ public class ROMapExtractor : EditorWindow {
 
     private void OnInspectorUpdate() {
         Repaint();
+    }
+    
+    private static void ExportToOBJ(Mesh mesh, string name)
+    {
+        var nfi = new NumberFormatInfo
+        {
+            NumberDecimalSeparator = ".",
+        };
+        var path = EditorUtility.SaveFilePanel("Export OBJ", "", name, "obj");
+        var sb = new StringBuilder();
+ 
+        foreach(Vector3 v in mesh.vertices)
+        {
+            sb.Append(string.Format("v {0} {1} {2}\n", v.x.ToString(nfi), v.y.ToString(nfi), v.z.ToString(nfi)));
+        }
+        foreach(Vector3 v in mesh.normals)
+        {
+            sb.Append(string.Format("vn {0} {1} {2}\n", v.x.ToString(nfi), v.y.ToString(nfi), v.z.ToString(nfi)));
+        }
+        int t1, t2, t3;
+        
+        for (int material=0; material < mesh.subMeshCount; material++)
+        {
+            sb.Append(string.Format("\ng {0}\n", name));
+            int[] triangles = mesh.GetTriangles(material);
+            for (int i = 0; i < triangles.Length; i += 3)
+            {
+                t1 = triangles[i] + 1;
+                t2 = triangles[i + 1] + 1;
+                t3 = triangles[i + 2] + 1;
+                
+                sb.Append(string.Format("f {0}/{0} {1}/{1} {2}/{2}\n", t1.ToString(nfi), t2.ToString(nfi), t3.ToString(nfi)));
+            }
+        }
+        
+        var writer = new StreamWriter(path);
+        writer.Write(sb.ToString());
+        writer.Close();
     }
 
     internal static Texture2D DuplicateTexture(Texture2D source) {

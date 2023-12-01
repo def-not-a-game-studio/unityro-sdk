@@ -53,9 +53,9 @@ public class Ground {
         mr.sharedMaterial.SetTexture("_Tintmap", tintmap);
         mr.sharedMaterial.SetTexture("_Lightmap", lightmap);
 
-        Vector3 scale = gameObject.transform.localScale;
-        scale.Set(1f, -1f, 1f);
-        gameObject.transform.localScale = scale;
+        // Vector3 scale = gameObject.transform.localScale;
+        // scale.Set(1f, 1f, 1f);
+        // gameObject.transform.localScale = scale;
 
         //smooth out mesh
         NormalSolver.RecalculateNormals(mf.sharedMesh, 60);
@@ -79,9 +79,9 @@ public class Ground {
         var newGround = new GameObject("_Ground") {
             transform = {
                 parent = GameObject.FindObjectOfType<GameMap>().transform,
-                localScale = scale
+                localScale = Vector3.one,
             },
-            layer = LayerMask.NameToLayer("Ground")
+            layer = LayerMask.NameToLayer("Ground"),
         };
         foreach (var subMesh in gameObject.transform.GetChildren()) {
             subMesh.transform.SetParent(newGround.transform, true);
@@ -160,8 +160,7 @@ public class Ground {
                         break;
                     }
 
-                    Array.ConstrainedCopy(compiledMesh.mesh, vIndex * vertexData.Length, vertexData, 0,
-                        vertexData.Length);
+                    Array.ConstrainedCopy(compiledMesh.mesh, vIndex * vertexData.Length, vertexData, 0, vertexData.Length);
                     Vertex vertex = BuildVertex(vertexData);
                     vs[j] = vertex;
                     vertices.Add(vertex.position);
@@ -175,20 +174,20 @@ public class Ground {
                     if (vs[0].normal.z == 1) {
                         v++;
                         triangles.AddRange(new int[] {
-                            i * 4 + 0, i * 4 + 1, i * 4 + 2, //left triangle                              
-                            i * 4 + 2, i * 4 + 3, i * 4 + 0, //right triangle      
+                            i * 4 + 2, i * 4 + 1, i * 4 + 0, //left triangle                              
+                            i * 4 + 0, i * 4 + 3, i * 4 + 2, //right triangle      
                         });
                     } else if (vs[0].normal.x == 1) {
                         v++;
                         triangles.AddRange(new int[] {
-                            i * 4 + 0, i * 4 + 2, i * 4 + 1, //left triangle  
-                            i * 4 + 2, i * 4 + 3, i * 4 + 1, //right triangle       
+                            i * 4 + 1, i * 4 + 2, i * 4 + 0, //left triangle  
+                            i * 4 + 1, i * 4 + 3, i * 4 + 2, //right triangle       
                         });
                     } else {
                         h++;
                         triangles.AddRange(new int[] {
-                            i * 4 + 0, i * 4 + 2, i * 4 + 3, //left triangle  
-                            i * 4 + 0, i * 4 + 1, i * 4 + 2, //right triangle                      
+                            i * 4 + 3, i * 4 + 2, i * 4 + 0, //left triangle  
+                            i * 4 + 2, i * 4 + 1, i * 4 + 0, //right triangle                      
                         });
                     }
                 }
@@ -202,6 +201,7 @@ public class Ground {
             mesh.uv = uv.ToArray();
             mesh.uv2 = lightmapUv.ToArray();
             mesh.uv3 = tintUv.ToArray();
+            //mesh.RecalculateNormals();
 
             meshes[nMesh] = mesh;
         }
@@ -210,7 +210,7 @@ public class Ground {
     private Vertex BuildVertex(float[] vertexData) {
         Vertex v = new Vertex();
 
-        v.position = new Vector3(vertexData[0], vertexData[1], vertexData[2]);
+        v.position = new Vector3(vertexData[0], -vertexData[1], vertexData[2]);
         v.normal = new Vector3(vertexData[3], vertexData[4], vertexData[5]);
         v.texCoord = new Vector2(vertexData[6], vertexData[7]);
         v.lightCoord = new Vector2(vertexData[8], vertexData[9]);
