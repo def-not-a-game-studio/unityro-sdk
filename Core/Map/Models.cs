@@ -84,9 +84,10 @@ public class Models {
                 instanceObj.transform.localScale = scale;
 
                 //avoid z fighting between models
-                float xRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
-                float yRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
-                float zRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
+                // float xRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
+                // float yRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
+                // float zRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
+                float xRandom = 0f, yRandom = 0f, zRandom = 0f;
 
                 Vector3 position = new Vector3(descriptor.position[0] + xRandom, descriptor.position[1] + yRandom, descriptor.position[2] + zRandom);
                 position.x += mapSize.x;

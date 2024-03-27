@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using ROIO;
 using ROIO.Loaders;
 using UnityEditor;
@@ -27,9 +28,9 @@ public class ROMapExtractor : EditorWindow {
         EditorWindow.GetWindow(typeof(ROMapExtractor));
     }
 
-    async void LoadMap() {
+    async Task LoadMap(bool splitIntoChunks = true) {
         AsyncMapLoader.GameMapData gameMapData = await new AsyncMapLoader().Load($"{mapName}.rsw");
-        CurrentGameMap = await new MapRenderer().RenderMap(gameMapData, mapName);
+        CurrentGameMap = await new MapRenderer().RenderMap(gameMapData, mapName, splitIntoChunks);
     }
 
     public static string GetBasePath() {
@@ -141,10 +142,25 @@ public class ROMapExtractor : EditorWindow {
 
     public async void ExportGroundObj()
     {
-        AsyncMapLoader.GameMapData gameMapData = await new AsyncMapLoader().Load($"{mapName}.rsw");
-        var ground = new Ground();
-        ground.BuildMesh(gameMapData.CompiledGround);
-        ExportToOBJ(ground.meshes[0], mapName);
+        await LoadMap(false);
+        var meshFilters = CurrentGameMap.GetComponentsInChildren<MeshFilter>();
+        CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+        
+        int i = 0;
+        while (i < meshFilters.Length)
+        {
+            combine[i].mesh = meshFilters[i].sharedMesh;
+            combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+            meshFilters[i].gameObject.SetActive(false);
+
+            i++;
+        }
+
+        Mesh mesh = new Mesh();
+        mesh.CombineMeshes(combine);
+        new GameObject().AddComponent<MeshFilter>().sharedMesh = mesh;
+
+        ExportToOBJ(mesh, mapName);
     }
 
     private static void ExtractWater(GameObject mapObject, string mapName) {
@@ -491,7 +507,7 @@ public class ROMapExtractor : EditorWindow {
         GUILayout.Label("GRF Settings", EditorStyles.boldLabel);
         grfRootPath = EditorGUILayout.TextField("GRF Root Path", grfRootPath);
         GUILayout.Space(8);
-        GrfReordableList.DoLayoutList();
+        GrfReordableList?.DoLayoutList();
 
         if (GUILayout.Button("Load GRF")) {
             LoadGRF();
@@ -535,34 +551,40 @@ public class ROMapExtractor : EditorWindow {
         };
         var path = EditorUtility.SaveFilePanel("Export OBJ", "", name, "obj");
         var sb = new StringBuilder();
+        sb.AppendLine($"mtllib {name}.mtl");
+        sb.AppendLine($"o {name}.obj");
  
-        foreach(Vector3 v in mesh.vertices)
+        ConvertMeshToObj(mesh, name, sb, nfi);
+
+        var writer = new StreamWriter(path);
+        writer.Write(sb.ToString());
+        writer.Close();
+    }
+    private static void ConvertMeshToObj(Mesh mesh, string name, StringBuilder sb, NumberFormatInfo nfi)
+    {
+        foreach (var v in mesh.vertices)
         {
-            sb.Append(string.Format("v {0} {1} {2}\n", v.x.ToString(nfi), v.y.ToString(nfi), v.z.ToString(nfi)));
+            sb.AppendLine($"v {v.x.ToString(nfi)} {v.y.ToString(nfi)} {v.z.ToString(nfi)}");
         }
-        foreach(Vector3 v in mesh.normals)
+        foreach (var v in mesh.normals)
         {
-            sb.Append(string.Format("vn {0} {1} {2}\n", v.x.ToString(nfi), v.y.ToString(nfi), v.z.ToString(nfi)));
+            sb.AppendLine($"vn {v.x.ToString(nfi)} {v.y.ToString(nfi)} {v.z.ToString(nfi)}");
         }
-        int t1, t2, t3;
         
-        for (int material=0; material < mesh.subMeshCount; material++)
+        int t1, t2, t3;
+        for (var material = 0; material < mesh.subMeshCount; material++)
         {
-            sb.Append(string.Format("\ng {0}\n", name));
-            int[] triangles = mesh.GetTriangles(material);
-            for (int i = 0; i < triangles.Length; i += 3)
+            sb.AppendLine($"g {name}");
+            var triangles = mesh.GetTriangles(material);
+            for (var i = 0; i < triangles.Length; i += 3)
             {
                 t1 = triangles[i] + 1;
                 t2 = triangles[i + 1] + 1;
                 t3 = triangles[i + 2] + 1;
-                
-                sb.Append(string.Format("f {0}/{0} {1}/{1} {2}/{2}\n", t1.ToString(nfi), t2.ToString(nfi), t3.ToString(nfi)));
+
+                sb.AppendLine(string.Format("f {0}/{0} {1}/{1} {2}/{2}", t1.ToString(nfi), t2.ToString(nfi), t3.ToString(nfi)));
             }
         }
-        
-        var writer = new StreamWriter(path);
-        writer.Write(sb.ToString());
-        writer.Close();
     }
 
     internal static Texture2D DuplicateTexture(Texture2D source) {

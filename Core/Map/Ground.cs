@@ -17,11 +17,11 @@ public class Ground {
 
     public Ground() { }
 
-    public Ground(GND.Mesh compiledMesh, RSW.WaterInfo waterInfo) {
+    public Ground(GND.Mesh compiledMesh, RSW.WaterInfo waterInfo, bool splitIntoChunks) {
         BuildMesh(compiledMesh);
         if (meshes.Length > 0) {
             InitTextures(compiledMesh);
-            Render();
+            Render(splitIntoChunks);
         }
 
         if (compiledMesh.waterVertCount > 0) {
@@ -39,7 +39,7 @@ public class Ground {
         public Vector2 tileCoord;
     }
 
-    public void Render() {
+    public void Render(bool splitIntoChunks) {
         GameObject gameObject = new GameObject("_Ground");
         gameObject.transform.parent = GameObject.FindObjectOfType<GameMap>().transform;
         var material = Resources.Load<Material>("Materials/GroundMaterial");
@@ -66,28 +66,31 @@ public class Ground {
         gameObject.layer = LayerMask.NameToLayer("Ground");
         gameObject.isStatic = true;
 
-        var meshSplitController = gameObject.AddComponent<MeshSplitController>();
-        meshSplitController.Parameters = new MeshSplitParameters {
-            GenerateColliders = true,
-            GridSize = 16,
-            SplitAxes = new bool3(true, false, true),
-            UseParentLayer = true,
-        };
-        meshSplitController.Split();
+        if (splitIntoChunks)
+        {
+            var meshSplitController = gameObject.AddComponent<MeshSplitController>();
+            meshSplitController.Parameters = new MeshSplitParameters {
+                GenerateColliders = true,
+                GridSize = 16,
+                SplitAxes = new bool3(true, false, true),
+                UseParentLayer = true,
+            };
+            meshSplitController.Split();
 
-        gameObject.name = "_Ground.old";
-        var newGround = new GameObject("_Ground") {
-            transform = {
-                parent = GameObject.FindObjectOfType<GameMap>().transform,
-                localScale = Vector3.one,
-            },
-            layer = LayerMask.NameToLayer("Ground"),
-        };
-        foreach (var subMesh in gameObject.transform.GetChildren()) {
-            subMesh.transform.SetParent(newGround.transform, true);
+            gameObject.name = "_Ground.old";
+            var newGround = new GameObject("_Ground") {
+                transform = {
+                    parent = GameObject.FindObjectOfType<GameMap>().transform,
+                    localScale = Vector3.one,
+                },
+                layer = LayerMask.NameToLayer("Ground"),
+            };
+            foreach (var subMesh in gameObject.transform.GetChildren()) {
+                subMesh.transform.SetParent(newGround.transform, true);
+            }
+
+            GameObject.DestroyImmediate(gameObject);
         }
-
-        GameObject.DestroyImmediate(gameObject);
     }
 
     public void InitTextures(GND.Mesh compiledMesh) {

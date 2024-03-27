@@ -52,14 +52,14 @@ public class MapRenderer {
 
     public Fog fog = new Fog(false);*/
 
-    public async Task<GameMap> RenderMap(AsyncMapLoader.GameMapData gameMapData, string mapName) {
+    public async Task<GameMap> RenderMap(AsyncMapLoader.GameMapData gameMapData, string mapName, bool splitIntoChunks) {
         var gameMap = new GameObject(mapName).AddComponent<GameMap>();
         gameMap.tag = "Map";
         gameMap.SetMapLightInfo(gameMapData.World.light);
         gameMap.SetMapSize((int)gameMapData.Ground.width, (int)gameMapData.Ground.height);
         gameMap.SetMapAltitude(new Altitude(gameMapData.Altitude));
 
-        var ground = new Ground(gameMapData.CompiledGround, gameMapData.World.water);
+        var ground = new Ground(gameMapData.CompiledGround, gameMapData.World.water, splitIntoChunks);
 
         for (int i = 0; i < gameMapData.World.sounds.Count; i++) {
             gameMapData.World.sounds[i].pos[0] += gameMap.Size.x;
@@ -170,7 +170,7 @@ public class MapRenderer {
         ground.BuildMesh(mesh);
         if (ground.meshes.Length > 0) {
             ground.InitTextures(mesh);
-            ground.Render();
+            ground.Render(true);
         }
 
         if (mesh.waterVertCount > 0) {
