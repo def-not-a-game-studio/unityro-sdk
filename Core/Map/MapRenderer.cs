@@ -103,19 +103,19 @@ public class MapRenderer {
     private void CreateLightPoints(Transform parent, RSW world, Vector2Int mapSize) {
         GameObject lightsParent = new GameObject("_lights");
         lightsParent.transform.SetParent(parent, false);
-
         foreach (var light in world.lights) {
             var lightObj = new GameObject(light.name).AddComponent<Light>();
             Transform transform;
             (transform = lightObj.transform).SetParent(lightsParent.transform, false);
             lightObj.color = new Color(light.color[0], light.color[1], light.color[2]);
-            lightObj.range = light.range / 5f; //?? whatsup doddler?
-            lightObj.intensity = 5f;
+            lightObj.range = light.range; //?? whatsup doddler?
+            lightObj.intensity = light.range;
+            lightObj.bounceIntensity = 1.5f;
             lightObj.shadows = LightShadows.Soft;
 #if UNITY_EDITOR
             lightObj.lightmapBakeType = LightmapBakeType.Baked;
 #endif
-            var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1], light.pos[2] + mapSize.y);
+            var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1] + 1f, light.pos[2] + mapSize.y);
             transform.position = position;
             lightObj.gameObject.isStatic = true;
         }

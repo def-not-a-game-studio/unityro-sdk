@@ -1,16 +1,20 @@
-namespace UnityRO.Core.Sprite {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Linq;
-    using ROIO.Models.FileTypes;
-    using UnityEngine;
-    using UnityRO.Core.Camera;
-    using UnityRO.Core.Database;
-    using UnityRO.Core.GameEntity;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using ROIO.Models.FileTypes;
+using UnityEngine;
+using UnityRO.Core.Camera;
+using UnityRO.Core.Database;
+using UnityRO.Core.GameEntity;
 
+namespace UnityRO.Core.Sprite {
     [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
-    public class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer {
+    public class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer
+    {
+
+        public bool IsReady { get; private set; } = false;
+        
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
         [field: SerializeField] public ViewerType ViewerType { get; private set; }
 
@@ -134,6 +138,18 @@ namespace UnityRO.Core.Sprite {
 
             Sprites = SpriteData.GetSprites();
             FramePaceCalculator = new FramePaceCalculator(Entity, this, SpriteData.act, CharacterCamera);
+
+            var material = Resources.Load<Material>("Materials/Palette");
+            var renderTexture = RenderTexture.GetTemporary(Atlas.width, Atlas.height, 0, RenderTextureFormat.ARGB32);
+            // renderTexture.antiAliasing = 2;
+            renderTexture.filterMode = FilterMode.Trilinear;
+            material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
+            if (SpriteData.palettes.Length > 0) {
+                material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
+                material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
+            }
+            Graphics.Blit(Atlas, renderTexture, material);
+
             MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
             MeshRenderer.material.SetFloat(AlphaProp, 1f);
 
@@ -150,11 +166,13 @@ namespace UnityRO.Core.Sprite {
                 Atlas.filterMode = FilterMode.Bilinear;
             }
 
-            MeshRenderer.material.SetTexture(MainTexProp, Atlas);
+            MeshRenderer.material.SetTexture(MainTexProp, renderTexture);
 
             if (SpriteData.palettes.Length > 0) {
                 MeshRenderer.material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
             }
+            
+            IsReady = true;
         }
 
         public Vector2 GetAnimationAnchor() {
@@ -164,7 +182,7 @@ namespace UnityRO.Core.Sprite {
         }
 
         private void UpdateLocalPosition() {
-            if (Parent == null)
+            if (Parent == null || !Parent.IsReady)
                 return;
 
             var parentAnchor = Parent.GetAnimationAnchor();
@@ -180,7 +198,9 @@ namespace UnityRO.Core.Sprite {
             MeshRenderer.material.SetVector(OffsetProp, localPosition);
         }
 
-        private ACT.Frame UpdateFrame() {
+        private ACT.Frame UpdateFrame()
+        {
+            FramePaceCalculator ??= new FramePaceCalculator(Entity, this, SpriteData.act, CharacterCamera);;
             return FramePaceCalculator.GetCurrentFrame();
         }
 

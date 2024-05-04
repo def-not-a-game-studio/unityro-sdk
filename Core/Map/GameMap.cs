@@ -6,7 +6,8 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 [Serializable]
-public class GameMap : MonoBehaviour {
+public class GameMap : MonoBehaviour
+{
     [SerializeField] private Vector2Int _size;
     public Vector2Int Size => _size;
 
@@ -20,18 +21,22 @@ public class GameMap : MonoBehaviour {
 
     private PathFinder PathFinder;
 
-    private void Awake() {
+    private void Awake()
+    {
         InitWorldLight();
         InitPathFinder();
     }
 
-    private void InitPathFinder() {
+    private void InitPathFinder()
+    {
         PathFinder = gameObject.GetOrAddComponent<PathFinder>();
         PathFinder.SetMap(Altitude);
     }
 
-    private void InitWorldLight() {
-        if (DirectionalLight == null) {
+    private void InitWorldLight()
+    {
+        if (DirectionalLight == null)
+        {
             var worldLightGameObject = new GameObject("Light");
             worldLightGameObject.transform.SetParent(gameObject.transform);
             DirectionalLight = worldLightGameObject.GetOrAddComponent<Light>();
@@ -39,12 +44,15 @@ public class GameMap : MonoBehaviour {
         SetupWorldLight();
     }
 
-    private void SetupWorldLight() {
-        if (LightInfo == null) {
+    private void SetupWorldLight()
+    {
+        if (LightInfo == null)
+        {
             return;
         }
 
-        if (this.ROLightMap != null) {
+        if (this.ROLightMap != null)
+        {
             Shader.SetGlobalTexture("_RoLightmap", ROLightMap);
             Shader.SetGlobalVector("_RoMapSize", new Vector4(this._size.x, this._size.y));
         }
@@ -53,7 +61,8 @@ public class GameMap : MonoBehaviour {
 
         DirectionalLight.type = LightType.Directional;
 #if UNITY_EDITOR
-            DirectionalLight.lightmapBakeType = LightmapBakeType.Mixed;
+        DirectionalLight.lightmapBakeType = LightmapBakeType.Mixed;
+        DirectionalLight.shadowStrength = .7f;
 #endif
         DirectionalLight.shadows = LightShadows.Soft;
 
@@ -62,11 +71,13 @@ public class GameMap : MonoBehaviour {
 
         var ambient = Color.white;
         var diffuse = Color.white;
-        if (LightInfo.ambient.Length > 0) {
+        if (LightInfo.ambient.Length > 0)
+        {
             ambient = new Color(LightInfo.ambient[0], LightInfo.ambient[1], LightInfo.ambient[2]);
         }
 
-        if (LightInfo.diffuse.Length > 0) {
+        if (LightInfo.diffuse.Length > 0)
+        {
             diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
         }
 
@@ -79,42 +90,52 @@ public class GameMap : MonoBehaviour {
         Diffuse = diffuse;
     }
 
-    public void SetMapSize(int width, int height) {
+    public void SetMapSize(int width, int height)
+    {
         _size = new Vector2Int(width, height);
     }
 
-    public void SetMapLightInfo(RSW.LightInfo lightInfo) {
+    public void SetMapLightInfo(RSW.LightInfo lightInfo)
+    {
         LightInfo = lightInfo;
 
-        if (DirectionalLight == null) {
+        if (DirectionalLight == null)
+        {
             InitWorldLight();
         }
 
         SetupWorldLight();
     }
 
-    public void SetMapAltitude(Altitude altitude) {
+    public void SetMapAltitude(Altitude altitude)
+    {
         Altitude = altitude;
         PathFinder?.SetMap(Altitude);
     }
 
-    public void SetMapSounds(List<MapSound> sounds) {
+    public void SetMapSounds(List<MapSound> sounds)
+    {
         Sounds = sounds;
     }
 
-    public PathFinder GetPathFinder() {
-        if (PathFinder == null) {
+    public PathFinder GetPathFinder()
+    {
+        if (PathFinder == null)
+        {
             InitPathFinder();
         }
 
         return PathFinder;
     }
 
-    public void Update() {
+    public void Update()
+    {
         var now = Time.realtimeSinceStartup;
 
-        foreach (var p in Sounds) {
-            if (p.playAt <= now && p.source != null) {
+        foreach (var p in Sounds)
+        {
+            if (p.playAt <= now && p.source != null)
+            {
                 p.source.Play();
                 p.playAt = now + p.info.cycle;
             }
