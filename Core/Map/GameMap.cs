@@ -12,7 +12,7 @@ public class GameMap : MonoBehaviour
     public Vector2Int Size => _size;
 
     [SerializeField] [HideInInspector] public Light DirectionalLight;
-    [SerializeField] [HideInInspector] private Altitude Altitude;
+    [field:SerializeField] [HideInInspector] public Altitude Altitude { get; private set; }
     [SerializeField] [HideInInspector] private List<MapSound> Sounds;
     [SerializeField] private RSW.LightInfo LightInfo;
     [SerializeField] private Color Ambient;
