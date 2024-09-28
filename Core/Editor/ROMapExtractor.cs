@@ -28,7 +28,7 @@ public class ROMapExtractor : EditorWindow
     [MenuItem("Window/ROMapExtractor")]
     public static void ShowWindow()
     {
-        EditorWindow.GetWindow(typeof(ROMapExtractor));
+        GetWindow(typeof(ROMapExtractor));
     }
 
     async Task LoadMap(bool splitIntoChunks = true)
@@ -104,25 +104,19 @@ public class ROMapExtractor : EditorWindow
             var originals = models.transform.Find("_Originals");
             var cloned = models.transform.Find("_Cloned");
 
-            foreach (var child in originals.transform.GetChildren())
+            foreach (var child in originals.transform.GetComponentsInChildren<Transform>())
             {
-                foreach (var grandChildren in child.transform.GetChildren())
+                if (child.transform.GetComponent(typeof(NodeAnimation)) == null)
                 {
-                    if (grandChildren.transform.GetComponentInChildren(typeof(NodeAnimation)) == null)
-                    {
-                        child.gameObject.isStatic = true;
-                    }
+                    child.gameObject.isStatic = true;
                 }
             }
 
-            foreach (var child in cloned.transform.GetChildren())
+            foreach (var child in cloned.transform.GetComponentsInChildren<Transform>())
             {
-                foreach (var grandChildren in child.transform.GetChildren())
+                if (child.transform.GetComponent(typeof(NodeAnimation)) == null)
                 {
-                    if (grandChildren.transform.GetComponentInChildren(typeof(NodeAnimation)) == null)
-                    {
-                        child.gameObject.isStatic = true;
-                    }
+                    child.gameObject.isStatic = true;
                 }
             }
 
@@ -134,7 +128,12 @@ public class ROMapExtractor : EditorWindow
             var defaultScene = EditorSceneManager.GetActiveScene();
             var mapScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
             mapScene.name = mapName;
+            
+            
+            var volume = Resources.Load<GameObject>("Global Volume");
+            var volumePrefab = PrefabUtility.InstantiatePrefab(volume) as GameObject;
             SceneManager.MoveGameObjectToScene(mapObject, mapScene);
+            SceneManager.MoveGameObjectToScene(volumePrefab, mapScene);
             EditorSceneManager.MarkAllScenesDirty();
             EditorSceneManager.SaveScene(mapScene, $"Assets/3rdparty/unityro-resources/Scenes/{mapName}.unity");
             EditorSceneManager.CloseScene(defaultScene, true);
@@ -145,7 +144,7 @@ public class ROMapExtractor : EditorWindow
 
             var original = EditorBuildSettings.scenes;
             var newSettings = new EditorBuildSettingsScene[original.Length + 1];
-            System.Array.Copy(original, newSettings, original.Length);
+            Array.Copy(original, newSettings, original.Length);
             var sceneToAdd = new EditorBuildSettingsScene(mapScene.path, true);
             newSettings[newSettings.Length - 1] = sceneToAdd;
             EditorBuildSettings.scenes = newSettings;
@@ -235,7 +234,7 @@ public class ROMapExtractor : EditorWindow
 
                 var partPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
                 $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
-                UnityEditor.PrefabUtility.SaveAsPrefabAssetAndConnect(filter.gameObject, partPath,
+                PrefabUtility.SaveAsPrefabAssetAndConnect(filter.gameObject, partPath,
                 InteractionMode.AutomatedAction);
                 AssetDatabase.ImportAsset(partPath);
             }
@@ -275,7 +274,7 @@ public class ROMapExtractor : EditorWindow
 
                 var prefabPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
                 $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
-                UnityEditor.PrefabUtility.SaveAsPrefabAssetAndConnect(filter.gameObject, prefabPath,
+                PrefabUtility.SaveAsPrefabAssetAndConnect(filter.gameObject, prefabPath,
                 InteractionMode.AutomatedAction);
 
                 AssetDatabase.ImportAsset(partPath);
@@ -434,7 +433,7 @@ public class ROMapExtractor : EditorWindow
         if (File.Exists(meshPath + ".prefab"))
         {
             var prefabObject = AssetDatabase.LoadAssetAtPath(meshPath + ".prefab", typeof(GameObject)) as GameObject;
-            var prefab = UnityEditor.PrefabUtility.InstantiatePrefab(prefabObject, mesh.transform.parent) as GameObject;
+            var prefab = PrefabUtility.InstantiatePrefab(prefabObject, mesh.transform.parent) as GameObject;
             prefab.transform.SetPositionAndRotation(mesh.transform.position, mesh.transform.rotation);
             prefab.transform.localScale = mesh.transform.localScale;
             if (overrideParent != null)
@@ -546,13 +545,13 @@ public class ROMapExtractor : EditorWindow
                 mesh.name.Substring(0, originalMeshName.IndexOf(Path.GetExtension(originalMeshName)));
 
             var prefab =
-                UnityEditor.PrefabUtility.InstantiatePrefab(originalPrefabs[meshPathWithoutExtension], cloned.transform)
+                PrefabUtility.InstantiatePrefab(originalPrefabs[meshPathWithoutExtension], cloned.transform)
                     as GameObject;
             prefab.transform.SetPositionAndRotation(mesh.transform.position, mesh.transform.rotation);
             prefab.transform.localScale = mesh.transform.localScale;
         }
 
-        GameObject.DestroyImmediate(clonedMeshes.gameObject);
+        DestroyImmediate(clonedMeshes.gameObject);
         //GameObject.DestroyImmediate(originalMeshes.gameObject);
     }
 

@@ -8,6 +8,7 @@ using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 /// <summary>
 /// Rendering of the map
@@ -87,7 +88,8 @@ public class MapRenderer
         CreateLightPoints(gameMap.transform, gameMapData.World, gameMap.Size);
         if (gameMapData.World.lights.Count > 0)
         {
-            CreateLightProbes(gameMap.transform, gameMap.Altitude);
+            CreateLightProbes(gameMap.transform, gameMap.Altitude,
+                gameMap.transform.Find("_lights").GetComponentsInChildren<Transform>());
         }
 
         return gameMap;
@@ -119,10 +121,11 @@ public class MapRenderer
         }
     }
 
-    private void CreateLightPoints(Transform parent, RSW world, Vector2Int mapSize)
+    private static void CreateLightPoints(Transform parent, RSW world, Vector2Int mapSize)
     {
         GameObject lightsParent = new GameObject("_lights");
         lightsParent.transform.SetParent(parent, false);
+        var index = 0;
         foreach (var light in world.lights)
         {
             var lightObj = new GameObject(light.name).AddComponent<Light>();
@@ -136,9 +139,13 @@ public class MapRenderer
 #if UNITY_EDITOR
             lightObj.lightmapBakeType = LightmapBakeType.Baked;
 #endif
-            var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1] + 1f, light.pos[2] + mapSize.y);
+            var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1] + 1f,
+                light.pos[2] + mapSize.y);
             transform.position = position;
             lightObj.gameObject.isStatic = true;
+            // var intensity = Mathf.Max(3, (light.range + 1) / 3f);
+
+            index++;
         }
     }
 
@@ -152,24 +159,59 @@ public class MapRenderer
         }
 
         var altitude = parent.GetComponent<GameMap>().Altitude;
-        CreateLightProbes(parent.transform, altitude);
+        CreateLightProbes(parent.transform, altitude,
+            parent.transform.Find("_lights").GetComponentsInChildren<Transform>());
     }
-    
-    private static void CreateLightProbes(Transform parent, Altitude altitude)
+
+    [MenuItem("Map/Adjust Lights")]
+    private static async void AdjustLights()
+    {
+        var parent = GameObject.Find(SceneManager.GetActiveScene().name);
+        if (parent == null)
+        {
+            return;
+        }
+
+        var mapName = parent.GetComponent<GameMap>().name;
+        AsyncMapLoader.GameMapData gameMapData = await new AsyncMapLoader().Load($"{mapName}.rsw");
+
+        CreateLightPoints(parent.transform, gameMapData.World, parent.GetComponent<GameMap>().Size);
+    }
+
+    private static void CreateLightProbes(Transform parent, Altitude altitude, Transform[] lights)
     {
         var LightProbes = new GameObject("LightProbes");
         LightProbes.transform.SetParent(parent, false);
         var lightProbeGroup = LightProbes.AddComponent<LightProbeGroup>();
 
+        // positions.Add(new Vector3(altitude.getWidth() / 2f, 0, altitude.getHeight() / 2f));
+        // foreach (var light in lights)
+        // {
+        //     var groundHeight = (float)altitude.GetCellHeight(light.transform.position.x, light.transform.position.z);
+        //     // var groundProbe = new Vector3(light.transform.position.x, 2.5f, light.transform.position.z);
+        //     // var groundProbe = new Vector3(light.transform.position.x, light.transform.position.y / 2f, light.transform.position.z);
+        //     // var groundProbe = new Vector3(light.transform.position.x, groundHeight + 0.5f, light.transform.position.z);
+        //     var lightProbe = light.transform.position;
+        //     // if (groundProbe != Vector3.zero)
+        //     // {
+        //     //     positions.Add(groundProbe);
+        //     // }
+        //
+        //     // if (lightProbe != Vector3.zero)
+        //     // {
+        //     //     positions.Add(lightProbe);
+        //     // }
+        // }
+
         var positions = new List<Vector3>();
-        for (var x = 0; x < altitude.getWidth(); x++)
+        for (var x = 0; x < altitude.getWidth() / 2; x++)
         {
-            for (var y = 0; y < altitude.getHeight(); y++)
+            for (var y = 0; y < altitude.getHeight() / 2; y++)
             {
-                var height = (float)altitude.GetCellHeight(x, y);
-                var ground = new Vector3(x, height, y);
-                var middle = new Vector3(x, (height + 5) / 2, y);
-                var top = new Vector3(x, height + 5, y);
+                var height = (float)altitude.GetCellHeight(x * 2, y * 2);
+                var ground = new Vector3(x * 2, height, y * 2);
+                var middle = new Vector3(x * 2, (height + 2), y * 2);
+                var top = new Vector3(x * 2, height + 4, y * 2);
 
                 positions.Add(ground);
                 positions.Add(middle);
@@ -302,14 +344,14 @@ public class MapRenderer
         //}
 
         //destroy textures
-        var ob = UnityEngine.Object.FindObjectsOfType(typeof(Texture2D));
+        var ob = Object.FindObjectsOfType(typeof(Texture2D));
         int dCount = 0;
         foreach (Texture2D t in ob)
         {
             if (t.name.StartsWith("maptexture@"))
             {
                 dCount++;
-                UnityEngine.Object.Destroy(t);
+                Object.Destroy(t);
             }
         }
 

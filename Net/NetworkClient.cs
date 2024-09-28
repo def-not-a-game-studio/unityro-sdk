@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using ROIO.Utils;
 using Telepathy;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityRO.Net.Editor;
@@ -60,7 +59,7 @@ public class NetworkClient : MonoBehaviour {
     private Queue<OutPacket> OutPacketQueue;
     private Queue<InPacket> InPacketQueue;
 
-    private Telepathy.Client _client;
+    private Client _client;
     private ServerType _currentServerType = ServerType.Login;
     private Coroutine _pingCoroutine;
 
@@ -72,9 +71,9 @@ public class NetworkClient : MonoBehaviour {
         IsInitialized = false;
         DontDestroyOnLoad(this);
         Application.runInBackground = true;
-        Telepathy.Log.Error = Debug.LogError;
-        Telepathy.Log.Info = Debug.Log;
-        Telepathy.Log.Warning = Debug.LogWarning;
+        Log.Error = Debug.LogError;
+        Log.Info = Debug.Log;
+        Log.Warning = Debug.LogWarning;
 
         RegisteredPackets = new Dictionary<ushort, PacketInfo>();
         ClientRegisteredPackets = new Dictionary<short, int>();
@@ -154,6 +153,10 @@ public class NetworkClient : MonoBehaviour {
         _client.Tick(100, CheckEnabled);
 
         if (IsPaused || !_client.Connected) {
+            if (!_client.Connected)
+            {
+                Debug.LogError("Disconnected");
+            }
             return;
         }
 
@@ -260,6 +263,7 @@ public class NetworkClient : MonoBehaviour {
 
         var cmd = BitConverter.ToUInt16(commandBuffer, 0);
 
+        Debug.Log($"Received packet {cmd} ({cmd:x4})");
         if (RegisteredPackets.ContainsKey(cmd)) {
             var size = RegisteredPackets[cmd].Size;
             var isFixed = true;

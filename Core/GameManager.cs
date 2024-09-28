@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour {
 
     [SerializeField] public AudioMixerGroup AudioMixerGroup;
 
-    public static bool IsOffline = false;
+    public static bool IsOffline = true;
 
     #region Time
 
