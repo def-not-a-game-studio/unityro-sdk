@@ -50,12 +50,7 @@ public class GameMap : MonoBehaviour
         {
             return;
         }
-
-        if (this.ROLightMap != null)
-        {
-            Shader.SetGlobalTexture("_RoLightmap", ROLightMap);
-            Shader.SetGlobalVector("_RoMapSize", new Vector4(this._size.x, this._size.y));
-        }
+        
         GraphicsSettings.lightsUseColorTemperature = true;
         GraphicsSettings.lightsUseLinearIntensity = true;
 
@@ -80,7 +75,7 @@ public class GameMap : MonoBehaviour
         {
             diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
         }
-
+        
         RenderSettings.ambientMode = AmbientMode.Flat;
         RenderSettings.ambientIntensity = 1f;
         RenderSettings.ambientLight = ambient;
@@ -88,6 +83,9 @@ public class GameMap : MonoBehaviour
 
         Ambient = ambient;
         Diffuse = diffuse;
+        
+        Shader.SetGlobalColor("_RoAmbientColor", Ambient);
+        Shader.SetGlobalColor("_RoDiffuseColor", Diffuse);
     }
 
     public void SetMapSize(int width, int height)

@@ -620,7 +620,7 @@ public class SpriteUtility {
     private static void ProcessPalette(string palettePath) {
         TextureImporter importer = AssetImporter.GetAtPath(palettePath) as TextureImporter;
         importer.textureType = TextureImporterType.Default;
-        importer.sRGBTexture = false;
+        importer.sRGBTexture = true;
         importer.alphaIsTransparency = false;
         importer.wrapMode = TextureWrapMode.Clamp;
         importer.filterMode = FilterMode.Point;

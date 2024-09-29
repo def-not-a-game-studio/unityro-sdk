@@ -128,8 +128,9 @@ public class ROMapExtractor : EditorWindow
             var defaultScene = EditorSceneManager.GetActiveScene();
             var mapScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
             mapScene.name = mapName;
-            
-            
+            var lightingSettings = AssetDatabase.LoadAssetAtPath<LightingSettings>("Assets/Configuration/Lighting Settings.lighting");
+            Lightmapping.lightingSettings = lightingSettings;
+
             var volume = Resources.Load<GameObject>("Global Volume");
             var volumePrefab = PrefabUtility.InstantiatePrefab(volume) as GameObject;
             SceneManager.MoveGameObjectToScene(mapObject, mapScene);
@@ -139,6 +140,7 @@ public class ROMapExtractor : EditorWindow
             EditorSceneManager.CloseScene(defaultScene, true);
 
             StaticOcclusionCulling.Compute();
+            Lightmapping.Bake();
 
             EditorSceneManager.SaveOpenScenes();
 
@@ -199,7 +201,7 @@ public class ROMapExtractor : EditorWindow
 
             var progress = i * 1f / waterMeshes.transform.childCount;
             if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving water meshes - {progress * 100}%",
-                progress))
+                    progress))
             {
                 break;
             }
@@ -233,9 +235,9 @@ public class ROMapExtractor : EditorWindow
                 AssetDatabase.ImportAsset(filterPath);
 
                 var partPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
-                $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
+                    $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
                 PrefabUtility.SaveAsPrefabAssetAndConnect(filter.gameObject, partPath,
-                InteractionMode.AutomatedAction);
+                    InteractionMode.AutomatedAction);
                 AssetDatabase.ImportAsset(partPath);
             }
         }
@@ -245,40 +247,54 @@ public class ROMapExtractor : EditorWindow
     {
         var ground = mapObject.transform.FindRecursive("_Ground");
 
-        ExtractGroundTextures(mapName, ground, out var lightmapTexture, out var tintmapTexture, out var mainTexture, out var material);
+        ExtractGroundTextures(mapName, ground, out var lightmapTexture, out var tintmapTexture, out var mainTexture,
+            out var material);
+
+        void ExtractGroundInner(Transform mesh)
+        {
+            mesh.gameObject.SetActive(true);
+            var meshPath = Path.Combine(GetBasePath(), mapName, "ground", mesh.gameObject.name);
+            Directory.CreateDirectory(meshPath);
+
+            var filter = mesh.GetComponent<MeshFilter>();
+            mesh.GetComponent<MeshRenderer>().material = material;
+
+            var partPath =
+                AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
+                    $"{filter.gameObject.name.SanitizeForAddressables()}.asset"));
+            AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
+
+            var prefabPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
+                $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
+            PrefabUtility.SaveAsPrefabAssetAndConnect(filter.gameObject, prefabPath,
+                InteractionMode.AutomatedAction);
+
+            AssetDatabase.ImportAsset(partPath);
+            AssetDatabase.ImportAsset(prefabPath);
+        }
 
         try
         {
             AssetDatabase.StartAssetEditing();
-
-            for (var i = 0; i < ground.transform.childCount; i++)
+            if (ground.transform.childCount == 0)
             {
-                var mesh = ground.transform.GetChild(i);
-                mesh.gameObject.SetActive(true);
-                var meshPath = Path.Combine(GetBasePath(), mapName, "ground", mesh.gameObject.name);
-                Directory.CreateDirectory(meshPath);
-
-                var progress = i * 1f / ground.transform.childCount;
-                if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving ground meshes - {progress * 100}%",
-                    progress))
+                ExtractGroundInner(ground);
+            }
+            else
+            {
+                for (var i = 0; i < ground.transform.childCount; i++)
                 {
-                    break;
+                    var mesh = ground.transform.GetChild(i);
+                    var progress = i * 1f / ground.transform.childCount;
+                    if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
+                            $"Saving ground meshes - {progress * 100}%",
+                            progress))
+                    {
+                        break;
+                    }
+
+                    ExtractGroundInner(mesh);
                 }
-
-                var filter = mesh.GetComponent<MeshFilter>();
-                mesh.GetComponent<MeshRenderer>().material = material;
-
-                var partPath =
-                    AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath, $"{filter.gameObject.name.SanitizeForAddressables()}.asset"));
-                AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
-
-                var prefabPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
-                $"{filter.gameObject.name.SanitizeForAddressables()}.prefab"));
-                PrefabUtility.SaveAsPrefabAssetAndConnect(filter.gameObject, prefabPath,
-                InteractionMode.AutomatedAction);
-
-                AssetDatabase.ImportAsset(partPath);
-                AssetDatabase.ImportAsset(prefabPath);
             }
         }
         finally
@@ -294,13 +310,15 @@ public class ROMapExtractor : EditorWindow
         out Texture2D mainTex,
         out Material material
     )
-    {// Extract first textures only
+    {
+        // Extract first textures only
         var firstMesh = groundMeshes.transform;
         firstMesh.gameObject.SetActive(true);
         var firstMeshMeshPath = Path.Combine(GetBasePath(), mapName, "ground");
         Directory.CreateDirectory(firstMeshMeshPath);
-
-        material = firstMesh.transform.GetChild(0).GetComponent<MeshRenderer>().material;
+        material = firstMesh.transform.childCount > 0
+            ? firstMesh.transform.GetChild(0).GetComponent<MeshRenderer>().material
+            : firstMesh.GetComponent<MeshRenderer>().material;
 
         mainTex = material.GetTexture("_MainTex") as Texture2D;
         lightmapTexture = material.GetTexture("_Lightmap") as Texture2D;
@@ -373,7 +391,7 @@ public class ROMapExtractor : EditorWindow
         {
             var progress = i * 1f / originalMeshes.transform.childCount;
             if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving model meshes - {progress * 100}%",
-                progress))
+                    progress))
             {
                 break;
             }
@@ -465,7 +483,7 @@ public class ROMapExtractor : EditorWindow
                     var nodeName = node.mainName.Length == 0 ? "node" : node.mainName;
                     var partPath =
                         AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
-                        $"{nodeName}_{node.nodeId}.asset"));
+                            $"{nodeName}_{node.nodeId}.asset"));
                     var materialPath =
                         AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath, $"{nodeName}_{node.nodeId}.mat"));
 
@@ -480,6 +498,7 @@ public class ROMapExtractor : EditorWindow
                     {
                         Debug.LogError($"Texture data/texture/{node.textureName} not found");
                     }
+
                     AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
                     AssetDatabase.CreateAsset(material, materialPath);
                 }
@@ -568,7 +587,8 @@ public class ROMapExtractor : EditorWindow
 
         GrfReordableList = new ReorderableList(grfPaths, typeof(string));
         GrfReordableList.drawHeaderCallback = (rect) => EditorGUI.LabelField(rect, "GRF List");
-        GrfReordableList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) => {
+        GrfReordableList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+        {
             rect.y += 2f;
             rect.height = EditorGUIUtility.singleLineHeight;
 
@@ -649,12 +669,14 @@ public class ROMapExtractor : EditorWindow
         writer.Write(sb.ToString());
         writer.Close();
     }
+
     private static void ConvertMeshToObj(Mesh mesh, string name, StringBuilder sb, NumberFormatInfo nfi)
     {
         foreach (var v in mesh.vertices)
         {
             sb.AppendLine($"v {v.x.ToString(nfi)} {v.y.ToString(nfi)} {v.z.ToString(nfi)}");
         }
+
         foreach (var v in mesh.normals)
         {
             sb.AppendLine($"vn {v.x.ToString(nfi)} {v.y.ToString(nfi)} {v.z.ToString(nfi)}");
@@ -671,7 +693,8 @@ public class ROMapExtractor : EditorWindow
                 t2 = triangles[i + 1] + 1;
                 t3 = triangles[i + 2] + 1;
 
-                sb.AppendLine(string.Format("f {0}/{0} {1}/{1} {2}/{2}", t1.ToString(nfi), t2.ToString(nfi), t3.ToString(nfi)));
+                sb.AppendLine(string.Format("f {0}/{0} {1}/{1} {2}/{2}", t1.ToString(nfi), t2.ToString(nfi),
+                    t3.ToString(nfi)));
             }
         }
     }
@@ -679,11 +702,11 @@ public class ROMapExtractor : EditorWindow
     internal static Texture2D DuplicateTexture(Texture2D source)
     {
         RenderTexture renderTex = RenderTexture.GetTemporary(
-        source.width,
-        source.height,
-        0,
-        RenderTextureFormat.Default,
-        RenderTextureReadWrite.Linear);
+            source.width,
+            source.height,
+            0,
+            RenderTextureFormat.Default,
+            RenderTextureReadWrite.Linear);
 
         Graphics.Blit(source, renderTex);
         RenderTexture previous = RenderTexture.active;
