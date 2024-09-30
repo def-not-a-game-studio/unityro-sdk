@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using _3rdparty.unityro_sdk.Core.Effects;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityRO.Core.Camera;
@@ -38,6 +39,17 @@ namespace UnityRO.Core.Sprite {
         private static readonly int PaletteTexProp = Shader.PropertyToID("_PaletteTex");
         private static readonly int AlphaProp = Shader.PropertyToID("_Alpha");
 
+        public void Init(SpriteData spriteData, ViewerType viewerType)
+        {
+            SpriteData = spriteData;
+            Atlas = spriteData.atlas;
+            ViewerType = viewerType;
+            
+            Entity = gameObject.AddComponent<EffectGameEntity>();
+            
+            InitializeRenderers();
+        }
+        
         public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity) {
             SpriteData = spriteData;
             Atlas = spriteData.atlas;
@@ -55,33 +67,12 @@ namespace UnityRO.Core.Sprite {
             InitializeRenderers();
         }
 
-        public void SetParent(SpriteViewer parent) {
-            Parent = parent;
-        }
-
-        public void AddChildren(SpriteViewer child) {
-            Children.Add(child);
-        }
-
         void Update() {
             if (SpriteData == null) return;
             
             var frame = UpdateFrame();
             UpdateMesh(frame);
             UpdateLocalPosition();
-        }
-
-        public void UpdatePalette() {
-            if (SpriteData.palettes.Length <= 0) return;
-            var palette = ViewerType switch {
-                ViewerType.Head => SpriteData.palettes[Entity.Status.HairColor],
-                ViewerType.Body => SpriteData.palettes[Entity.Status.ClothesColor],
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
-            if (palette != null) {
-                MeshRenderer.material.SetTexture(PaletteTexProp, palette);
-            }
         }
 
         private void InitializeRenderers() {
@@ -94,19 +85,10 @@ namespace UnityRO.Core.Sprite {
 
             Sprites = SpriteData.GetSprites();
             FramePaceCalculator = new FramePaceCalculator(Entity, this, SpriteData.act, CharacterCamera);
-            MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
+            MeshRenderer.material = Resources.Load<Material>("Materials/SpriteEffects");
             MeshRenderer.material.SetFloat(AlphaProp, 1f);
-
-            MeshRenderer.material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
-            if (SpriteData.palettes.Length <= 0) {
-                Atlas.filterMode = FilterMode.Bilinear;
-            }
-
             MeshRenderer.material.SetTexture(MainTexProp, Atlas);
-
-            if (SpriteData.palettes.Length > 0) {
-                MeshRenderer.material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
-            }
+            MeshRenderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
         }
 
         public Vector2 GetAnimationAnchor() {
@@ -138,58 +120,21 @@ namespace UnityRO.Core.Sprite {
 
         private void UpdateMesh(ACT.Frame frame) {
             // We need this mesh collider in order to have the raycast to hit the sprite
-            ColliderCache.TryGetValue(frame, out Mesh colliderMesh);
-            if (colliderMesh == null) {
-                colliderMesh = SpriteMeshBuilder.BuildColliderMesh(frame, Sprites);
-                ColliderCache.Add(frame, colliderMesh);
-            }
+            // ColliderCache.TryGetValue(frame, out Mesh colliderMesh);
+            // if (colliderMesh == null) {
+            //     colliderMesh = SpriteMeshBuilder.BuildColliderMesh(frame, Sprites);
+            //     ColliderCache.Add(frame, colliderMesh);
+            // }
 
             MeshCache.TryGetValue(frame, out Mesh rendererMesh);
             if (rendererMesh == null) {
-                rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites, 0);
+                rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites);
                 MeshCache.Add(frame, rendererMesh);
             }
 
             MeshFilter.sharedMesh = null;
             MeshFilter.sharedMesh = rendererMesh;
-            MeshCollider.sharedMesh = colliderMesh;
-        }
-
-        public SpriteViewer FindChild(ViewerType viewerType) {
-            return Children.FirstOrDefault(it => it.ViewerType == viewerType);
-        }
-
-        public void FadeOut(float delay = 2f, float timeout = 2f) {
-            StartCoroutine(FadeOutRenderer(delay, timeout));
-        }
-
-        public IEnumerator FadeOutRenderer(float delay, float timeout) {
-            yield return new WaitForSeconds(delay);
-            var currentTime = 0f;
-            var currentAlpha = MeshRenderer.material.GetFloat(AlphaProp);
-
-            while (currentTime <= timeout && currentAlpha > 0f) {
-                currentTime += Time.deltaTime;
-                currentAlpha = Mathf.Lerp(currentAlpha, 0f, currentTime / timeout);
-                SetAlpha(currentAlpha);
-                foreach (var child in Children) {
-                    child.SetAlpha(currentAlpha);
-                }
-                yield return null;
-            }
-        }
-
-        private void SetAlpha(float alpha) {
-            MeshRenderer.material.SetFloat(AlphaProp, alpha);
-        }
-
-        public void Teardown() {
-            SpriteData = null;
-            Atlas = null;
-            Sprites = null;
-            foreach (var child in Children) {
-                child.Teardown();
-            }
+            // MeshCollider.sharedMesh = colliderMesh;
         }
 
         public void SetActionIndex(int actionIndex) {

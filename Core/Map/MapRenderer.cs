@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using _3rdparty.unityro_sdk.Core.Effects;
 using ROIO.Loaders;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
+using UnityRO.Core.Sprite;
 
 /// <summary>
 /// Rendering of the map
@@ -75,7 +77,34 @@ public class MapRenderer
                 gameMap.transform.Find("_lights").GetComponentsInChildren<Transform>());
         }
 
+        MaybeInitEffects(gameMap.transform, gameMap.Size, gameMapData.World.effects);
+
         return gameMap;
+    }
+
+    private static void MaybeInitEffects(Transform parent, Vector2Int mapSize, List<RSW.Effect> worldEffects)
+    {
+        if (worldEffects is { Count: 0 }) return;
+        var effectParent = new GameObject("_effects");
+        effectParent.transform.SetParent(parent, false);
+
+        foreach (var effect in worldEffects)
+        {
+            if (effect.id == 47)
+            {
+                var effectObj = new GameObject(effect.name);
+                effectObj.transform.SetParent(effectParent.transform, false);
+                effectObj.transform.position = new Vector3(
+                    effect.pos[0] + mapSize.x + .2f, 
+                    -effect.pos[1] + 2f,
+                    effect.pos[2] + mapSize.y);
+                var spriteEffect = effectObj.AddComponent<SpriteEffectViewer>();
+                var spriteData = Resources.Load<SpriteData>("Effects/SPR/torch_01");
+                var atlas = Resources.Load<Texture2D>("Effects/SPR/torch_01");
+                spriteData.atlas = atlas;
+                spriteEffect.Init(spriteData, ViewerType.Effect);
+            }
+        }
     }
 
     private void InitializeSounds(RSW world)
@@ -122,7 +151,7 @@ public class MapRenderer
             {
                 position.y = Mathf.Abs(groundHeight + 13f);
             }
-            
+
             var range = light.range / 5f;
             var intensity = Mathf.Max(3, (light.range + 1) / 3f);
 
@@ -149,7 +178,7 @@ public class MapRenderer
             subLight.intensity = intensity;
             subLight.shadows = LightShadows.Soft;
             // subLight.cullingMask = 0;
-            
+
 #if UNITY_EDITOR
             lightObj.lightmapBakeType = LightmapBakeType.Baked;
             subLight.lightmapBakeType = LightmapBakeType.Baked;
@@ -188,6 +217,21 @@ public class MapRenderer
         CreateLightPoints(parent.transform, gameMapData.World, parent.GetComponent<GameMap>().Size);
     }
 
+    [UnityEditor.MenuItem("Map/Recreate Effects")]
+    private static async void RecreateEffects()
+    {
+        var parent = GameObject.Find(SceneManager.GetActiveScene().name);
+        if (parent == null)
+        {
+            return;
+        }
+
+        var mapName = parent.GetComponent<GameMap>().name;
+        AsyncMapLoader.GameMapData gameMapData = await new AsyncMapLoader().Load($"{mapName}.rsw");
+
+        MaybeInitEffects(parent.transform, parent.GetComponent<GameMap>().Size, gameMapData.World.effects);
+    }
+
     private static void CreateLightProbes(Transform parent, Altitude altitude, Transform[] lights)
     {
         var LightProbes = new GameObject("LightProbes");
@@ -201,11 +245,11 @@ public class MapRenderer
             {
                 // if (!altitude.IsCellWalkable(x * 2, y * 2)) continue;
                 var height = (float)altitude.GetCellHeight(x * 2, y * 2) + 0.5f;
-                
+
                 var ground = new Vector3(x * 2, height, y * 2);
                 var middle = new Vector3(x * 2, height + 2.5f, y * 2);
                 var top = new Vector3(x * 2, height + 5f, y * 2);
-        
+
                 positions.Add(ground);
                 positions.Add(middle);
                 positions.Add(top);

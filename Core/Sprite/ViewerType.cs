@@ -2,6 +2,7 @@ namespace UnityRO.Core.Sprite {
     public enum ViewerType {
         Head,
         Body,
-        Emotion
+        Emotion,
+        Effect
     }
 }
