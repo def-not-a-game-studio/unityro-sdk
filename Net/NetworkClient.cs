@@ -238,7 +238,7 @@ public class NetworkClient : MonoBehaviour {
             Directory.CreateDirectory("Assets/Misc/Replays/");
         }
 
-        AssetDatabase.CreateAsset(recorded, AssetDatabase.GenerateUniqueAssetPath($"Assets/Misc/Replays/{fileName}.asset"));
+        UnityEditor.AssetDatabase.CreateAsset(recorded,  UnityEditor.AssetDatabase.GenerateUniqueAssetPath($"Assets/Misc/Replays/{fileName}.asset"));
     }
 #endif
 

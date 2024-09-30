@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace ROIO.Loaders {
 
@@ -88,6 +89,10 @@ namespace ROIO.Loaders {
                     lock (objectsSet) {
                         objectsSet.Add(model);
                     }
+                }
+                else
+                {
+                    Debug.LogError($"Couldn't load model {descriptor.filename}");
                 }
             }
 

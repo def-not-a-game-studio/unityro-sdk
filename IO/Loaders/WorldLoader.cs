@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using ROIO.Models.FileTypes;
 using ROIO.Utils;
+using UnityEngine;
 
 namespace ROIO.Loaders {
     /// <summary>
@@ -94,8 +95,10 @@ namespace ROIO.Loaders {
             var sounds = rsw.sounds = new List<RSW.Sound>(count);
             var effects = rsw.effects = new List<RSW.Effect>(count);
 
-            for (int i = 0; i < count; i++) {
-                switch (data.ReadInt()) {
+            for (int i = 0; i < count; i++)
+            {
+                var identifier = data.ReadInt();
+                switch (identifier) {
                     case 1: //load model
                         var model = new RSW.ModelDescriptor();
                         
@@ -166,6 +169,9 @@ namespace ROIO.Loaders {
                             effect.param[j] = data.ReadFloat();
                         }
                         effects.Add(effect);
+                        continue;
+                    default:
+                        Debug.LogWarning($"Unknown identifier {identifier}");
                         continue;
                 }
             }

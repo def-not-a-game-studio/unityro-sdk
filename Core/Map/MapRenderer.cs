@@ -112,26 +112,54 @@ public class MapRenderer
         foreach (var light in world.lights)
         {
             var lightObj = new GameObject(light.name).AddComponent<Light>();
-            Transform transform;
-            (transform = lightObj.transform).SetParent(lightsParent.transform, false);
-            lightObj.color = new Color(light.color[0], light.color[1], light.color[2]);
-            lightObj.range = light.range; //?? whatsup doddler?
-            lightObj.intensity = light.range;
-            lightObj.bounceIntensity = 1.5f;
+            var color = new Color(light.color[0], light.color[1], light.color[2]);
+            var height = -light.pos[1];
+            var position = new Vector3(light.pos[0] + mapSize.x, height, light.pos[2] + mapSize.y);
+            var groundHeight = (float)parent.GetComponent<GameMap>().Altitude.GetCellHeight(position.x, position.z);
+            var groundPoint = new Vector3(position.x, groundHeight, position.z);
+            var distance = (position - groundPoint).magnitude;
+            if (distance > 13f)
+            {
+                position.y = Mathf.Abs(groundHeight + 13f);
+            }
+            
+            var range = light.range / 5f;
+            var intensity = Mathf.Max(3, (light.range + 1) / 3f);
+
+            Color.RGBToHSV(color, out var hue, out var saturation, out var value);
+            color = Color.HSVToRGB(hue, saturation, value * 3f);
+
+            lightObj.transform.SetParent(lightsParent.transform, false);
+            lightObj.transform.position = position;
+
+            lightObj.gameObject.isStatic = true;
+            lightObj.type = LightType.Point;
+            lightObj.range = range;
+            lightObj.color = color;
+            lightObj.intensity = intensity;
             lightObj.shadows = LightShadows.Soft;
+            // lightObj.cullingMask = 0;
+
+            var subLight = new GameObject($"{light.name}_sub").AddComponent<Light>();
+            subLight.transform.SetParent(lightObj.transform, false);
+            subLight.gameObject.isStatic = false;
+            subLight.type = LightType.Point;
+            subLight.range = range / 2f;
+            subLight.color = color;
+            subLight.intensity = intensity;
+            subLight.shadows = LightShadows.Soft;
+            // subLight.cullingMask = 0;
+            
 #if UNITY_EDITOR
             lightObj.lightmapBakeType = LightmapBakeType.Baked;
+            subLight.lightmapBakeType = LightmapBakeType.Baked;
 #endif
-            var position = new Vector3(light.pos[0] + mapSize.x, -light.pos[1], light.pos[2] + mapSize.y);
-            transform.position = position;
-            lightObj.gameObject.isStatic = true;
-            // var intensity = Mathf.Max(3, (light.range + 1) / 3f);
 
             index++;
         }
     }
 
-    [MenuItem("Map/Recreate Light Probes")]
+    [UnityEditor.MenuItem("Map/Recreate Light Probes")]
     private static void ReCreateLightProbes()
     {
         var parent = GameObject.Find(SceneManager.GetActiveScene().name);
@@ -145,7 +173,7 @@ public class MapRenderer
             parent.transform.Find("_lights").GetComponentsInChildren<Transform>());
     }
 
-    [MenuItem("Map/Adjust Lights")]
+    [UnityEditor.MenuItem("Map/Adjust Lights")]
     private static async void AdjustLights()
     {
         var parent = GameObject.Find(SceneManager.GetActiveScene().name);
@@ -166,35 +194,18 @@ public class MapRenderer
         LightProbes.transform.SetParent(parent, false);
         var lightProbeGroup = LightProbes.AddComponent<LightProbeGroup>();
 
-        // positions.Add(new Vector3(altitude.getWidth() / 2f, 0, altitude.getHeight() / 2f));
-        // foreach (var light in lights)
-        // {
-        //     var groundHeight = (float)altitude.GetCellHeight(light.transform.position.x, light.transform.position.z);
-        //     // var groundProbe = new Vector3(light.transform.position.x, 2.5f, light.transform.position.z);
-        //     // var groundProbe = new Vector3(light.transform.position.x, light.transform.position.y / 2f, light.transform.position.z);
-        //     // var groundProbe = new Vector3(light.transform.position.x, groundHeight + 0.5f, light.transform.position.z);
-        //     var lightProbe = light.transform.position;
-        //     // if (groundProbe != Vector3.zero)
-        //     // {
-        //     //     positions.Add(groundProbe);
-        //     // }
-        //
-        //     // if (lightProbe != Vector3.zero)
-        //     // {
-        //     //     positions.Add(lightProbe);
-        //     // }
-        // }
-
         var positions = new List<Vector3>();
         for (var x = 0; x < altitude.getWidth() / 2; x++)
         {
             for (var y = 0; y < altitude.getHeight() / 2; y++)
             {
-                var height = (float)altitude.GetCellHeight(x * 2, y * 2);
+                // if (!altitude.IsCellWalkable(x * 2, y * 2)) continue;
+                var height = (float)altitude.GetCellHeight(x * 2, y * 2) + 0.5f;
+                
                 var ground = new Vector3(x * 2, height, y * 2);
-                var middle = new Vector3(x * 2, (height + 2), y * 2);
-                var top = new Vector3(x * 2, height + 4, y * 2);
-
+                var middle = new Vector3(x * 2, height + 2.5f, y * 2);
+                var top = new Vector3(x * 2, height + 5f, y * 2);
+        
                 positions.Add(ground);
                 positions.Add(middle);
                 positions.Add(top);
