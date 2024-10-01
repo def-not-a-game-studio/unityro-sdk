@@ -8,7 +8,7 @@ using Random = UnityEngine.Random;
 
 namespace Core.Effects {
     public class ThreeDEffectRenderer : MonoBehaviour {
-        [SerializeField] public ThreeDEffect Effect;
+        [SerializeField] public EffectParts.ThreeDEffectPart Effect;
 
         private ThreeDEffectPart _part;
 
@@ -18,7 +18,7 @@ namespace Core.Effects {
         private Sprite MainSprite;
         private List<Sprite> SpriteList = new();
 
-        public void Init(ThreeDEffect effect, EffectInstanceParam instanceParam, EffectInitParam initParam) {
+        public void Init(EffectParts.ThreeDEffectPart effect, EffectInstanceParam instanceParam, EffectInitParam initParam) {
             _part = new ThreeDEffectPart();
             var position = instanceParam.position;
             var otherPosition = instanceParam.otherPosition;

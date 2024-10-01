@@ -4,67 +4,86 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Core.Effects.EffectParts;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ROIO.Models.FileTypes;
 using UnityEditor;
 using UnityEngine;
 
-public class EffectUtility {
+public class EffectUtility
+{
     private static string GENERATED_RESOURCES_PATH = Path.Combine("Assets", "Resources", "Effects");
     private static string DEFAULT_EFFECT_DIR = Path.Combine("data", "texture", "effect") + Path.DirectorySeparatorChar;
 
     [MenuItem("UnityRO/Utils/Extract/Effects/STR")]
-    static void ExtractSTREffects() {
+    static void ExtractSTREffects()
+    {
         FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
         //FileManager.LoadGRF("../../ragnarok/", new List<string> { "data.grf" });
 
-        try {
+        try
+        {
             var descriptors = DataUtility
                 .FilterDescriptors(FileManager.GetFileDescriptors(), "data/texture/effect")
                 .Where(it => Path.GetExtension(it) == ".str")
                 .ToList();
 
-            for (var i = 0; i < descriptors.Count; i++) {
+            for (var i = 0; i < descriptors.Count; i++)
+            {
                 var progress = i * 1f / descriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
                         $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
-                        progress)) {
+                        progress))
+                {
                     break;
                 }
 
-                try {
+                try
+                {
                     ExtractStr(descriptors[i]);
-                } catch (Exception e) {
+                }
+                catch (Exception e)
+                {
                     Debug.LogException(e);
                 }
             }
-        } finally {
+        }
+        finally
+        {
             EditorUtility.ClearProgressBar();
             AssetDatabase.Refresh();
         }
     }
 
     [MenuItem("UnityRO/Utils/Extract/Effects/SPR")]
-    static void ExtractSPREffects() {
+    static void ExtractSPREffects()
+    {
         FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
         //FileManager.LoadGRF("../../ragnarok/", new List<string> { "data.grf" });
 
-        try {
+        try
+        {
             var descriptors = DataUtility
                 .FilterDescriptors(FileManager.GetFileDescriptors(), "data/sprite/ÀÌÆÑÆ®")
                 .Where(it => Path.GetExtension(it) is ".str" or ".act" or ".spr")
                 .ToList();
 
-            for (var i = 0; i < descriptors.Count; i++) {
+            for (var i = 0; i < descriptors.Count; i++)
+            {
                 var progress = i * 1f / descriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
                         $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
-                        progress)) {
+                        progress))
+                {
                     break;
                 }
 
-                try {
+                try
+                {
                     var descriptor = descriptors[i];
-                    switch (Path.GetExtension(descriptor)) {
+                    switch (Path.GetExtension(descriptor))
+                    {
                         case ".spr":
                             ExtractSpr(descriptor);
                             break;
@@ -72,22 +91,28 @@ public class EffectUtility {
                             ExtractStr(descriptors[i]);
                             break;
                     }
-                } catch (Exception e) {
+                }
+                catch (Exception e)
+                {
                     Debug.LogException(e);
                 }
             }
-        } finally {
+        }
+        finally
+        {
             EditorUtility.ClearProgressBar();
             AssetDatabase.Refresh();
         }
     }
 
     [MenuItem("UnityRO/Utils/Extract/Effects/Everything else")]
-    static void ExtractTextureEffects() {
+    static void ExtractTextureEffects()
+    {
         FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
         //FileManager.LoadGRF("../../ragnarok/", new List<string> { "data.grf" });
 
-        try {
+        try
+        {
             AssetDatabase.StartAssetEditing();
             var descriptors = DataUtility
                 .FilterDescriptors(FileManager.GetFileDescriptors(), "data/texture/effect")
@@ -96,28 +121,36 @@ public class EffectUtility {
                     Path.GetExtension(it) != ".str")
                 .ToList();
 
-            for (var i = 0; i < descriptors.Count; i++) {
+            for (var i = 0; i < descriptors.Count; i++)
+            {
                 var progress = i * 1f / descriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
                         $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
-                        progress)) {
+                        progress))
+                {
                     break;
                 }
 
-                try {
+                try
+                {
                     ExtractTexture(descriptors[i]);
-                } catch (Exception e) {
+                }
+                catch (Exception e)
+                {
                     Debug.LogException(e);
                 }
             }
-        } finally {
+        }
+        finally
+        {
             AssetDatabase.StopAssetEditing();
             EditorUtility.ClearProgressBar();
             AssetDatabase.Refresh();
         }
     }
 
-    private static void ExtractTexture(string descriptor) {
+    private static void ExtractTexture(string descriptor)
+    {
         var texture = FileManager.Load(descriptor) as Texture2D;
         if (texture == null) throw new Exception();
 
@@ -134,7 +167,8 @@ public class EffectUtility {
         AssetDatabase.ImportAsset($"{assetPath}/{filenameWithoutExtension}.png");
     }
 
-    private static void ExtractStr(string descriptor) {
+    private static void ExtractStr(string descriptor)
+    {
         var strEffect = EffectLoader.Load(FileManager.ReadSync(descriptor),
             Path.GetDirectoryName(descriptor).Replace("\\", "/"),
             path => FileManager.Load(path) as Texture2D);
@@ -164,7 +198,8 @@ public class EffectUtility {
         AssetDatabase.CreateAsset(strEffect, completePath);
     }
 
-    private static void ExtractSpr(string descriptor) {
+    private static void ExtractSpr(string descriptor)
+    {
         var baseFileName = descriptor.Replace(".spr", "");
 
         var sprPath = baseFileName + ".spr";
@@ -203,7 +238,8 @@ public class EffectUtility {
         textureSettings.spriteMeshType = SpriteMeshType.FullRect;
         textureSettings.spritePixelsPerUnit = SPR.PIXELS_PER_UNIT;
 
-        var sheetMetaData = spriteLoader.Sprites.Select(it => new SpriteMetaData {
+        var sheetMetaData = spriteLoader.Sprites.Select(it => new SpriteMetaData
+        {
             rect = it.rect,
             name = it.name
         }).ToArray();
@@ -218,5 +254,91 @@ public class EffectUtility {
 
         var fullAssetPath = spriteDataPath + ".asset";
         AssetDatabase.CreateAsset(spriteData, fullAssetPath);
+    }
+
+    [MenuItem("UnityRO/Utils/Generate/Effects Scriptables")]
+    private static void GenerateEffects()
+    {
+        var databaseString = Resources.Load<TextAsset>("Effects/EffectTable").text;
+        var databaseObj = JsonConvert.DeserializeObject<JObject>(databaseString);
+
+        try
+        {
+            AssetDatabase.StartAssetEditing();
+            
+            foreach (var (key, effect) in databaseObj)
+            {
+                var effName = int.TryParse(key, out var id) ? ((EffectId)id).ToString() : key;
+
+                var cylinder = new List<CylinderEffectPart>();
+                var spr = new List<SprEffectPart>();
+                var str = new List<StrEffectPart>();
+                var _3d = new List<ThreeDEffectPart>();
+                var _2d = new List<TwoDEffectPart>();
+
+                foreach (var part in effect)
+                {
+                    switch (part["type"]?.ToString())
+                    {
+                        case "3D":
+                            break;
+                        case "2D":
+                            break;
+                        case "CYLINDER":
+                            break;
+                        case "FUNC":
+                            break;
+                        case "SPR":
+                            spr.Add(GetPart(part));
+                            break;
+                        case "STR":
+                            break;
+                        case "QuadHorn":
+                            break;
+                        default: //wav
+                            break;
+                    }
+                }
+
+                if (cylinder.Count <= 0 && spr.Count <= 0 && str.Count <= 0 && _3d.Count <= 0 &&
+                    _2d.Count <= 0) continue;
+
+                var scriptableEffect = ScriptableObject.CreateInstance<Effect>();
+                scriptableEffect.EffectId = id;
+                scriptableEffect.name = effName;
+                scriptableEffect.CylinderParts = cylinder.ToArray();
+                scriptableEffect.SPRParts = spr.ToArray();
+                scriptableEffect.STRParts = str.ToArray();
+                scriptableEffect.ThreeDParts = _3d.ToArray();
+                scriptableEffect.TwoDParts = _2d.ToArray();
+
+                AssetDatabase.CreateAsset(scriptableEffect,
+                    $"Assets/3rdparty/unityro-resources/Resources/Database/Effects/Extracted/{effName}.asset");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+        finally
+        {
+            AssetDatabase.StopAssetEditing();
+        }
+    }
+
+    private static SprEffectPart GetPart(JToken src)
+    {
+        return new SprEffectPart
+        {
+            duration = src["duration"]?.Value<long>() ?? 0L,
+            duplicates = src["duplicates"]?.Value<int>() ?? 0,
+            timeBetweenDuplication = src["timeBetweenDuplication"]?.Value<float>() ?? 0f,
+            attachedEntity = src["attachedEntity"]?.Value<bool>() ?? false,
+            head = src["head"]?.Value<bool>() ?? false,
+            stopAtEnd = src["stopAtEnd"]?.Value<bool>() ?? false,
+            direction = src["direction"]?.Value<bool>() ?? false,
+            wav = Resources.Load<AudioClip>($"Wav/{src["wav"]?.Value<string>()}"),
+            file = Resources.Load<SpriteData>($"Effects/SPR/{src["file"]?.Value<string>()}"),
+        };
     }
 }

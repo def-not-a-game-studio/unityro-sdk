@@ -3,7 +3,7 @@ using ROIO.Models.FileTypes;
 
 namespace Core.Effects.EffectParts {
     [Serializable]
-    public class StrEffect : EffectPart {
+    public class StrEffectPart : EffectPart {
         public STR EffectFile;
     }
 }
