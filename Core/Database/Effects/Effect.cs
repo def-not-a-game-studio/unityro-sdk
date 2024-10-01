@@ -8,9 +8,9 @@ namespace Core.Effects.EffectParts {
         public int EffectId;
 
         public CylinderEffectPart[] CylinderParts;
-        public SprEffect[] SPRParts;
-        public StrEffect[] STRParts;
-        public ThreeDEffect[] ThreeDParts;
-        public TwoDEffect[] TwoDParts;
+        public SprEffectPart[] SPRParts;
+        public StrEffectPart[] STRParts;
+        public ThreeDEffectPart[] ThreeDParts;
+        public TwoDEffectPart[] TwoDParts;
     }
 }

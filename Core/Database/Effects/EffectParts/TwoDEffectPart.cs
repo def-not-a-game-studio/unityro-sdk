@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Core.Effects.EffectParts {
     [Serializable]
-    public class TwoDEffect : EffectPart {
+    public class TwoDEffectPart : EffectPart {
         public long duration;
         public int duplicates;
         public float timeBetweenDuplication;
