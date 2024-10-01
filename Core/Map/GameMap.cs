@@ -78,8 +78,10 @@ public class GameMap : MonoBehaviour
         
         RenderSettings.ambientMode = AmbientMode.Flat;
         RenderSettings.ambientIntensity = 1f;
-        RenderSettings.ambientLight = ambient;
+        var color = new Color(ambient.r + diffuse.r * LightInfo.intensity, ambient.g + diffuse.g * LightInfo.intensity, ambient.b + diffuse.b * LightInfo.intensity, ambient.a);
+        RenderSettings.ambientLight = color;
         DirectionalLight.color = diffuse;
+        DirectionalLight.intensity = LightInfo.intensity;
 
         Ambient = ambient;
         Diffuse = diffuse;
