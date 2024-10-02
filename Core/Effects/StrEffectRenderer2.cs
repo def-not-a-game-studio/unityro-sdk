@@ -8,7 +8,6 @@ using UnityRO.Core;
 
 namespace Core.Effects
 {
-    [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter))]
     public class StrEffectRenderer2 : ManagedMonoBehaviour
     {
         [SerializeField] private STR Anim;
@@ -28,9 +27,6 @@ namespace Core.Effects
 
         public UnityAction OnEnd;
 
-        private MeshRenderer _meshRenderer;
-        private MeshFilter _meshFilter;
-
         public void Initialize(STR animation)
         {
             Anim = animation;
@@ -44,11 +40,8 @@ namespace Core.Effects
             //
             // mat.SetFloat("_SrcBlend", (float)this.srcBlend);
             // mat.SetFloat("_DstBlend", (float)this.dstBlend);
-            _meshRenderer.material.SetFloat("_ZWrite", 0);
-            _meshRenderer.material.SetFloat("_Cull", 0);
-
-            _meshRenderer.material.SetTexture("_MainTex", Anim.Atlas);
-            _meshRenderer.material.SetColor("_Color", Color.white);
+            _renderParams.material.SetTexture("_MainTex", Anim.Atlas);
+            _renderParams.material.SetColor("_Color", Color.white);
 
             time = 0;
             _currentFrame = -1;
@@ -79,12 +72,13 @@ namespace Core.Effects
             LayersParent = new GameObject("Layers").transform;
             LayersParent.SetParent(transform, false);
 
-            _meshRenderer = GetComponent<MeshRenderer>();
-            _meshFilter = GetComponent<MeshFilter>();
             var material = new Material(Shader.Find("Ragnarok/EffectShader"));
-            _meshRenderer.material = material;
-            _meshRenderer.material.SetFloat("_SrcBlend", (float)this.srcBlend);
-            _meshRenderer.material.SetFloat("_DstBlend", (float)this.dstBlend);
+            material.SetFloat("_SrcBlend", (float)this.srcBlend);
+            material.SetFloat("_DstBlend", (float)this.dstBlend);
+            material.SetFloat("_ZWrite", 0);
+            material.SetFloat("_Cull", 0);
+            _renderParams = new RenderParams(material);
+
             if (Anim != null)
                 Initialize(Anim);
         }
@@ -123,7 +117,7 @@ namespace Core.Effects
         private static List<Vector3> outVertices = new List<Vector3>(512);
         private static List<Vector3> outNormals = new List<Vector3>(512);
         private static List<int> outTris = new List<int>(1024);
-        private static List<Vector3> outUvs = new List<Vector3>(512);
+        private static List<Vector2> outUvs = new List<Vector2>(512);
         private static List<Color> outColors = new List<Color>(512);
 
         private static Vector2[] tempPositions2 = new Vector2[4];
@@ -137,31 +131,40 @@ namespace Core.Effects
             public int imageId;
             public Color color;
         }
+        
+        private Dictionary<int, Mesh> _meshCache = new();
+        private RenderParams _renderParams;
 
         private void UpdateAnimationFrame()
         {
-            var meshList = new List<Mesh>();
-            foreach (var layer in Anim.layers)
+            if (!_meshCache.ContainsKey(_currentFrame))
             {
-                if (layer.animations.Length == 0)
-                    continue;
-
-                var res = UpdateAnimationLayer(layer);
-                if (res != null)
+                var meshList = new List<Mesh>();
+                foreach (var layer in Anim.layers)
                 {
-                    meshList.Add(GenerateFrameMesh(res));
+                    if (layer.animations.Length == 0)
+                        continue;
+
+                    var res = UpdateAnimationLayer(layer);
+                    if (res != null)
+                    {
+                        meshList.Add(GenerateFrameMesh(res));
+                    }
                 }
+
+                var combine = meshList.Select(it => new CombineInstance
+                {
+                    mesh = it,
+                    transform = transform.worldToLocalMatrix
+                });
+            
+                var combined = new Mesh();
+                combined.CombineMeshes(combine.ToArray());
+                
+                _meshCache[_currentFrame] = combined;
             }
-
-            var combine = meshList.Select(it => new CombineInstance()
-            {
-                mesh = it,
-                transform = transform.worldToLocalMatrix
-            });
-
-            var combined = new Mesh();
-            combined.CombineMeshes(combine.ToArray());
-            _meshFilter.sharedMesh = combined;
+            
+            Graphics.RenderMesh(_renderParams,  _meshCache[_currentFrame], 0, transform.worldToLocalMatrix);
         }
 
         private MeshBuilderInfo UpdateAnimationLayer(STR.Layer layer)
@@ -264,7 +267,6 @@ namespace Core.Effects
                 outNormals.Add(new Vector3(0, 0, -1));
             }
 
-            // TODO: read real UVs from file
             outUvs.Add(new Vector3(bounds.xMin, bounds.yMax));
             outUvs.Add(new Vector3(bounds.xMax, bounds.yMax));
             outUvs.Add(new Vector3(bounds.xMin, bounds.yMin));
@@ -283,8 +285,8 @@ namespace Core.Effects
                 triangles = outTris.ToArray(),
                 colors = outColors.ToArray(),
                 normals = outNormals.ToArray(),
+                uv = outUvs.ToArray(),
             };
-            mesh.SetUVs(0, outUvs.ToArray());
             mesh.Optimize();
             return mesh;
         }
