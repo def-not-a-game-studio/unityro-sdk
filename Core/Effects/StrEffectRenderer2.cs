@@ -15,10 +15,20 @@ namespace Core.Effects
         [SerializeField] private BlendMode dstBlend;
         [SerializeField] private bool Loop;
         [SerializeField] private bool ManualAdvanceFrame;
-        [SerializeField] private int newFrame;
+        [HideInInspector] [SerializeField] private int newFrame;
+
+        private static List<Vector3> outVertices = new(512);
+        private static List<Vector3> outNormals = new(512);
+        private static List<int> outTris = new(1024);
+        private static List<Vector2> outUvs = new(512);
+        private static List<Color> outColors = new(512);
+        private static Vector2[] tempPositions2 = new Vector2[4];
+        private static Vector2[] tempUvs2 = new Vector2[4];
 
         private bool isInit;
         private Dictionary<float, BlendMode> BlendModes = new();
+        private Dictionary<int, List<RenderParams>> _rpCache = new();
+        private Dictionary<int, List<Mesh>> _meshCache = new();
 
         private float time;
         private int _currentFrame;
@@ -31,20 +41,12 @@ namespace Core.Effects
         {
             Anim = animation;
 
-            // this.srcBlend = BlendModes[srcBlend];
-            // this.dstBlend = BlendModes[destBlend];
-            //
-            // if (this.srcBlend == BlendMode.SrcAlpha && this.dstBlend == BlendMode.DstAlpha) {
-            //     this.dstBlend = BlendMode.One;
-            // }
-            //
-            // mat.SetFloat("_SrcBlend", (float)this.srcBlend);
-            // mat.SetFloat("_DstBlend", (float)this.dstBlend);
-            _renderParams.material.SetTexture("_MainTex", Anim.Atlas);
-            _renderParams.material.SetColor("_Color", Color.white);
-
             time = 0;
-            _currentFrame = -1;
+            _currentFrame = 0;
+
+            _rpCache.Clear();
+            _meshCache.Clear();
+
             isInit = true;
         }
 
@@ -72,13 +74,6 @@ namespace Core.Effects
             LayersParent = new GameObject("Layers").transform;
             LayersParent.SetParent(transform, false);
 
-            var material = new Material(Shader.Find("Ragnarok/EffectShader"));
-            material.SetFloat("_SrcBlend", (float)this.srcBlend);
-            material.SetFloat("_DstBlend", (float)this.dstBlend);
-            material.SetFloat("_ZWrite", 0);
-            material.SetFloat("_Cull", 0);
-            _renderParams = new RenderParams(material);
-
             if (Anim != null)
                 Initialize(Anim);
         }
@@ -91,9 +86,16 @@ namespace Core.Effects
             time += Time.deltaTime;
             if (!ManualAdvanceFrame)
                 newFrame = Mathf.FloorToInt(time * Anim.fps);
-            if (newFrame == _currentFrame)
-                return;
+            
+            UpdateAnimationFrame();
+            for (var index = 0; index < _meshCache[_currentFrame].Count; index++)
+            {
+                var mesh = _meshCache[_currentFrame][index];
+                var rp = _rpCache[_currentFrame][index];
+                Graphics.RenderMesh(rp, mesh, 0, transform.localToWorldMatrix);
+            }
 
+            if (newFrame == _currentFrame) return;
             _currentFrame = newFrame;
 
             if (_currentFrame > Anim.maxKey)
@@ -107,64 +109,47 @@ namespace Core.Effects
                 }
 
                 OnEnd?.Invoke();
-
-                return;
             }
-
-            UpdateAnimationFrame();
         }
-
-        private static List<Vector3> outVertices = new List<Vector3>(512);
-        private static List<Vector3> outNormals = new List<Vector3>(512);
-        private static List<int> outTris = new List<int>(1024);
-        private static List<Vector2> outUvs = new List<Vector2>(512);
-        private static List<Color> outColors = new List<Color>(512);
-
-        private static Vector2[] tempPositions2 = new Vector2[4];
-        private static Vector2[] tempUvs2 = new Vector2[4];
-
-        public class MeshBuilderInfo
-        {
-            public Vector2[] vertex;
-            public Vector2 position;
-            public float angle;
-            public int imageId;
-            public Color color;
-        }
-        
-        private Dictionary<int, Mesh> _meshCache = new();
-        private RenderParams _renderParams;
 
         private void UpdateAnimationFrame()
         {
             if (!_meshCache.ContainsKey(_currentFrame))
             {
-                var meshList = new List<Mesh>();
-                foreach (var layer in Anim.layers)
+                _meshCache.Add(_currentFrame, new List<Mesh>());
+                _rpCache.Add(_currentFrame, new List<RenderParams>());
+                for (var index = 0; index < Anim.layers.Length; index++)
                 {
+                    var layer = Anim.layers[index];
                     if (layer.animations.Length == 0)
                         continue;
 
                     var res = UpdateAnimationLayer(layer);
                     if (res != null)
                     {
-                        meshList.Add(GenerateFrameMesh(res));
+                        var material = new Material(Shader.Find("Ragnarok/EffectShader"));
+                        var srcBlend = BlendModes[res.srcBlend];
+                        var dstBlend = BlendModes[res.dstBlend];
+
+                        if (srcBlend == BlendMode.SrcAlpha && dstBlend == BlendMode.DstAlpha)
+                        {
+                            dstBlend = BlendMode.One;
+                        }
+
+                        material.SetFloat("_SrcBlend", (float)srcBlend);
+                        material.SetFloat("_DstBlend", (float)dstBlend);
+                        material.SetTexture("_MainTex", Anim.Atlas);
+                        var renderParams = new RenderParams(material)
+                        {
+                            receiveShadows = false,
+                            lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off,
+                            shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+                        };
+                        _rpCache[_currentFrame].Add(renderParams);
+                        _meshCache[_currentFrame].Add(GenerateFrameMesh(res, index));
                     }
                 }
-
-                var combine = meshList.Select(it => new CombineInstance
-                {
-                    mesh = it,
-                    transform = transform.worldToLocalMatrix
-                });
-            
-                var combined = new Mesh();
-                combined.CombineMeshes(combine.ToArray());
-                
-                _meshCache[_currentFrame] = combined;
             }
-            
-            Graphics.RenderMesh(_renderParams,  _meshCache[_currentFrame], 0, transform.worldToLocalMatrix);
         }
 
         private MeshBuilderInfo UpdateAnimationLayer(STR.Layer layer)
@@ -213,6 +198,8 @@ namespace Core.Effects
                     angle = from.angle,
                     imageId = fixedFrame,
                     color = from.color,
+                    srcBlend = (int)from.srcAlpha,
+                    dstBlend = (int)from.destAlpha,
                 };
             }
 
@@ -243,10 +230,12 @@ namespace Core.Effects
                 angle = angle,
                 imageId = texIndex,
                 color = color,
+                srcBlend = (int)from.srcAlpha,
+                dstBlend = (int)from.destAlpha,
             };
         }
 
-        private Mesh GenerateFrameMesh(MeshBuilderInfo part)
+        private Mesh GenerateFrameMesh(MeshBuilderInfo part, int layerIndex)
         {
             var tIndex = 0;
             outNormals.Clear();
@@ -267,10 +256,10 @@ namespace Core.Effects
                 outNormals.Add(new Vector3(0, 0, -1));
             }
 
-            outUvs.Add(new Vector3(bounds.xMin, bounds.yMax));
-            outUvs.Add(new Vector3(bounds.xMax, bounds.yMax));
-            outUvs.Add(new Vector3(bounds.xMin, bounds.yMin));
-            outUvs.Add(new Vector3(bounds.xMax, bounds.yMin));
+            outUvs.Add(new Vector3(bounds.xMin, bounds.yMax, layerIndex));
+            outUvs.Add(new Vector3(bounds.xMax, bounds.yMax, layerIndex));
+            outUvs.Add(new Vector3(bounds.xMin, bounds.yMin, layerIndex));
+            outUvs.Add(new Vector3(bounds.xMax, bounds.yMin, layerIndex));
 
             outTris.Add(tIndex);
             outTris.Add(tIndex + 1);
@@ -297,6 +286,23 @@ namespace Core.Effects
                 v.x * Mathf.Cos(delta) - v.y * Mathf.Sin(delta),
                 v.x * Mathf.Sin(delta) + v.y * Mathf.Cos(delta)
             );
+        }
+
+        public void Replay()
+        {
+            if (Anim != null)
+                Initialize(Anim);
+        }
+
+        private class MeshBuilderInfo
+        {
+            public Vector2[] vertex;
+            public Vector2 position;
+            public float angle;
+            public int imageId;
+            public Color color;
+            public int srcBlend;
+            public int dstBlend;
         }
     }
 }
