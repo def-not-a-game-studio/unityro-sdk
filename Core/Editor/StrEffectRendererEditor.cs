@@ -2,10 +2,10 @@
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(LegacyStrEffectRenderer))]
+[CustomEditor(typeof(StrEffectRenderer))]
 internal class StrEffectRendererEditor : Editor {
     public override void OnInspectorGUI() {
-        var component = (LegacyStrEffectRenderer)target;
+        var component = (StrEffectRenderer)target;
         base.OnInspectorGUI();
 
         if (GUILayout.Button("Replay Effect")) {

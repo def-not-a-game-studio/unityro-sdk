@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -51,7 +52,7 @@ public class MapRenderer
         gameMap.SetMapSize((int)gameMapData.Ground.width, (int)gameMapData.Ground.height);
         gameMap.SetMapAltitude(new Altitude(gameMapData.Altitude));
 
-        var ignoreChunks = !mapName.ContainsInvariantCultureIgnoreCase("_in");
+        var ignoreChunks = !mapName.Contains("_in");
 
         var ground = new Ground(gameMapData.CompiledGround, gameMapData.World.water, splitIntoChunks && ignoreChunks);
 
@@ -95,7 +96,7 @@ public class MapRenderer
                 var effectObj = new GameObject(effect.name);
                 effectObj.transform.SetParent(effectParent.transform, false);
                 effectObj.transform.position = new Vector3(
-                    effect.pos[0] + mapSize.x + .2f, 
+                    effect.pos[0] + mapSize.x + .2f,
                     -effect.pos[1] + 2f,
                     effect.pos[2] + mapSize.y);
                 var spriteEffect = effectObj.AddComponent<SpriteEffectViewer>();
@@ -259,3 +260,4 @@ public class MapRenderer
         lightProbeGroup.probePositions = positions.ToArray();
     }
 }
+#endif

@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using _3rdparty.unityro_sdk.Core.Effects;
+using Cysharp.Threading.Tasks;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityEngine.Events;
@@ -11,39 +14,57 @@ namespace Core.Effects
     public class StrEffectRenderer : ManagedMonoBehaviour
     {
         [SerializeField] private STR Anim;
-        [SerializeField] private BlendMode srcBlend;
-        [SerializeField] private BlendMode dstBlend;
+        [SerializeField] private int EffectId;
         [SerializeField] private bool Loop;
         [SerializeField] private bool ManualAdvanceFrame;
         [HideInInspector] [SerializeField] private int newFrame;
 
-        private static List<Vector3> outVertices = new(512);
-        private static List<Vector3> outNormals = new(512);
-        private static List<int> outTris = new(1024);
-        private static List<Vector2> outUvs = new(512);
-        private static List<Color> outColors = new(512);
+        private static Vector3[] outVertices = new Vector3[4];
+        private static Vector3[] outNormals = new Vector3[4];
+        private static int[] outTris = new int[6];
+        private static Vector2[] outUvs = new Vector2[4];
+        private static Color[] outColors = new Color[4];
         private static Vector2[] tempPositions2 = new Vector2[4];
         private static Vector2[] tempUvs2 = new Vector2[4];
 
         private bool isInit;
         private Dictionary<float, BlendMode> BlendModes = new();
-        private Dictionary<int, List<RenderParams>> _rpCache = new();
-        private Dictionary<int, List<Mesh>> _meshCache = new();
+        private Dictionary<int, List<EffectRenderInfo>> _effectRenderInfo = new();
 
         private float time;
         private int _currentFrame;
 
-        private Transform LayersParent;
-
         public UnityAction OnEnd;
 
-        public void Initialize(STR animation)
+        private EffectCache _effectCache;
+
+        private void Awake()
         {
+            _effectCache = FindAnyObjectByType<EffectCache>();
+        }
+
+        public void Initialize(STR animation, int effectId, Dictionary<int, List<EffectRenderInfo>> renderInfo)
+        {
+            isInit = false;
             Anim = animation;
+            EffectId = effectId;
 
             time = 0;
             _currentFrame = 0;
+
+            _effectRenderInfo = renderInfo;
             isInit = true;
+        }
+
+        public void Initialize(STR animation, int effectId)
+        {
+            Anim = animation;
+            EffectId = effectId;
+
+            time = 0;
+            _currentFrame = 0;
+
+            InitializeMeshes(Anim);
         }
 
         private void Start()
@@ -65,15 +86,6 @@ namespace Core.Effects
             BlendModes[15] = BlendMode.Zero;
         }
 
-        private void Awake()
-        {
-            LayersParent = new GameObject("Layers").transform;
-            LayersParent.SetParent(transform, false);
-
-            if (Anim != null)
-                Initialize(Anim);
-        }
-
         public override void ManagedUpdate()
         {
             if (!isInit)
@@ -87,77 +99,29 @@ namespace Core.Effects
 
             if (newFrame == _currentFrame) return;
             _currentFrame = newFrame;
+            if (_currentFrame <= Anim.maxKey) return;
 
-            if (_currentFrame > Anim.maxKey)
+            isInit = false;
+            if (Loop)
             {
-                isInit = false;
-                if (Loop)
-                {
-                    time = 0;
-                    _currentFrame = -1;
-                    isInit = true;
-                }
-
-                OnEnd?.Invoke();
-                return;
+                time = 0;
+                _currentFrame = -1;
+                isInit = true;
             }
-            
-            UpdateAnimationFrame();
+
+            OnEnd?.Invoke();
         }
 
         private void Render()
         {
-            if (!_meshCache.ContainsKey(_currentFrame)) return;
-            
-            for (var index = 0; index < _meshCache[_currentFrame].Count; index++)
+            if (!_effectRenderInfo.ContainsKey(_currentFrame)) return;
+            foreach (var pInfo in _effectRenderInfo[_currentFrame])
             {
-                var mesh = _meshCache[_currentFrame][index];
-                var rp = _rpCache[_currentFrame][index];
-                Graphics.RenderMesh(rp, mesh, 0, transform.localToWorldMatrix);
+                Graphics.RenderMesh(pInfo.RenderParams, pInfo.Mesh, 0, transform.localToWorldMatrix);
             }
         }
 
-        private void UpdateAnimationFrame()
-        {
-            if (!_meshCache.ContainsKey(_currentFrame))
-            {
-                _meshCache.Add(_currentFrame, new List<Mesh>());
-                _rpCache.Add(_currentFrame, new List<RenderParams>());
-                for (var index = 0; index < Anim.layers.Length; index++)
-                {
-                    var layer = Anim.layers[index];
-                    if (layer.animations.Length == 0)
-                        continue;
-
-                    var res = UpdateAnimationLayer(layer);
-                    if (res != null)
-                    {
-                        var material = new Material(Shader.Find("Ragnarok/EffectShader"));
-                        var srcBlend = BlendModes[res.srcBlend];
-                        var dstBlend = BlendModes[res.dstBlend];
-
-                        if (srcBlend == BlendMode.SrcAlpha && dstBlend == BlendMode.DstAlpha)
-                        {
-                            dstBlend = BlendMode.One;
-                        }
-
-                        material.SetFloat("_SrcBlend", (float)srcBlend);
-                        material.SetFloat("_DstBlend", (float)dstBlend);
-                        material.SetTexture("_MainTex", Anim.Atlas);
-                        var renderParams = new RenderParams(material)
-                        {
-                            receiveShadows = false,
-                            lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off,
-                            shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
-                        };
-                        _rpCache[_currentFrame].Add(renderParams);
-                        _meshCache[_currentFrame].Add(GenerateFrameMesh(res, index));
-                    }
-                }
-            }
-        }
-
-        private MeshBuilderInfo UpdateAnimationLayer(STR.Layer layer)
+        private MeshBuilderInfo UpdateAnimationLayer(STR.Layer layer, int currentFrame)
         {
             var lastFrame = 0;
             var lastSource = 0;
@@ -167,7 +131,7 @@ namespace Core.Effects
             for (var i = 0; i < layer.animations.Length; i++)
             {
                 var a = layer.animations[i];
-                if (a.frame < _currentFrame)
+                if (a.frame < currentFrame)
                 {
                     if (a.type == 0)
                         startAnim = i;
@@ -180,7 +144,7 @@ namespace Core.Effects
                     lastSource = Mathf.Max(lastSource, a.frame);
             }
 
-            if (startAnim < 0 || (nextAnim < 0 && lastFrame < _currentFrame))
+            if (startAnim < 0 || (nextAnim < 0 && lastFrame < currentFrame))
                 return null;
 
             var from = layer.animations[startAnim];
@@ -189,7 +153,7 @@ namespace Core.Effects
             if (nextAnim >= 0)
                 to = layer.animations[nextAnim];
 
-            var delta = _currentFrame - from.frame;
+            var delta = currentFrame - from.frame;
             if (nextAnim != startAnim + 1 || to?.frame != from.frame)
             {
                 if (to != null && lastSource <= from.frame)
@@ -242,13 +206,6 @@ namespace Core.Effects
 
         private Mesh GenerateFrameMesh(MeshBuilderInfo part, int layerIndex)
         {
-            var tIndex = 0;
-            outNormals.Clear();
-            outVertices.Clear();
-            outTris.Clear();
-            outUvs.Clear();
-            outColors.Clear();
-
             var verts = part.vertex;
             var bounds = Anim.AtlasRects[part.imageId];
             for (var i = 0; i < 4; i++)
@@ -256,22 +213,22 @@ namespace Core.Effects
                 var vertex = verts[i];
                 var v = Rotate(vertex, -part.angle * Mathf.Deg2Rad);
                 var pos = new Vector2(part.position.x - 320f, -(part.position.y - 360f));
-                outVertices.Add((v + pos) / SPR.PIXELS_PER_UNIT);
-                outColors.Add(part.color);
-                outNormals.Add(new Vector3(0, 0, -1));
+                outVertices[i] = (v + pos) / SPR.PIXELS_PER_UNIT;
+                outColors[i] = part.color;
+                outNormals[i] = Vector3.back;
             }
 
-            outUvs.Add(new Vector3(bounds.xMin, bounds.yMax, layerIndex));
-            outUvs.Add(new Vector3(bounds.xMax, bounds.yMax, layerIndex));
-            outUvs.Add(new Vector3(bounds.xMin, bounds.yMin, layerIndex));
-            outUvs.Add(new Vector3(bounds.xMax, bounds.yMin, layerIndex));
+            outUvs[0] = new Vector3(bounds.xMin, bounds.yMax, layerIndex);
+            outUvs[1] = new Vector3(bounds.xMax, bounds.yMax, layerIndex);
+            outUvs[2] = new Vector3(bounds.xMin, bounds.yMin, layerIndex);
+            outUvs[3] = new Vector3(bounds.xMax, bounds.yMin, layerIndex);
 
-            outTris.Add(tIndex);
-            outTris.Add(tIndex + 1);
-            outTris.Add(tIndex + 2);
-            outTris.Add(tIndex + 1);
-            outTris.Add(tIndex + 3);
-            outTris.Add(tIndex + 2);
+            outTris[0] = 0;
+            outTris[1] = 1;
+            outTris[2] = 2;
+            outTris[3] = 1;
+            outTris[4] = 3;
+            outTris[5] = 2;
 
             var mesh = new Mesh
             {
@@ -296,7 +253,63 @@ namespace Core.Effects
         public void Replay()
         {
             if (Anim != null)
-                Initialize(Anim);
+                Initialize(Anim, EffectId);
+        }
+
+        private async void InitializeMeshes(STR anim)
+        {
+            _effectRenderInfo.Clear();
+
+            for (var frame = 0; frame < anim.maxKey; frame++)
+            {
+                PopulateCache(frame).Forget();
+                await UniTask.Yield();
+            }
+
+            isInit = true;
+            _effectCache.CacheEffect(EffectId, _effectRenderInfo);
+        }
+
+        private async UniTaskVoid PopulateCache(int frame)
+        {
+            var list = new List<EffectRenderInfo>();
+            for (var index = 0; index < Anim.layers.Length; index++)
+            {
+                var layer = Anim.layers[index];
+                if (layer.animations.Length == 0)
+                    continue;
+
+                var res = UpdateAnimationLayer(layer, frame);
+                if (res == null) continue;
+
+                var material = new Material(Shader.Find("Ragnarok/EffectShader"));
+                var srcBlend = BlendModes[res.srcBlend];
+                var dstBlend = BlendModes[res.dstBlend];
+
+                if (srcBlend == BlendMode.SrcAlpha && dstBlend == BlendMode.DstAlpha)
+                {
+                    dstBlend = BlendMode.One;
+                }
+
+                material.SetFloat("_SrcBlend", (float)srcBlend);
+                material.SetFloat("_DstBlend", (float)dstBlend);
+                material.SetTexture("_MainTex", Anim.Atlas);
+                var renderParams = new RenderParams(material)
+                {
+                    receiveShadows = false,
+                    lightProbeUsage = LightProbeUsage.Off,
+                    shadowCastingMode = ShadowCastingMode.Off,
+                };
+                list.Add(new EffectRenderInfo
+                {
+                    RenderParams = renderParams,
+                    Mesh = GenerateFrameMesh(res, index),
+                });
+
+                await UniTask.Yield();
+            }
+
+            _effectRenderInfo[frame] = list;
         }
 
         private class MeshBuilderInfo
