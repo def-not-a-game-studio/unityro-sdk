@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Core.Effects.EffectParts;
 using Cysharp.Threading.Tasks;
 using ROIO.Models.FileTypes;
 using UnityEngine;
@@ -24,6 +25,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
     public class EffectCache : MonoBehaviour
     {
         public Dictionary<int, EffectRenderInfo> EffectRenderInfos = new();
+        private Dictionary<int, Effect> Effects = new();
 
         private Material _material;
 
@@ -35,14 +37,23 @@ namespace _3rdparty.unityro_sdk.Core.Effects
             _material.enableInstancing = true;
             _material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
             _material.SetFloat("_DstBlend", (float)BlendMode.One);
+
+            var effects = Resources.LoadAll<Effect>("Database/Effects/Extracted");
+            foreach (var effect in effects)
+            {
+                Effects.TryAdd(effect.EffectId, effect);
+            }
         }
 
         public async UniTask<EffectRenderInfo> GetRenderInfo(int effectId)
         {
             if (!EffectRenderInfos.TryGetValue(effectId, out var effectRenderInfo))
             {
-                var effect = await Resources.LoadAsync<STR>("Effects/STR/magnificat") as STR;
-                effectRenderInfo = await StrEffectBuilder.InitializeMeshes(effect, effectId);
+                var effect = Effects[effectId];
+                // TODO render more parts
+                var part = effect.STRParts[0];
+                effectRenderInfo = await StrEffectBuilder.InitializeMeshes(part.file, effectId);
+                effectRenderInfo.AudioClip = part.wav;
                 EffectRenderInfos.Add(effectId, effectRenderInfo);
             }
 

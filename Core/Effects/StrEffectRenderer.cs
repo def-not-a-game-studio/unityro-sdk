@@ -1,3 +1,4 @@
+using System;
 using _3rdparty.unityro_sdk.Core.Effects;
 using UnityEngine;
 using UnityEngine.Events;
@@ -5,6 +6,7 @@ using UnityRO.Core;
 
 namespace Core.Effects
 {
+    [RequireComponent(typeof(AudioSource))]
     public class StrEffectRenderer : ManagedMonoBehaviour
     {
         [SerializeField] private int EffectId;
@@ -17,9 +19,15 @@ namespace Core.Effects
         private int _currentFrame;
         
         private EffectRenderInfo _effectRenderInfo;
+        private AudioSource _audioSource;
 
         public UnityAction OnEnd;
-        
+
+        private void Awake()
+        {
+            _audioSource = GetComponent<AudioSource>();
+        }
+
         public void Initialize(EffectRenderInfo renderInfo)
         {
             isInit = false;
@@ -27,6 +35,12 @@ namespace Core.Effects
             _currentFrame = 0;
             _effectRenderInfo = renderInfo;
             isInit = true;
+
+            if (renderInfo.AudioClip != null)
+            {
+                _audioSource.clip = _effectRenderInfo.AudioClip;
+                _audioSource.Play();
+            }
         }
 
         public override void ManagedUpdate()
@@ -45,6 +59,7 @@ namespace Core.Effects
             if (_currentFrame <= _effectRenderInfo.MaxKey) return;
 
             isInit = false;
+            _audioSource.clip = null;
             if (Loop)
             {
                 _time = 0;

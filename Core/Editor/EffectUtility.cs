@@ -7,6 +7,7 @@ using System.Linq;
 using Core.Effects.EffectParts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using ROIO.Models.FileTypes;
 using UnityEditor;
 using UnityEngine;
@@ -19,7 +20,7 @@ public class EffectUtility
     [MenuItem("UnityRO/Utils/Extract/Effects/STR")]
     static void ExtractSTREffects()
     {
-        FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        FileManager.LoadGRF("D:\\Projetos\\Personal\\Ragnarok\\Unity\\", new List<string> { "kro_data.grf" });
         //FileManager.LoadGRF("../../ragnarok/", new List<string> { "data.grf" });
 
         try
@@ -59,7 +60,7 @@ public class EffectUtility
     [MenuItem("UnityRO/Utils/Extract/Effects/SPR")]
     static void ExtractSPREffects()
     {
-        FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        FileManager.LoadGRF("D:\\Projetos\\Personal\\Ragnarok\\Unity\\", new List<string> { "kro_data.grf" });
         //FileManager.LoadGRF("../../ragnarok/", new List<string> { "data.grf" });
 
         try
@@ -108,7 +109,7 @@ public class EffectUtility
     [MenuItem("UnityRO/Utils/Extract/Effects/Everything else")]
     static void ExtractTextureEffects()
     {
-        FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        FileManager.LoadGRF("D:\\Projetos\\Personal\\Ragnarok\\Unity\\", new List<string> { "kro_data.grf" });
         //FileManager.LoadGRF("../../ragnarok/", new List<string> { "data.grf" });
 
         try
@@ -163,8 +164,13 @@ public class EffectUtility
         Directory.CreateDirectory(assetPath);
 
         var bytes = texture.EncodeToPNG();
-        File.WriteAllBytes($"{assetPath}/{filenameWithoutExtension}.png", bytes);
-        AssetDatabase.ImportAsset($"{assetPath}/{filenameWithoutExtension}.png");
+        var atlasPath = $"{assetPath}/{filenameWithoutExtension}.png";
+        File.WriteAllBytes(atlasPath, bytes);
+        AssetDatabase.ImportAsset(atlasPath);
+
+        var importer = AssetImporter.GetAtPath(atlasPath) as TextureImporter;
+        importer.alphaIsTransparency = true;
+        importer.SaveAndReimport();
     }
 
     private static void ExtractStr(string descriptor)
@@ -186,10 +192,16 @@ public class EffectUtility
 
         var atlas = strEffect.Atlas;
         var bytes = atlas.EncodeToPNG();
-        File.WriteAllBytes($"{assetPath}/{filenameWithoutExtension}.png", bytes);
-        AssetDatabase.ImportAsset($"{assetPath}/{filenameWithoutExtension}.png");
-        var diskAtlas =
-            AssetDatabase.LoadAssetAtPath<Texture2D>($"{assetPath}/{filenameWithoutExtension}.png");
+        var atlasPath = $"{assetPath}/{filenameWithoutExtension}.png";
+
+        File.WriteAllBytes(atlasPath, bytes);
+        AssetDatabase.ImportAsset(atlasPath);
+
+        var importer = AssetImporter.GetAtPath(atlasPath) as TextureImporter;
+        importer.alphaIsTransparency = true;
+        importer.SaveAndReimport();
+
+        var diskAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>(atlasPath);
         strEffect._Atlas = diskAtlas;
 
         strEffect.name = filenameWithoutExtension;
@@ -265,7 +277,7 @@ public class EffectUtility
         try
         {
             AssetDatabase.StartAssetEditing();
-            
+
             foreach (var (key, effect) in databaseObj)
             {
                 var effName = int.TryParse(key, out var id) ? ((EffectId)id).ToString() : key;
@@ -289,9 +301,10 @@ public class EffectUtility
                         case "FUNC":
                             break;
                         case "SPR":
-                            spr.Add(GetPart(part));
+                            spr.Add(GetSprPart(part));
                             break;
                         case "STR":
+                            str.Add(GetStrPart(part));
                             break;
                         case "QuadHorn":
                             break;
@@ -326,7 +339,7 @@ public class EffectUtility
         }
     }
 
-    private static SprEffectPart GetPart(JToken src)
+    private static SprEffectPart GetSprPart(JToken src)
     {
         return new SprEffectPart
         {
@@ -339,6 +352,41 @@ public class EffectUtility
             direction = src["direction"]?.Value<bool>() ?? false,
             wav = Resources.Load<AudioClip>($"Wav/{src["wav"]?.Value<string>()}"),
             file = Resources.Load<SpriteData>($"Effects/SPR/{src["file"]?.Value<string>()}"),
+        };
+    }
+
+    private static StrEffectPart GetStrPart(JToken src)
+    {
+        var rand = src["rand"]?.Values<int>().ToArray() ?? new int[] { };
+        var files = new List<STR>();
+        var wavs = new List<AudioClip>();
+        
+        if (rand.Length > 1)
+        {
+            for (var i = rand[0]; i <= rand.Last(); i++)
+            {
+                var file = Resources.Load<STR>(
+                    $"Effects/STR/{src["file"]?.Value<string>().Replace("%d", i.ToString())}");
+                var wav = Resources.Load<AudioClip>($"Wav/{src["wav"]?.Value<string>().Replace("%d", i.ToString())}");
+
+                if (wav != null)
+                    wavs.Add(wav);
+
+                if (file != null)
+                    files.Add(file);
+            }
+        }
+
+        return new StrEffectPart
+        {
+            attachedEntity = src["attachedEntity"]?.Value<bool>() ?? false,
+            head = src["head"]?.Value<bool>() ?? false,
+            repeat = src["head"]?.Value<bool>() ?? false,
+            wav = Resources.Load<AudioClip>($"Wav/{src["wav"]?.Value<string>()}"),
+            wavs = wavs.ToArray(),
+            file = Resources.Load<STR>($"Effects/STR/{src["file"]?.Value<string>()}"),
+            files = files.ToArray(),
+            simplified = Resources.Load<STR>($"Effects/STR/{src["min"]?.Value<string>()}"),
         };
     }
 }
