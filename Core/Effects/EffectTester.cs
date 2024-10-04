@@ -19,13 +19,13 @@ namespace Core.Effects
 
             EffectRenderer = gameObject.AddComponent<StrEffectRenderer>();
 
-            EffectRenderer.Initialize(Effects[0], 0);
+            // EffectRenderer.Initialize(Effects[0], 0);
 
             EffectRenderer.OnEnd += delegate
             {
                 var effect = Effects[CurrentEffect++];
                 Debug.Log($"Testing effect {effect.name}");
-                EffectRenderer.Initialize(effect, 0);
+                // EffectRenderer.Initialize(effect, 0);
             };
         }
     }
