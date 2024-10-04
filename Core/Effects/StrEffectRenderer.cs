@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 using UnityRO.Core;
+using Object = System.Object;
 
 namespace Core.Effects
 {
@@ -30,8 +31,9 @@ namespace Core.Effects
         private bool isInit;
         private Dictionary<float, BlendMode> BlendModes = new();
         private Dictionary<int, List<EffectRenderInfo>> _effectRenderInfo = new();
+        private Material _material;
 
-        private float time;
+        private float _time;
         private int _currentFrame;
 
         public UnityAction OnEnd;
@@ -41,34 +43,11 @@ namespace Core.Effects
         private void Awake()
         {
             _effectCache = FindAnyObjectByType<EffectCache>();
-        }
+            _material = new Material(Shader.Find("Ragnarok/EffectShader"));
+            _material.enableInstancing = true;
+            _material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            _material.SetFloat("_DstBlend", (float)BlendMode.One);
 
-        public void Initialize(STR animation, int effectId, Dictionary<int, List<EffectRenderInfo>> renderInfo)
-        {
-            isInit = false;
-            Anim = animation;
-            EffectId = effectId;
-
-            time = 0;
-            _currentFrame = 0;
-
-            _effectRenderInfo = renderInfo;
-            isInit = true;
-        }
-
-        public void Initialize(STR animation, int effectId)
-        {
-            Anim = animation;
-            EffectId = effectId;
-
-            time = 0;
-            _currentFrame = 0;
-
-            InitializeMeshes(Anim);
-        }
-
-        private void Start()
-        {
             BlendModes[1] = BlendMode.Zero;
             BlendModes[2] = BlendMode.One;
             BlendModes[3] = BlendMode.SrcColor;
@@ -86,14 +65,39 @@ namespace Core.Effects
             BlendModes[15] = BlendMode.Zero;
         }
 
+        public void Initialize(STR animation, int effectId, Dictionary<int, List<EffectRenderInfo>> renderInfo)
+        {
+            isInit = false;
+            Anim = animation;
+            EffectId = effectId;
+
+            _time = 0;
+            _currentFrame = 0;
+            _effectRenderInfo = renderInfo;
+            isInit = true;
+        }
+
+        public void Initialize(STR animation, int effectId)
+        {
+            isInit = false;
+            Anim = animation;
+            EffectId = effectId;
+
+            _time = 0;
+            _currentFrame = 0;
+            _material.SetTexture("_MainTex", Anim.Atlas);
+
+            InitializeMeshes(Anim);
+        }
+
         public override void ManagedUpdate()
         {
             if (!isInit)
                 return;
 
-            time += Time.deltaTime;
+            _time += Time.deltaTime;
             if (!ManualAdvanceFrame)
-                newFrame = Mathf.FloorToInt(time * Anim.fps);
+                newFrame = Mathf.FloorToInt(_time * Anim.fps);
 
             Render();
 
@@ -104,7 +108,7 @@ namespace Core.Effects
             isInit = false;
             if (Loop)
             {
-                time = 0;
+                _time = 0;
                 _currentFrame = -1;
                 isInit = true;
             }
@@ -114,8 +118,8 @@ namespace Core.Effects
 
         private void Render()
         {
-            if (!_effectRenderInfo.ContainsKey(_currentFrame)) return;
-            foreach (var pInfo in _effectRenderInfo[_currentFrame])
+            if (!_effectRenderInfo.TryGetValue(_currentFrame, out var value)) return;
+            foreach (var pInfo in value)
             {
                 Graphics.RenderMesh(pInfo.RenderParams, pInfo.Mesh, 0, transform.localToWorldMatrix);
             }
@@ -232,11 +236,11 @@ namespace Core.Effects
 
             var mesh = new Mesh
             {
-                vertices = outVertices.ToArray(),
-                triangles = outTris.ToArray(),
-                colors = outColors.ToArray(),
-                normals = outNormals.ToArray(),
-                uv = outUvs.ToArray(),
+                vertices = outVertices,
+                triangles = outTris,
+                colors = outColors,
+                normals = outNormals,
+                uv = outUvs,
             };
             mesh.Optimize();
             return mesh;
@@ -282,19 +286,18 @@ namespace Core.Effects
                 var res = UpdateAnimationLayer(layer, frame);
                 if (res == null) continue;
 
-                var material = new Material(Shader.Find("Ragnarok/EffectShader"));
                 var srcBlend = BlendModes[res.srcBlend];
                 var dstBlend = BlendModes[res.dstBlend];
-
+                
                 if (srcBlend == BlendMode.SrcAlpha && dstBlend == BlendMode.DstAlpha)
                 {
                     dstBlend = BlendMode.One;
                 }
 
-                material.SetFloat("_SrcBlend", (float)srcBlend);
-                material.SetFloat("_DstBlend", (float)dstBlend);
-                material.SetTexture("_MainTex", Anim.Atlas);
-                var renderParams = new RenderParams(material)
+                var clone = Instantiate(_material);
+                clone.SetFloat("_SrcBlend", (float)srcBlend);
+                clone.SetFloat("_DstBlend", (float)dstBlend);
+                var renderParams = new RenderParams(clone)
                 {
                     receiveShadows = false,
                     lightProbeUsage = LightProbeUsage.Off,
