@@ -37,6 +37,7 @@ namespace ROIO.Models.FileTypes
             public Layer[] layers;
             public int soundId;
             public Vector2Int[] pos;
+            public int id; // custom property
         }
 
         [Serializable]

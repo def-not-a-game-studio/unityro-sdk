@@ -23,8 +23,8 @@ namespace UnityRO.Core.Sprite {
         [SerializeField] private List<SpriteViewer> Children = new();
         [SerializeField] private SpriteViewer Parent;
         
-        private Dictionary<ACT.Frame, Mesh> ColliderCache = new();
-        private Dictionary<ACT.Frame, Mesh> MeshCache = new();
+        private Dictionary<int, Mesh> ColliderCache = new();
+        private Dictionary<int, Mesh> MeshCache = new();
 
         private MeshRenderer MeshRenderer;
         private MeshFilter MeshFilter;
@@ -204,18 +204,22 @@ namespace UnityRO.Core.Sprite {
             return FramePaceCalculator.GetCurrentFrame();
         }
 
+        private int _currentFrameId;
         private void UpdateMesh(ACT.Frame frame) {
+            if (frame.id == _currentFrameId) return;
+            _currentFrameId = frame.id;
+            
             // We need this mesh collider in order to have the raycast to hit the sprite
-            ColliderCache.TryGetValue(frame, out Mesh colliderMesh);
+            ColliderCache.TryGetValue(frame.id, out Mesh colliderMesh);
             if (colliderMesh == null) {
                 colliderMesh = SpriteMeshBuilder.BuildColliderMesh(frame, Sprites);
-                ColliderCache.Add(frame, colliderMesh);
+                ColliderCache.Add(frame.id, colliderMesh);
             }
 
-            MeshCache.TryGetValue(frame, out Mesh rendererMesh);
+            MeshCache.TryGetValue(frame.id, out Mesh rendererMesh);
             if (rendererMesh == null) {
                 rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites);
-                MeshCache.Add(frame, rendererMesh);
+                MeshCache.Add(frame.id, rendererMesh);
             }
 
             MeshFilter.sharedMesh = null;

@@ -65,7 +65,6 @@ namespace UnityRO.Core.Sprite {
 
             CurrentDelay = GetDelay();
             if (deltaSinceMotionStart >= CurrentDelay) {
-                PCLog($"{CurrentSpriteMotion} Frame delay passed {deltaSinceMotionStart} {CurrentDelay}, advancing frame");
                 AnimationStart = GameManager.Tick;
 
                 if (CurrentFrame < maxFrame && !isIdle) {
@@ -75,11 +74,9 @@ namespace UnityRO.Core.Sprite {
 
             if (CurrentFrame >= maxFrame) {
                 if (AnimationHelper.IsLoopingMotion(CurrentSpriteMotion) && SpriteViewer.GetViewerType() != ViewerType.Emotion) {
-                    PCLog($"{CurrentSpriteMotion} Animation ended, looping");
                     CurrentFrame = 0;
                 } else { //might need to check if it's body to call the animation finished
                     SpriteViewer.OnAnimationFinished();
-                    PCLog($"{CurrentSpriteMotion} Animation ended, stopping");
                     if (CurrentFrame > 0) {
                         CurrentFrame = maxFrame - 1;
                     }
@@ -129,7 +126,6 @@ namespace UnityRO.Core.Sprite {
             ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, CurrentSpriteMotion);
 
             CurrentDelay = GetDelay();
-            PCLog($"{SpriteViewer.GetViewerType()} Current delay for {CurrentSpriteMotion} is {CurrentDelay}");
         }
 
         private int GetAttackMotion() {

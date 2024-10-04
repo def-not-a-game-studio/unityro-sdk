@@ -11,6 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityRO.Core.Database;
 using UnityRO.Core.Editor;
+using Random = UnityEngine.Random;
 
 public class SpriteUtility {
     private static string UTILS_DIR =
@@ -322,6 +323,36 @@ public class SpriteUtility {
         } finally {
             EditorUtility.ClearProgressBar();
             AssetDatabase.Refresh();
+        }
+    }
+
+    [MenuItem("UnityRO/Utils/Generate/Frame Ids")]
+    static void GenerateFrameIds()
+    {
+        var spriteDatas = Resources.LoadAll<SpriteData>("Sprites");
+        try
+        {
+            AssetDatabase.StartAssetEditing();
+            foreach (var spriteData in spriteDatas)
+            {
+                foreach (var action in spriteData.act.actions)
+                {
+                    foreach (var frame in action.frames)
+                    {
+                        frame.id = Random.Range(int.MinValue, int.MaxValue);
+                    }
+                }
+                EditorUtility.SetDirty(spriteData);
+            }
+        }
+        catch (Exception e)
+        {
+           Debug.LogException(e);
+        }
+        finally
+        {
+            AssetDatabase.StopAssetEditing();
+            AssetDatabase.SaveAssets();
         }
     }
 

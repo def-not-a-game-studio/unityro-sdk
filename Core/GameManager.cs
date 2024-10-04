@@ -15,7 +15,7 @@ public class GameManager : MonoBehaviour {
 
     private static long _serverTick;
     private static long _previousLocalTick;
-    private static long _currentTick => new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+    private static long _currentTick = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
 
     private static long _pingTime = 0;
 
@@ -44,6 +44,11 @@ public class GameManager : MonoBehaviour {
         NetworkClient.OnPingRequest = SetPingTime;
         
         NetworkClient.HookPacket<ZC.NOTIFY_TIME>(ZC.NOTIFY_TIME.HEADER, OnTimeResponse);
+    }
+
+    private void Update()
+    {
+        _currentTick += (long)(Time.deltaTime * 1000);
     }
 
     private void OnTimeResponse(ushort cmd, int size, ZC.NOTIFY_TIME packet) {

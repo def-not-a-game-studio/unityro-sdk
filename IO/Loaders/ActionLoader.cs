@@ -3,6 +3,7 @@ using ROIO.Utils;
 using System;
 using System.Globalization;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace ROIO.Loaders {
@@ -116,6 +117,7 @@ namespace ROIO.Loaders {
             }
 
             return new ACT.Frame() {
+                id = UnityEngine.Random.Range(int.MinValue, int.MaxValue),
                 layers = layers.Where(t => t.index >= 0).ToArray(),
                 soundId = soundId,
                 pos = pos
