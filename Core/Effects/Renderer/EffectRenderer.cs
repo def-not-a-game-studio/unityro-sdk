@@ -97,9 +97,9 @@ namespace Core.Effects
             {
                 var renderer = new StrEffectRenderer();
                 var renderInfo = await _effectCache.GetRenderInfo(effect.EffectId, param);
-                renderer.Initialize(renderInfo);
                 renderer.OnAudio += PlayPartAudioClip;
                 renderer.OnEnd += OnPartEnd;
+                renderer.Initialize(renderInfo);
                 Parts.Add(renderer);
             }
         }
@@ -110,9 +110,9 @@ namespace Core.Effects
             foreach (var param in effect.SPRParts)
             {
                 var renderer = new SpriteEffectRenderer();
-                renderer.Init(param.file, param.wav, ViewerType.Effect, entity);
                 renderer.OnAudio += PlayPartAudioClip;
                 renderer.OnEnd += OnPartEnd;
+                renderer.Init(param.file, param.wav, ViewerType.Effect, entity);
                 Parts.Add(renderer);
             }
         }
