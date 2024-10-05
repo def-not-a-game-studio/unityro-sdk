@@ -25,7 +25,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
     public class EffectCache : MonoBehaviour
     {
         public Dictionary<int, EffectRenderInfo> EffectRenderInfos = new();
-        private Dictionary<int, Effect> Effects = new();
+        public Dictionary<int, Effect> Effects = new();
 
         private Material _material;
 
@@ -45,6 +45,12 @@ namespace _3rdparty.unityro_sdk.Core.Effects
             }
         }
 
+        /// <summary>
+        /// Builds asynchronously the meshes need to display the effect.
+        /// Only supports STR for now
+        /// </summary>
+        /// <param name="effectId"></param>
+        /// <returns></returns>
         public async UniTask<EffectRenderInfo> GetRenderInfo(int effectId)
         {
             if (!EffectRenderInfos.TryGetValue(effectId, out var effectRenderInfo))
@@ -52,6 +58,18 @@ namespace _3rdparty.unityro_sdk.Core.Effects
                 var effect = Effects[effectId];
                 // TODO render more parts
                 var part = effect.STRParts[0];
+                effectRenderInfo = await StrEffectBuilder.InitializeMeshes(part.file, effectId);
+                effectRenderInfo.AudioClip = part.wav;
+                EffectRenderInfos.Add(effectId, effectRenderInfo);
+            }
+
+            return effectRenderInfo;
+        }
+
+        public async UniTask<EffectRenderInfo> GetRenderInfo(int effectId, StrEffectPart part)
+        {
+            if (!EffectRenderInfos.TryGetValue(effectId, out var effectRenderInfo))
+            {
                 effectRenderInfo = await StrEffectBuilder.InitializeMeshes(part.file, effectId);
                 effectRenderInfo.AudioClip = part.wav;
                 EffectRenderInfos.Add(effectId, effectRenderInfo);

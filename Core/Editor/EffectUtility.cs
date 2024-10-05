@@ -261,11 +261,66 @@ public class EffectUtility
         importer.SaveAndReimport();
 
         AssetDatabase.ImportAsset(spriteDataPath + ".png");
-
+        spriteData.atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(atlasPath);
         spriteData.sprites = AssetDatabase.LoadAllAssetsAtPath(spriteDataPath + ".png").OfType<Sprite>().ToArray();
 
         var fullAssetPath = spriteDataPath + ".asset";
         AssetDatabase.CreateAsset(spriteData, fullAssetPath);
+    }
+    
+    [MenuItem("UnityRO/Utils/Effect/Assign atlas to Sprite effects")]
+    static void AssignAtlas()
+    {
+        var spriteDatas = Resources.LoadAll<SpriteData>("Effects/SPR");
+        try
+        {
+            AssetDatabase.StartAssetEditing();
+            foreach (var spriteData in spriteDatas)
+            {
+                var assetPath = AssetDatabase.GetAssetPath(spriteData);
+                spriteData.atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(Path.ChangeExtension(assetPath, ".png"));
+                EditorUtility.SetDirty(spriteData);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+        finally
+        {
+            AssetDatabase.StopAssetEditing();
+            AssetDatabase.SaveAssets();
+        }
+    }
+    
+    [MenuItem("UnityRO/Utils/Effect/Generate SPR Frame Ids")]
+    static void GenerateFrameIds()
+    {
+        var spriteDatas = Resources.LoadAll<SpriteData>("Effects/SPR");
+        try
+        {
+            AssetDatabase.StartAssetEditing();
+            foreach (var spriteData in spriteDatas)
+            {
+                foreach (var action in spriteData.act.actions)
+                {
+                    foreach (var frame in action.frames)
+                    {
+                        frame.id = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+                    }
+                }
+                EditorUtility.SetDirty(spriteData);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+        finally
+        {
+            AssetDatabase.StopAssetEditing();
+            AssetDatabase.SaveAssets();
+        }
     }
 
     [MenuItem("UnityRO/Utils/Generate/Effects Scriptables")]

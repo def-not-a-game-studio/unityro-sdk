@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using _3rdparty.unityro_sdk.Core.Effects;
+using Core.Effects;
 using ROIO.Loaders;
 using ROIO.Models.FileTypes;
 using UnityEngine;
@@ -99,11 +100,11 @@ public class MapRenderer
                     effect.pos[0] + mapSize.x + .2f,
                     -effect.pos[1] + 2f,
                     effect.pos[2] + mapSize.y);
-                var spriteEffect = effectObj.AddComponent<SpriteEffectViewer>();
+                var spriteEffect = effectObj.AddComponent<SpriteEffectRenderer>();
                 var spriteData = Resources.Load<SpriteData>("Effects/SPR/torch_01");
                 var atlas = Resources.Load<Texture2D>("Effects/SPR/torch_01");
                 spriteData.atlas = atlas;
-                spriteEffect.Init(spriteData, ViewerType.Effect);
+                spriteEffect.Init(spriteData, null, ViewerType.Effect);
             }
         }
     }
