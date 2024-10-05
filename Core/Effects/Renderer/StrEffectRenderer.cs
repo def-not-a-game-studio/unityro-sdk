@@ -6,83 +6,55 @@ using UnityRO.Core;
 
 namespace Core.Effects
 {
-    [RequireComponent(typeof(AudioSource))]
-    public class StrEffectRenderer : ManagedMonoBehaviour
+    public class StrEffectRenderer : EffectRendererPart
     {
-        [SerializeField] private int EffectId;
-        [SerializeField] private bool Loop;
-        [SerializeField] private bool ManualAdvanceFrame;
-        [HideInInspector] [SerializeField] private int newFrame;
-
-        private bool isInit;
-        private float _time;
+        private int _newFrame;
         private int _currentFrame;
-        
+        private bool _isInit;
+        private float _time;
+
         private EffectRenderInfo _effectRenderInfo;
-        private AudioSource _audioSource;
-
-        public UnityAction OnEnd;
-
-        private void Awake()
-        {
-            _audioSource = GetComponent<AudioSource>();
-        }
 
         public void Initialize(EffectRenderInfo renderInfo)
         {
-            isInit = false;
+            _isInit = false;
             _time = 0;
             _currentFrame = 0;
             _effectRenderInfo = renderInfo;
-            isInit = true;
+            _isInit = true;
 
-            if (renderInfo.AudioClip != null)
+            if (renderInfo.AudioClip is not null)
             {
-                _audioSource.clip = _effectRenderInfo.AudioClip;
-                _audioSource.Play();
+                OnAudio?.Invoke(renderInfo.AudioClip);
             }
         }
 
-        public override void ManagedUpdate()
+        public override void Update(Matrix4x4 matrix)
         {
-            if (!isInit)
+            if (!_isInit)
                 return;
 
             _time += Time.deltaTime;
-            if (!ManualAdvanceFrame)
-                newFrame = Mathf.FloorToInt(_time * _effectRenderInfo.Fps);
+            _newFrame = Mathf.FloorToInt(_time * _effectRenderInfo.Fps);
 
-            Render();
+            Render(matrix);
 
-            if (newFrame == _currentFrame) return;
-            _currentFrame = newFrame;
+            if (_newFrame == _currentFrame) return;
+            _currentFrame = _newFrame;
             if (_currentFrame <= _effectRenderInfo.MaxKey) return;
 
-            isInit = false;
-            _audioSource.clip = null;
-            if (Loop)
-            {
-                _time = 0;
-                _currentFrame = -1;
-                isInit = true;
-            }
+            _isInit = false;
 
-            OnEnd?.Invoke();
+            OnEnd?.Invoke(this);
         }
 
-        private void Render()
+        private void Render(Matrix4x4 matrix)
         {
             if (!_effectRenderInfo.Frames.TryGetValue(_currentFrame, out var value)) return;
             foreach (var pInfo in value)
             {
-                Graphics.RenderMesh(pInfo.RenderParams, pInfo.Mesh, 0, transform.localToWorldMatrix);
+                Graphics.RenderMesh(pInfo.RenderParams, pInfo.Mesh, 0, matrix);
             }
-        }
-
-        public void Replay()
-        {
-            if (_effectRenderInfo != null)
-                Initialize(_effectRenderInfo);
         }
     }
 }

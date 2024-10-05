@@ -17,7 +17,7 @@ namespace Core.Effects
         {
             Effects = Resources.LoadAll<STR>("Effects/STR").ToList();
 
-            EffectRenderer = gameObject.AddComponent<StrEffectRenderer>();
+            // EffectRenderer = gameObject.AddComponent<StrEffectRenderer>();
 
             // EffectRenderer.Initialize(Effects[0], 0);
 

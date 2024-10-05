@@ -94,17 +94,17 @@ public class MapRenderer
         {
             if (effect.id == 47)
             {
-                var effectObj = new GameObject(effect.name);
-                effectObj.transform.SetParent(effectParent.transform, false);
-                effectObj.transform.position = new Vector3(
-                    effect.pos[0] + mapSize.x + .2f,
-                    -effect.pos[1] + 2f,
-                    effect.pos[2] + mapSize.y);
-                var spriteEffect = effectObj.AddComponent<SpriteEffectRenderer>();
-                var spriteData = Resources.Load<SpriteData>("Effects/SPR/torch_01");
-                var atlas = Resources.Load<Texture2D>("Effects/SPR/torch_01");
-                spriteData.atlas = atlas;
-                spriteEffect.Init(spriteData, null, ViewerType.Effect);
+                // var effectObj = new GameObject(effect.name);
+                // effectObj.transform.SetParent(effectParent.transform, false);
+                // effectObj.transform.position = new Vector3(
+                //     effect.pos[0] + mapSize.x + .2f,
+                //     -effect.pos[1] + 2f,
+                //     effect.pos[2] + mapSize.y);
+                // var spriteEffect = effectObj.AddComponent<SpriteEffectRenderer>();
+                // var spriteData = Resources.Load<SpriteData>("Effects/SPR/torch_01");
+                // var atlas = Resources.Load<Texture2D>("Effects/SPR/torch_01");
+                // spriteData.atlas = atlas;
+                // spriteEffect.Init(spriteData, null, ViewerType.Effect);
             }
         }
     }

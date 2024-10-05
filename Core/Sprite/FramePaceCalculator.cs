@@ -38,13 +38,23 @@ namespace UnityRO.Core.Sprite {
             CurrentACT = currentACT;
             CharacterCamera = characterCamera;
         }
+        
+        public FramePaceCalculator(
+            CoreSpriteGameEntity entity,
+            ISpriteViewer viewer,
+            ACT currentACT
+        ) {
+            Entity = entity;
+            SpriteViewer = viewer;
+            CurrentACT = currentACT;
+        }
 
         public int GetActionIndex() {
             if (FixedActionIndex >= 0) {
                 return FixedActionIndex;
             }
 
-            var cameraDirection = (int)CharacterCamera.Direction;
+            var cameraDirection = (int)(CharacterCamera?.Direction ?? 0);
             var entityDirection = (int)Entity.Direction + 8;
 
             return (ActionId + (cameraDirection + entityDirection) % 8) % CurrentACT.actions.Length;

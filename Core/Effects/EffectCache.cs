@@ -27,16 +27,11 @@ namespace _3rdparty.unityro_sdk.Core.Effects
         public Dictionary<int, EffectRenderInfo> EffectRenderInfos = new();
         public Dictionary<int, Effect> Effects = new();
 
-        private Material _material;
+        private List<int> EffectLoaderQueue = new List<int>();        
 
         private void Awake()
         {
             DontDestroyOnLoad(this);
-
-            _material = new Material(Shader.Find("Ragnarok/EffectShader"));
-            _material.enableInstancing = true;
-            _material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-            _material.SetFloat("_DstBlend", (float)BlendMode.One);
 
             var effects = Resources.LoadAll<Effect>("Database/Effects/Extracted");
             foreach (var effect in effects)
@@ -58,7 +53,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
                 var effect = Effects[effectId];
                 // TODO render more parts
                 var part = effect.STRParts[0];
-                effectRenderInfo = await StrEffectBuilder.InitializeMeshes(part.file, effectId);
+                effectRenderInfo = await new StrEffectBuilder().InitializeMeshes(part.file, effectId);
                 effectRenderInfo.AudioClip = part.wav;
                 EffectRenderInfos.Add(effectId, effectRenderInfo);
             }
@@ -68,32 +63,41 @@ namespace _3rdparty.unityro_sdk.Core.Effects
 
         public async UniTask<EffectRenderInfo> GetRenderInfo(int effectId, StrEffectPart part)
         {
+            if (EffectLoaderQueue.Contains(effectId))
+            {
+                await UniTask.WaitWhile(() => EffectLoaderQueue.Contains(effectId));
+            }
+            
             if (!EffectRenderInfos.TryGetValue(effectId, out var effectRenderInfo))
             {
-                effectRenderInfo = await StrEffectBuilder.InitializeMeshes(part.file, effectId);
+                EffectLoaderQueue.Add(effectId);
+                
+                effectRenderInfo = await new StrEffectBuilder().InitializeMeshes(part.file, effectId);
                 effectRenderInfo.AudioClip = part.wav;
                 EffectRenderInfos.Add(effectId, effectRenderInfo);
+                
+                EffectLoaderQueue.Remove(effectId);
             }
 
             return effectRenderInfo;
         }
     }
 
-    public static class StrEffectBuilder
+    public class StrEffectBuilder
     {
-        private static Vector3[] outVertices = new Vector3[4];
-        private static Vector3[] outNormals = new Vector3[4];
-        private static int[] outTris = new int[6];
-        private static Vector2[] outUvs = new Vector2[4];
-        private static Color[] outColors = new Color[4];
-        private static Vector2[] tempPositions2 = new Vector2[4];
-        private static Vector2[] tempUvs2 = new Vector2[4];
-        private static Dictionary<float, BlendMode> _blendModes = new();
+        private Vector3[] outVertices = new Vector3[4];
+        private Vector3[] outNormals = new Vector3[4];
+        private int[] outTris = new int[6];
+        private Vector2[] outUvs = new Vector2[4];
+        private Color[] outColors = new Color[4];
+        private Vector2[] tempPositions2 = new Vector2[4];
+        private Vector2[] tempUvs2 = new Vector2[4];
+        private Dictionary<float, BlendMode> _blendModes = new();
 
-        private static Dictionary<int, List<EffectLayerInfo>> _effectRenderInfo = new();
-        private static Material _material;
+        private Dictionary<int, List<EffectLayerInfo>> _effectRenderInfo = new();
+        private Material _material;
 
-        static StrEffectBuilder()
+        public StrEffectBuilder()
         {
             _blendModes[1] = BlendMode.Zero;
             _blendModes[2] = BlendMode.One;
@@ -116,7 +120,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
             _material.SetFloat("_DstBlend", (float)BlendMode.One);
         }
 
-        public static async UniTask<EffectRenderInfo> InitializeMeshes(STR anim, int id)
+        public async UniTask<EffectRenderInfo> InitializeMeshes(STR anim, int id)
         {
             _effectRenderInfo.Clear();
             _material.SetTexture("_MainTex", anim.Atlas);
@@ -136,7 +140,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
             };
         }
 
-        private static async UniTaskVoid PopulateCache(STR anim, int frame)
+        private async UniTaskVoid PopulateCache(STR anim, int frame)
         {
             var list = new List<EffectLayerInfo>();
             for (var index = 0; index < anim.layers.Length; index++)
@@ -177,7 +181,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
             _effectRenderInfo[frame] = list;
         }
 
-        private static MeshBuilderInfo UpdateAnimationLayer(STR.Layer layer, int currentFrame)
+        private MeshBuilderInfo UpdateAnimationLayer(STR.Layer layer, int currentFrame)
         {
             var lastFrame = 0;
             var lastSource = 0;
@@ -260,7 +264,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
             };
         }
 
-        private static Mesh GenerateFrameMesh(MeshBuilderInfo part, int layerIndex, STR anim)
+        private Mesh GenerateFrameMesh(MeshBuilderInfo part, int layerIndex, STR anim)
         {
             var verts = part.vertex;
             var bounds = anim.AtlasRects[part.imageId];
@@ -298,7 +302,7 @@ namespace _3rdparty.unityro_sdk.Core.Effects
             return mesh;
         }
 
-        private static Vector2 Rotate(Vector2 v, float delta)
+        private Vector2 Rotate(Vector2 v, float delta)
         {
             return new Vector2(
                 v.x * Mathf.Cos(delta) - v.y * Mathf.Sin(delta),

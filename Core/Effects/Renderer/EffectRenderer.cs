@@ -1,49 +1,59 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using _3rdparty.unityro_sdk.Core.Effects;
 using Core.Effects.EffectParts;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityRO.Core;
 using UnityRO.Core.Sprite;
 
-namespace Core.Effects {
-    
-    public class EffectRenderer : ManagedMonoBehaviour {
+namespace Core.Effects
+{
+    public abstract class EffectRendererPart
+    {
+        public UnityAction<EffectRendererPart> OnEnd;
+        public UnityAction<AudioClip> OnAudio;
 
-        [SerializeField] public Effect Effect;
-        [SerializeField] private bool autoStart = false;
+        public abstract void Update(Matrix4x4 matrix);
+    }
 
+    public class EffectRenderer : ManagedMonoBehaviour
+    {
         private EffectCache _effectCache;
-        private bool IsInit = false;
+        private AudioSource _audioSource;
 
-        private void Start() {
-            _effectCache = FindAnyObjectByType<EffectCache>();
-            if (autoStart)
-                InitEffects().Forget();
-        }
+        private List<EffectRendererPart> Parts = new();
+        private List<EffectRendererPart> CopyParts;
 
-        public UniTask InitEffects() {
-            if (Effect.CylinderParts.Length > 0) InitCylinder();
-            if (Effect.ThreeDParts.Length > 0) Init3D();
-            if (Effect.STRParts.Length > 0) InitStr().Forget();
-            if (Effect.SPRParts.Length > 0) InitSpr();
-
-            IsInit = true;
-            
-            return UniTask.CompletedTask;
-        }
-
-        private void InitCylinder()
+        private void Start()
         {
-            for (int i = 0; i < Effect.CylinderParts.Length; i++) {
-                var param = Effect.CylinderParts[i];
+            _effectCache = FindAnyObjectByType<EffectCache>();
+            _audioSource = FindAnyObjectByType<AudioSource>();
+        }
+
+        public void InitEffects(Effect effect)
+        {
+            if (effect.CylinderParts.Length > 0) InitCylinder(effect);
+            if (effect.ThreeDParts.Length > 0) Init3D(effect);
+            if (effect.STRParts.Length > 0) InitStr(effect).Forget();
+            if (effect.SPRParts.Length > 0) InitSpr(effect);
+        }
+
+        private void InitCylinder(Effect effect)
+        {
+            for (int i = 0; i < effect.CylinderParts.Length; i++)
+            {
+                var param = effect.CylinderParts[i];
 
                 var cylinderRenderer = new GameObject($"Cylinder{i}").AddComponent<CylinderEffectRenderer>();
                 cylinderRenderer.gameObject.layer = LayerMask.NameToLayer("Effects");
                 cylinderRenderer.transform.SetParent(transform, false);
                 cylinderRenderer.SetPart(param, param.delay);
 
-                for (int j = 1; j <= param.duplicates; j++) {
+                for (int j = 1; j <= param.duplicates; j++)
+                {
                     var cylinderJ = new GameObject($"Cylinder{i}-{j}").AddComponent<CylinderEffectRenderer>();
                     cylinderJ.gameObject.layer = LayerMask.NameToLayer("Effects");
                     cylinderJ.transform.SetParent(transform, false);
@@ -51,26 +61,29 @@ namespace Core.Effects {
                 }
             }
         }
-        
-        private void Init3D()
+
+        private void Init3D(Effect effect)
         {
-            for (int i = 0; i < Effect.ThreeDParts.Length; i++) {
-                var param = Effect.ThreeDParts[i];
+            for (int i = 0; i < effect.ThreeDParts.Length; i++)
+            {
+                var param = effect.ThreeDParts[i];
 
                 var threeDRenderer = new GameObject($"3D{i}").AddComponent<ThreeDEffectRenderer>();
                 threeDRenderer.gameObject.layer = LayerMask.NameToLayer("Effects");
                 //threeDRenderer.gameObject.GetOrAddComponent<Billboard>();
                 threeDRenderer.transform.SetParent(transform, false);
-                    
+
                 var time = GameManager.Tick;
-                var instanceParam = new EffectInstanceParam {
+                var instanceParam = new EffectInstanceParam
+                {
                     position = transform.position,
                     otherPosition = transform.position + Vector3.left * 5,
                     startTick = time,
                     endTick = time + param.duration
                 };
 
-                var initParam = new EffectInitParam {
+                var initParam = new EffectInitParam
+                {
                     ownerAID = 0
                 };
 
@@ -78,51 +91,66 @@ namespace Core.Effects {
             }
         }
 
-        private async UniTaskVoid InitStr()
+        private async UniTask InitStr(Effect effect)
         {
-            for (int i = 0; i < Effect.STRParts.Length; i++)
+            foreach (var param in effect.STRParts)
             {
-                var param = Effect.STRParts[i];
-                
-                var renderer = new GameObject($"STR{i}").AddComponent<StrEffectRenderer>();
-                renderer.gameObject.layer = LayerMask.NameToLayer("Effects");
-                renderer.transform.SetParent(transform, false);
-
-                var renderInfo = await _effectCache.GetRenderInfo(Effect.EffectId, param);
+                var renderer = new StrEffectRenderer();
+                var renderInfo = await _effectCache.GetRenderInfo(effect.EffectId, param);
                 renderer.Initialize(renderInfo);
+                renderer.OnAudio += PlayPartAudioClip;
+                renderer.OnEnd += OnPartEnd;
+                Parts.Add(renderer);
             }
         }
 
-        private void InitSpr()
+        private void InitSpr(Effect effect)
         {
-            for (int i = 0; i < Effect.SPRParts.Length; i++)
+            var entity = gameObject.AddComponent<EffectGameEntity>();
+            foreach (var param in effect.SPRParts)
             {
-                var param = Effect.SPRParts[i];
-                
-                var renderer = new GameObject($"SPR{i}").AddComponent<SpriteEffectRenderer>();
-                renderer.gameObject.layer = LayerMask.NameToLayer("Effects");
-                renderer.transform.SetParent(transform, false);
-                
-                renderer.Init(param.file, param.wav, ViewerType.Effect);
+                var renderer = new SpriteEffectRenderer();
+                renderer.Init(param.file, param.wav, ViewerType.Effect, entity);
+                renderer.OnAudio += PlayPartAudioClip;
+                renderer.OnEnd += OnPartEnd;
+                Parts.Add(renderer);
             }
         }
 
-        public void Vanish() {
+        private void OnPartEnd(EffectRendererPart part)
+        {
+            Parts.Remove(part);
+        }
+
+        private void PlayPartAudioClip(AudioClip clip)
+        {
+            _audioSource.clip = clip;
+            _audioSource.Play();
+        }
+
+        public void Vanish()
+        {
             Destroy(gameObject);
         }
 
         public override void ManagedUpdate()
         {
-            if (Effect is not null && !IsInit)
+            if (Parts.Count == 0)
+                return;
+            
+            lock (Parts) {
+                CopyParts = new List<EffectRendererPart>(Parts);
+            }
+
+            foreach (var part in CopyParts)
             {
-                InitEffects();
+                part?.Update(transform.localToWorldMatrix);
             }
         }
 
         public void SetEffect(Effect effect)
         {
-            Effect = effect;
-            InitEffects();
+            InitEffects(effect);
         }
     }
 }

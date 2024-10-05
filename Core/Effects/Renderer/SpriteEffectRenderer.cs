@@ -12,19 +12,18 @@ using UnityRO.Core.Sprite;
 
 namespace Core.Effects
 {
-    public class SpriteEffectRenderer : ManagedMonoBehaviour, ISpriteViewer
+    public class SpriteEffectRenderer : EffectRendererPart, ISpriteViewer
     {
-        [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
-        [field: SerializeField] public ViewerType ViewerType { get; private set; }
-        [field: SerializeField] public EntityState State { get; private set; }
-        [field: SerializeField] public SpriteMotion Motion { get; private set; }
+        public CoreSpriteGameEntity Entity { get; private set; }
+        public ViewerType ViewerType { get; private set; }
+        public EntityState State { get; private set; }
+        public SpriteMotion Motion { get; private set; }
 
-        [SerializeField] private SpriteData SpriteData;
-        [SerializeField] private Texture2D Atlas;
-        [SerializeField] private AudioClip AudioClip;
+        private SpriteData SpriteData;
+        private Texture2D Atlas;
+        private AudioClip AudioClip;
 
         private Dictionary<int, Mesh> MeshCache = new();
-        private CharacterCamera CharacterCamera;
         public Sprite[] Sprites;
 
         private Material _material;
@@ -36,19 +35,7 @@ namespace Core.Effects
         private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
         private static readonly int AlphaProp = Shader.PropertyToID("_Alpha");
 
-        public void Init(SpriteData spriteData, AudioClip wav, ViewerType viewerType)
-        {
-            SpriteData = spriteData;
-            Atlas = spriteData.atlas;
-            ViewerType = viewerType;
-            AudioClip = wav;
-
-            Entity = gameObject.AddComponent<EffectGameEntity>();
-
-            InitializeRenderers();
-        }
-
-        public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity)
+        public void Init(SpriteData spriteData, AudioClip wav, ViewerType viewerType, CoreSpriteGameEntity entity)
         {
             SpriteData = spriteData;
             Atlas = spriteData.atlas;
@@ -58,34 +45,22 @@ namespace Core.Effects
             InitializeRenderers();
         }
 
-        private void Awake()
-        {
-            CharacterCamera = FindObjectOfType<CharacterCamera>();
-        }
-
-        private void Start()
-        {
-            InitializeRenderers();
-        }
-
-        public override void ManagedUpdate()
+        public override void Update(Matrix4x4 matrix)
         {
             if (SpriteData is null) return;
 
             var frame = UpdateFrame();
             UpdateMesh(frame);
 
-            Graphics.RenderMesh(_renderParams, _currentMesh, 0, transform.localToWorldMatrix);
+            Graphics.RenderMesh(_renderParams, _currentMesh, 0, matrix);
         }
 
         private void InitializeRenderers()
         {
-            Entity ??= GetComponentInParent<CoreSpriteGameEntity>();
-
             if (SpriteData is null) return;
 
             Sprites = SpriteData.GetSprites();
-            FramePaceCalculator = new FramePaceCalculator(Entity, this, SpriteData.act, CharacterCamera);
+            FramePaceCalculator = new FramePaceCalculator(Entity, this, SpriteData.act);
             _material = Resources.Load<Material>("Materials/SpriteEffects");
             _material.SetFloat(AlphaProp, 1f);
             _material.SetTexture(MainTexProp, Atlas);
@@ -117,7 +92,7 @@ namespace Core.Effects
         {
             if (ViewerType is ViewerType.Emotion or ViewerType.Effect)
             {
-                Destroy(gameObject);
+                // Destroy(gameObject);
             }
         }
     }

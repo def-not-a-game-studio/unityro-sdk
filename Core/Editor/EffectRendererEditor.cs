@@ -10,7 +10,7 @@ internal class EffectRendererEditor : Editor {
 
         if(GUILayout.Button("Replay Effect")) {
             // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
-            component.InitEffects();
+            //component.InitEffects();
         }
     }
 }
