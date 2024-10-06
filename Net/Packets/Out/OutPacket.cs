@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityRO.Net;
 
 public abstract class OutPacket : NetworkPacket {
 

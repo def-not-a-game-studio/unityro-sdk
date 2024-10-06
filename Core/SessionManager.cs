@@ -1,4 +1,5 @@
 using Core.Scene;
+using UnityRO.Net;
 
 namespace UnityRO.Net {
     using System;

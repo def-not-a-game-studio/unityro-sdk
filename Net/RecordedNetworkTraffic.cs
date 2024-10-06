@@ -1,16 +1,20 @@
 using System;
 using UnityEngine;
 
-namespace UnityRO.Net.Editor {
-
+#if UNITY_EDITOR
+namespace UnityRO.Net
+{
     [Serializable]
-    public class RecordedNetworkPacket {
+    public class RecordedNetworkPacket
+    {
         public float Time;
         public byte[] Data;
         public bool IsOut;
     }
-    
-    public class RecordedNetworkTraffic : ScriptableObject {
+
+    public class RecordedNetworkTraffic : ScriptableObject
+    {
         [SerializeField] public RecordedNetworkPacket[] Packets;
     }
 }
+#endif
