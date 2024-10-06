@@ -43,21 +43,19 @@ namespace Core.Effects
 
         private void InitCylinder(Effect effect)
         {
-            for (int i = 0; i < effect.CylinderParts.Length; i++)
+            foreach (var param in effect.CylinderParts)
             {
-                var param = effect.CylinderParts[i];
-
-                var cylinderRenderer = new GameObject($"Cylinder{i}").AddComponent<CylinderEffectRenderer>();
-                cylinderRenderer.gameObject.layer = LayerMask.NameToLayer("Effects");
-                cylinderRenderer.transform.SetParent(transform, false);
+                var cylinderRenderer = new CylinderEffectRenderer();
+                cylinderRenderer.OnEnd += OnPartEnd;
                 cylinderRenderer.SetPart(param, param.delay);
+                Parts.Add(cylinderRenderer);
 
-                for (int j = 1; j <= param.duplicates; j++)
+                for (var j = 1; j <= param.duplicates; j++)
                 {
-                    var cylinderJ = new GameObject($"Cylinder{i}-{j}").AddComponent<CylinderEffectRenderer>();
-                    cylinderJ.gameObject.layer = LayerMask.NameToLayer("Effects");
-                    cylinderJ.transform.SetParent(transform, false);
+                    var cylinderJ =  new CylinderEffectRenderer();
+                    cylinderJ.OnEnd += OnPartEnd;
                     cylinderJ.SetPart(param, j * param.timeBetweenDuplication);
+                    Parts.Add(cylinderJ);
                 }
             }
         }
