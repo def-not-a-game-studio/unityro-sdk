@@ -1,3 +1,5 @@
+using Core.Scene;
+
 namespace UnityRO.Net {
     using System;
     using System.Threading.Tasks;
@@ -46,7 +48,7 @@ namespace UnityRO.Net {
 
             var mapScene = SceneManager.GetSceneByName(CurrentSession.CurrentMap ?? "");
             if (mapScene.isLoaded) {
-                await UnloadScene(CurrentScene.name);
+                await GameSceneManager.UnloadScene(CurrentScene.name);
             }
 
             CurrentSession.SetCurrentMap(mapName);
@@ -57,7 +59,7 @@ namespace UnityRO.Net {
 
             try {
                 NetworkClient.PausePacketHandling();
-                await LoadScene(CurrentSession.CurrentMap, LoadSceneMode.Additive);
+                await GameSceneManager.LoadScene(CurrentSession.CurrentMap, LoadSceneMode.Additive);
             } catch (Exception e) {
                 Debug.LogError($"Map not found on build index: {e.Message}");
             } finally {
@@ -75,24 +77,6 @@ namespace UnityRO.Net {
                 EntityManager.ClearEntities();
                 await SetCurrentMap(pkt.MapName);
             }
-        }
-        #endregion
-        
-        #region Scene Extension
-        private Task<bool> LoadScene(string sceneName, LoadSceneMode mode) {
-            var t = new TaskCompletionSource<bool>();
-
-            SceneManager.LoadSceneAsync(sceneName, mode).completed += delegate { t.TrySetResult(true); };
-
-            return t.Task;
-        }
-
-        private Task<bool> UnloadScene(string sceneName) {
-            var t = new TaskCompletionSource<bool>();
-
-            SceneManager.UnloadSceneAsync(sceneName).completed += delegate { t.TrySetResult(true); };
-
-            return t.Task;
         }
         #endregion
     }
