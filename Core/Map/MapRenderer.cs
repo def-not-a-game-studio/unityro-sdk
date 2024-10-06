@@ -47,6 +47,8 @@ public class MapRenderer
 
     public async Task<GameMap> RenderMap(AsyncMapLoader.GameMapData gameMapData, string mapName, bool splitIntoChunks)
     {
+        var effectCache = GameObject.FindAnyObjectByType<EffectCache>();
+        effectCache.LoadEffects();
         var gameMap = new GameObject(mapName).AddComponent<GameMap>();
         gameMap.tag = "Map";
         gameMap.SetMapLightInfo(gameMapData.World.light);
@@ -79,32 +81,29 @@ public class MapRenderer
                 gameMap.transform.Find("_lights").GetComponentsInChildren<Transform>());
         }
 
-        MaybeInitEffects(gameMap.transform, gameMap.Size, gameMapData.World.effects);
+        MaybeInitEffects(gameMap.transform, gameMap.Size, gameMapData.World.effects, effectCache);
 
         return gameMap;
     }
 
-    private static void MaybeInitEffects(Transform parent, Vector2Int mapSize, List<RSW.Effect> worldEffects)
+    private static void MaybeInitEffects(Transform parent, Vector2Int mapSize, List<RSW.Effect> worldEffects, EffectCache effectCache)
     {
         if (worldEffects is { Count: 0 }) return;
         var effectParent = new GameObject("_effects");
         effectParent.transform.SetParent(parent, false);
 
-        foreach (var effect in worldEffects)
+        for (var index = 0; index < worldEffects.Count; index++)
         {
-            if (effect.id == 47)
+            var effect = worldEffects[index];
+            if (effectCache.Effects.TryGetValue(effect.id, out var eff))
             {
-                // var effectObj = new GameObject(effect.name);
-                // effectObj.transform.SetParent(effectParent.transform, false);
-                // effectObj.transform.position = new Vector3(
-                //     effect.pos[0] + mapSize.x + .2f,
-                //     -effect.pos[1] + 2f,
-                //     effect.pos[2] + mapSize.y);
-                // var spriteEffect = effectObj.AddComponent<SpriteEffectRenderer>();
-                // var spriteData = Resources.Load<SpriteData>("Effects/SPR/torch_01");
-                // var atlas = Resources.Load<Texture2D>("Effects/SPR/torch_01");
-                // spriteData.atlas = atlas;
-                // spriteEffect.Init(spriteData, null, ViewerType.Effect);
+                var effectObj = new GameObject($"{eff}_{index}").AddComponent<EffectRenderer>();
+                effectObj.transform.SetParent(effectParent.transform, false);
+                effectObj.transform.position = new Vector3(
+                    effect.pos[0] + mapSize.x + .2f,
+                    -effect.pos[1] + 2f,
+                    effect.pos[2] + mapSize.y);
+                effectObj.InitEffects(eff);
             }
         }
     }
@@ -229,9 +228,11 @@ public class MapRenderer
         }
 
         var mapName = parent.GetComponent<GameMap>().name;
+        var effectCache = GameObject.FindAnyObjectByType<EffectCache>();
+        effectCache.LoadEffects();
         AsyncMapLoader.GameMapData gameMapData = await new AsyncMapLoader().Load($"{mapName}.rsw");
 
-        MaybeInitEffects(parent.transform, parent.GetComponent<GameMap>().Size, gameMapData.World.effects);
+        MaybeInitEffects(parent.transform, parent.GetComponent<GameMap>().Size, gameMapData.World.effects, effectCache);
     }
 
     private static void CreateLightProbes(Transform parent, Altitude altitude, Transform[] lights)

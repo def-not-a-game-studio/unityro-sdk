@@ -5,6 +5,7 @@ using System.Linq;
 using _3rdparty.unityro_sdk.Core.Effects;
 using ROIO.Models.FileTypes;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityRO.Core;
 using UnityRO.Core.Camera;
 using UnityRO.Core.GameEntity;
@@ -64,7 +65,11 @@ namespace Core.Effects
             _material = Resources.Load<Material>("Materials/SpriteEffects");
             _material.SetFloat(AlphaProp, 1f);
             _material.SetTexture(MainTexProp, Atlas);
-            _renderParams = new RenderParams(_material);
+            _renderParams = new RenderParams(_material)
+            {
+                receiveShadows = false,
+                lightProbeUsage = LightProbeUsage.Off
+            };
         }
 
         private ACT.Frame UpdateFrame() => FramePaceCalculator.GetCurrentFrame();
@@ -92,7 +97,7 @@ namespace Core.Effects
         {
             if (ViewerType is ViewerType.Emotion or ViewerType.Effect)
             {
-                // Destroy(gameObject);
+                OnEnd?.Invoke(this);
             }
         }
     }

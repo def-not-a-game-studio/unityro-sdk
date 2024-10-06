@@ -33,6 +33,11 @@ namespace _3rdparty.unityro_sdk.Core.Effects
         {
             DontDestroyOnLoad(this);
 
+            LoadEffects();
+        }
+
+        public void LoadEffects()
+        {
             var effects = Resources.LoadAll<Effect>("Database/Effects/Extracted");
             foreach (var effect in effects)
             {

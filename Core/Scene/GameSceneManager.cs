@@ -8,26 +8,26 @@ namespace Core.Scene
     public class GameSceneManager
     {
         private static float _currentProgress = 0f;
-        
+
         public static UnityAction<float> SceneLoadingProgress;
 
         public static async UniTask LoadScene(string sceneName, LoadSceneMode mode)
         {
             _currentProgress = 0f;
-            
+
             await SceneManager.LoadSceneAsync("Loading", LoadSceneMode.Additive);
-            
-            if (sceneName == SceneManager.GetActiveScene().name)
+            if (SceneManager.GetActiveScene().buildIndex > 2)
             {
-                await UnloadScene(sceneName);
+                await UnloadScene(SceneManager.GetActiveScene().name);
             }
+
             var op = SceneManager.LoadSceneAsync(sceneName, mode);
             ObserveProgress(op).Forget();
             await op.ToUniTask();
             UpdateProgress(1f);
-            
+
             await SceneManager.UnloadSceneAsync("Loading");
-            
+
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneName));
         }
 
@@ -40,6 +40,7 @@ namespace Core.Scene
                 {
                     UpdateProgress(operation.progress);
                 }
+
                 await UniTask.Yield();
             }
         }

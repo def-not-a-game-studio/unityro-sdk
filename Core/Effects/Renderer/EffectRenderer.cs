@@ -22,6 +22,8 @@ namespace Core.Effects
 
     public class EffectRenderer : ManagedMonoBehaviour
     {
+        [SerializeField] private Effect Effect;
+        
         private EffectCache _effectCache;
         private AudioSource _audioSource;
         private CoreSpriteGameEntity _entity;
@@ -34,10 +36,14 @@ namespace Core.Effects
             _effectCache = FindAnyObjectByType<EffectCache>();
             _audioSource = FindAnyObjectByType<AudioSource>();
             _entity = GetComponentInParent<CoreSpriteGameEntity>();
+            
+            if (Effect != null)
+                InitEffects(Effect);
         }
 
         public void InitEffects(Effect effect)
         {
+            Effect = effect;
             if (effect.CylinderParts.Length > 0) InitCylinder(effect);
             if (effect.ThreeDParts.Length > 0) Init3D(effect);
             if (effect.STRParts.Length > 0) InitStr(effect).Forget();
@@ -107,7 +113,7 @@ namespace Core.Effects
 
         private void InitSpr(Effect effect)
         {
-            var entity = gameObject.AddComponent<EffectGameEntity>();
+            var entity = _entity ?? gameObject.AddComponent<EffectGameEntity>();
             foreach (var param in effect.SPRParts)
             {
                 var renderer = new SpriteEffectRenderer();
