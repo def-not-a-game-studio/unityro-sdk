@@ -7,6 +7,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityRO.Core;
+using UnityRO.Core.GameEntity;
 using UnityRO.Core.Sprite;
 
 namespace Core.Effects
@@ -23,6 +24,7 @@ namespace Core.Effects
     {
         private EffectCache _effectCache;
         private AudioSource _audioSource;
+        private CoreSpriteGameEntity _entity;
 
         private List<EffectRendererPart> Parts = new();
         private List<EffectRendererPart> CopyParts;
@@ -31,6 +33,7 @@ namespace Core.Effects
         {
             _effectCache = FindAnyObjectByType<EffectCache>();
             _audioSource = FindAnyObjectByType<AudioSource>();
+            _entity = GetComponentInParent<CoreSpriteGameEntity>();
         }
 
         public void InitEffects(Effect effect)
@@ -149,6 +152,15 @@ namespace Core.Effects
         public void SetEffect(Effect effect)
         {
             InitEffects(effect);
+        }
+
+        public async UniTask SetEmotion(int emotionIndex)
+        {
+            var request = await Resources.LoadAsync("Sprites/emotions") as SpriteData;
+            var part = new SpriteEffectRenderer();
+            part.OnEnd += OnPartEnd;
+            part.Init(request, null, ViewerType.Emotion, _entity);
+            part.SetActionIndex(emotionIndex);
         }
     }
 }

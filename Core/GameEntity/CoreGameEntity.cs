@@ -1,6 +1,7 @@
 using UnityEngine;
 
 namespace UnityRO.Core.GameEntity {
+    //TODO divide this into multiple abstract classes similar to the partial classes
     public abstract class CoreGameEntity : ManagedMonoBehaviour, INetworkEntity {
         public abstract GameEntityBaseStatus Status { get; }
         public abstract EntityState State { get; }
