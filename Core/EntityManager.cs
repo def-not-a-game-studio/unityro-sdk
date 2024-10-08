@@ -210,8 +210,10 @@ namespace UnityRO.Core {
 
                 source.LookTo(destination.gameObject.transform.position);
 
-                var delay = GameManager.Tick + (long)source.GetActionDelay(actionRequest);
+                // using the source to delay the movement of the target seems wrong
+                // var delay = GameManager.Tick + (long)source.GetActionDelay(actionRequest);
                 destination.SetAttackedSpeed(actionRequest.targetSpeed);
+                var delay = (long)destination.GetActionDelay(actionRequest);
                 destination.SetAction(actionRequest, false, delay);
             }
         }

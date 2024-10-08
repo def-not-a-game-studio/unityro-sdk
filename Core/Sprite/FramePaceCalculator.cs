@@ -115,6 +115,8 @@ namespace UnityRO.Core.Sprite {
             return CurrentAction.delay;
         }
 
+        // TODO check if there's no need use the action delay * AttackMotion instead 
+        // rA found out they need to find the current attacked action index and multiply by the action default delay
         public float GetAttackDelay() {
             ProcessAttackMotion();
             var delayTime = AttackMotion * GetMotionSpeed();

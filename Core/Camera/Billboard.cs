@@ -13,7 +13,10 @@ public class Billboard : MonoBehaviour {
         if (_camera == null) {
             _camera = Camera.main;
         }
-        
-        transform.localRotation = _camera.transform.rotation;
+
+        var rotation = _camera.transform.eulerAngles;
+        rotation.x = 0;
+        rotation.z = 0;
+        transform.localRotation = Quaternion.Euler(rotation);
     }
 }
