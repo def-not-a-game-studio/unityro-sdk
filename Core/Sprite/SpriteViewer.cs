@@ -139,37 +139,37 @@ namespace UnityRO.Core.Sprite {
             Sprites = SpriteData.GetSprites();
             FramePaceCalculator = new FramePaceCalculator(Entity, this, SpriteData.act, CharacterCamera);
 
-            var material = Resources.Load<Material>("Materials/Palette");
-            var renderTexture = RenderTexture.GetTemporary(Atlas.width, Atlas.height, 0, RenderTextureFormat.ARGB32);
-            // renderTexture.antiAliasing = 2;
-            renderTexture.filterMode = FilterMode.Trilinear;
-            material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
-            if (SpriteData.palettes.Length > 0) {
-                material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
-                material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
-            }
-            Graphics.Blit(Atlas, renderTexture, material);
-
             MeshRenderer.material = Resources.Load<Material>("Materials/BillboardSpriteMaterial");
             MeshRenderer.material.SetFloat(AlphaProp, 1f);
 
             var rendererIndex = ViewerType switch {
-                                    ViewerType.Head => 2,
-                                    ViewerType.Body => 1,
-                                    ViewerType.Emotion => 0,
-                                    _ => 0
-                                };
+                ViewerType.Head => 2,
+                ViewerType.Body => 1,
+                ViewerType.Emotion => 0,
+                _ => 0
+            };
             MeshRenderer.material.renderQueue += rendererIndex;
-
-            MeshRenderer.material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
-            if (SpriteData.palettes.Length <= 0) {
-                Atlas.filterMode = FilterMode.Bilinear;
+            
+            // if palettes are present, we blit the palette into a render texture then
+            // apply filtering to the renderTexture so it looks better
+            if (SpriteData.palettes.Length > 0)
+            {
+                var material = Resources.Load<Material>("Materials/Palette");
+                var renderTexture = RenderTexture.GetTemporary(Atlas.width, Atlas.height, 0, RenderTextureFormat.ARGB32);
+                renderTexture.filterMode = FilterMode.Trilinear;
+                material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
+                if (SpriteData.palettes.Length > 0) {
+                    material.SetFloat(UsePaletteProp, SpriteData.palettes.Length);
+                    material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
+                }
+                Graphics.Blit(Atlas, renderTexture, material);
+                
+                MeshRenderer.material.SetTexture(MainTexProp, renderTexture);
             }
-
-            MeshRenderer.material.SetTexture(MainTexProp, renderTexture);
-
-            if (SpriteData.palettes.Length > 0) {
-                MeshRenderer.material.SetTexture(PaletteTexProp, SpriteData.palettes[0]);
+            else
+            {
+                Atlas.filterMode = FilterMode.Trilinear;
+                MeshRenderer.material.SetTexture(MainTexProp, Atlas);
             }
             
             IsReady = true;
