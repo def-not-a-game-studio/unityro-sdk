@@ -90,6 +90,10 @@ namespace _3rdparty.unityro_sdk.Core.Effects
         {
         }
 
+        public override void DelayMovement(long delay)
+        {
+        }
+
         public override Direction Direction { get; set; } = Direction.South;
         public override int HeadDirection { get; } = 0;
         public override GameMap CurrentMap { get; }

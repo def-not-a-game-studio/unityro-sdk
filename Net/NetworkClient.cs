@@ -248,7 +248,7 @@ namespace UnityRO.Net
 
             var cmd = BitConverter.ToUInt16(commandBuffer, 0);
 
-            Debug.Log($"Received packet {cmd} ({cmd:x4})");
+            //Debug.Log($"Received packet {cmd} ({cmd:x4})");
             if (RegisteredPackets.ContainsKey(cmd))
             {
                 var size = RegisteredPackets[cmd].Size;

@@ -35,7 +35,7 @@ namespace Core.Path {
             var j = (int)PathData.Count - 1;
             for (var i = count - 1; (i >= cc && j >= cc); i--, j--) {
                 if (cells[i].X != PathData[j].X || cells[i].Y != PathData[j].Y
-                                                || Math.Abs((int)cells[j].Time - (int)PathData[j].Time) > 200) {
+                                                || Math.Abs((int)cells[i].Time - (int)PathData[j].Time) > 200) {
                     clearFlag = true;
                 }
             }
@@ -87,7 +87,7 @@ namespace Core.Path {
             return sub < delay;
         }
 
-        public int GetPos(int speedFactor, int time, ref float xPos, ref float yPos, ref int dir) {
+        public int GetPos(long time, ref float xPos, ref float yPos, ref int dir) {
             if (PathData.Count == 0 || PathData[0].Time > time) {
                 xPos = PathData[0].X;
                 yPos = PathData[0].Y;

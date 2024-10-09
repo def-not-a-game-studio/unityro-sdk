@@ -33,7 +33,7 @@ public abstract class OutPacket : NetworkPacket {
 
     private byte[] GetArray() {
         IEnumerable<byte> packet = BitConverter.GetBytes((ushort)Header);
-        Debug.Log($"Sending packet {Header}");
+        //Debug.Log($"Sending packet {Header}");
         if (!IsFixed) {
             Size = buffer.Count() + 4;
             packet = packet.Concat(BitConverter.GetBytes((short)Size));

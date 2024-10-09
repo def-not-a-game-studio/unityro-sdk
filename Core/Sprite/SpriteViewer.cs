@@ -35,8 +35,6 @@ namespace UnityRO.Core.Sprite {
 
         private FramePaceCalculator FramePaceCalculator;
 
-        private MotionRequest CurrentMotionRequest;
-
         private static readonly int OffsetProp = Shader.PropertyToID("_Offset");
         private static readonly int UsePaletteProp = Shader.PropertyToID("_UsePalette");
         private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
@@ -73,7 +71,6 @@ namespace UnityRO.Core.Sprite {
             if (SpriteData == null) return;
 
             UpdateFrames();
-            CheckMotionQueue();
         }
 
         private void UpdateFrames() {
@@ -82,19 +79,7 @@ namespace UnityRO.Core.Sprite {
             UpdateLocalPosition();
         }
 
-        private void CheckMotionQueue() {
-            if (CurrentMotionRequest.startTime <= 0 || GameManager.Tick <= CurrentMotionRequest.startTime)
-                return;
-            CurrentMotionRequest.startTime = -1;
-            ChangeMotion(CurrentMotionRequest);
-        }
-
         public void ChangeMotion(MotionRequest motionRequest) {
-            if (motionRequest.startTime > GameManager.Tick) {
-                CurrentMotionRequest = motionRequest;
-                return;
-            }
-
             MeshRenderer.material.SetFloat(AlphaProp, 1f);
 
             if (motionRequest.Motion == SpriteMotion.Attack) {
@@ -272,7 +257,7 @@ namespace UnityRO.Core.Sprite {
         public ViewerType GetViewerType() => ViewerType;
 
         public void OnAnimationFinished() {
-            if (Entity.State is EntityState.Dead or EntityState.Freeze or EntityState.Sit || CurrentMotionRequest.startTime == -1) {
+            if (Entity.State is EntityState.Dead or EntityState.Freeze or EntityState.Sit) {
                 return;
             }
 

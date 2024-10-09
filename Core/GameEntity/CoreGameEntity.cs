@@ -43,5 +43,6 @@ namespace UnityRO.Core.GameEntity {
         public abstract void TalkToNpc(CoreGameEntity target);
         public abstract void SetAttackedSpeed(ushort attackedSpeed);
         public abstract void SetState(EntityState state);
+        public abstract void DelayMovement(long delay);
     }
 }
