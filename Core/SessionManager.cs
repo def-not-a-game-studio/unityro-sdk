@@ -51,6 +51,13 @@ namespace UnityRO.Net {
             if (mapScene.isLoaded) {
                 await GameSceneManager.UnloadScene(CurrentScene.name);
             }
+            // else if (!mapScene.IsValid())
+            // {
+            //     NetworkClient.ResumePacketHandling();
+            //     new CZ.NOTIFY_ACTORINIT().Send();
+            //     new CZ.REQUEST_CHAT(CurrentSession.Entity.GetEntityName(), "@warp prontera").Send();
+            //     return;
+            // }
 
             CurrentSession.SetCurrentMap(mapName);
             var gameMap = FindObjectOfType<GameMap>();

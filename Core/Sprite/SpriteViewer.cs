@@ -85,7 +85,7 @@ namespace UnityRO.Core.Sprite {
         private void CheckMotionQueue() {
             if (CurrentMotionRequest.startTime <= 0 || GameManager.Tick <= CurrentMotionRequest.startTime)
                 return;
-            CurrentMotionRequest.startTime = 0;
+            CurrentMotionRequest.startTime = -1;
             ChangeMotion(CurrentMotionRequest);
         }
 
@@ -272,7 +272,7 @@ namespace UnityRO.Core.Sprite {
         public ViewerType GetViewerType() => ViewerType;
 
         public void OnAnimationFinished() {
-            if (Entity.State is EntityState.Dead or EntityState.Freeze or EntityState.Sit) {
+            if (Entity.State is EntityState.Dead or EntityState.Freeze or EntityState.Sit || CurrentMotionRequest.startTime == -1) {
                 return;
             }
 
