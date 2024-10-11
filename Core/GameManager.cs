@@ -16,12 +16,13 @@ public class GameManager : MonoBehaviour {
 
     private static long _serverTick;
     private static long _previousLocalTick;
-    private static long _currentTick = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+    // private static long _currentTick = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+    private static long _currentTick = Environment.TickCount & UInt32.MaxValue;
 
     private static long _pingTime = 0;
 
     public void SetServerTick(long tick) {
-        _serverTick = tick * 1000;
+        _serverTick = tick;
         _previousLocalTick = _currentTick;
     }
 

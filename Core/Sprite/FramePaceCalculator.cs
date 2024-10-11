@@ -210,12 +210,11 @@ namespace UnityRO.Core.Sprite {
                 _ => 0
             };
             motionSpeed = motionSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : motionSpeed;
-            // var multiplier = CurrentSpriteMotion switch
-            // {
-            //     SpriteMotion.Hit => motionSpeed / (float)AVERAGE_ATTACKED_SPEED < 1f ? 1f : motionSpeed / (float)AVERAGE_ATTACKED_SPEED,
-            //     _ => motionSpeed / (float)AVERAGE_ATTACK_SPEED
-            // };
-            var multiplier = motionSpeed / (float)AVERAGE_ATTACK_SPEED;
+            var multiplier = CurrentSpriteMotion switch
+            {
+                SpriteMotion.Hit => motionSpeed / (float)AVERAGE_ATTACKED_SPEED < 1f ? 1f : motionSpeed / (float)AVERAGE_ATTACKED_SPEED,
+                _ => motionSpeed / (float)AVERAGE_ATTACK_SPEED
+            };
             var finalSpeed = (CurrentAction.delay / 25) * multiplier;
 
             return finalSpeed * 24;
