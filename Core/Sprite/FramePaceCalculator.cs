@@ -18,7 +18,6 @@ namespace UnityRO.Core.Sprite {
         private int CurrentFrame = 0;
         private long AnimationStart = GameManager.Tick;
         private float CurrentDelay = 0f;
-        private MotionRequest CurrentMotionRequest;
         private ACT CurrentACT;
         private ACT.Action CurrentAction;
         private int ActionId;
@@ -103,16 +102,14 @@ namespace UnityRO.Core.Sprite {
                 return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
             }
 
-            if (CurrentSpriteMotion is SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3 or SpriteMotion.Hit) {
-                var delayTime = AttackMotion * GetMotionSpeed();
-                if (delayTime < 0) {
-                    delayTime = 0;
-                }
-
-                return delayTime / CurrentAction.frames.Length;
-            }
-
-            return CurrentAction.delay;
+            var delayTime = CurrentSpriteMotion switch
+            {
+                SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3 => AttackMotion * GetMotionSpeed() / CurrentAction.frames.Length,
+                SpriteMotion.Hit => GetMotionSpeed() / CurrentAction.frames.Length,
+                _ => CurrentAction.delay
+            };
+            
+            return delayTime;
         }
 
         // TODO check if there's no need use the action delay * AttackMotion instead 
@@ -206,17 +203,19 @@ namespace UnityRO.Core.Sprite {
             CurrentAction = CurrentACT.actions[GetActionIndex()];
             var motionSpeed = CurrentSpriteMotion switch {
                 SpriteMotion.Hit => Entity.Status.AttackedSpeed,
-                SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3 => Entity.Status.AttackSpeed,
+                SpriteMotion.Attack1 or SpriteMotion.Attack2 or SpriteMotion.Attack3 => Entity.Status.AttackSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : Entity.Status.AttackSpeed,
                 _ => 0
             };
-            motionSpeed = motionSpeed > MAX_ATTACK_SPEED ? MAX_ATTACK_SPEED : motionSpeed;
+
             var multiplier = CurrentSpriteMotion switch
             {
-                SpriteMotion.Hit => motionSpeed / (float)AVERAGE_ATTACKED_SPEED < 1f ? 1f : motionSpeed / (float)AVERAGE_ATTACKED_SPEED,
+                SpriteMotion.Hit => motionSpeed / (float)AVERAGE_ATTACKED_SPEED,
                 _ => motionSpeed / (float)AVERAGE_ATTACK_SPEED
             };
-            var finalSpeed = (CurrentAction.delay / 25) * multiplier;
-
+            
+            // we divide by 25 because when we read from ACT we multiply by 25. IDK why
+            var finalSpeed = CurrentAction.delay / 25 * multiplier;
+            // then we multiply by 24 because DHXJ mod their tick by 24 
             return finalSpeed * 24;
         }
 

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using ROIO.Utils;
 using Telepathy;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityRO.Net.Packets;
@@ -153,6 +154,12 @@ namespace UnityRO.Net
                 if (!_client.Connected)
                 {
                     Debug.LogError("Disconnected");
+#if UNITY_EDITOR
+                    if (_currentServerType == ServerType.Zone && Application.isPlaying)
+                    {
+                        EditorApplication.ExitPlaymode();
+                    }
+#endif
                 }
 
                 return;
