@@ -89,9 +89,9 @@ namespace Core.Path {
 
         public int GetPos(long time, ref float xPos, ref float yPos, ref int dir) {
             if (PathData.Count == 0 || PathData[0].Time > time) {
-                xPos = PathData[0].X;
-                yPos = PathData[0].Y;
-                dir = PathData[1].Direction;
+                xPos = -1;
+                yPos = -1;
+                dir = 0;
                 return 0;
             }
 
