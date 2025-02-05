@@ -53,12 +53,12 @@ namespace UnityRO.Net
         public RecordedNetworkTraffic ReplayFile { get; private set; }
         public int ReplayPosition = 0;
         public bool IsReplayStepping;
+        private List<RecordedNetworkPacket> ReplayQueue;
+        private List<RecordedNetworkPacket> RecordedTraffic = new();
 #endif
 
         private bool IsInitialized;
         private bool IsReplay;
-        private List<RecordedNetworkPacket> ReplayQueue;
-        private List<RecordedNetworkPacket> RecordedTraffic = new();
 
         public NetworkClientState State;
 
