@@ -8,6 +8,15 @@ namespace UnityRO.Net
 {
     public partial class NetworkClient
     {
+        
+        [field: SerializeField] public bool IsRecording { get; private set; }
+        public RecordedNetworkTraffic ReplayFile { get; private set; }
+        public int ReplayPosition = 0;
+        public bool IsReplayStepping;
+        private List<RecordedNetworkPacket> ReplayQueue;
+        private List<RecordedNetworkPacket> RecordedTraffic = new();
+        
+        
         private void HandleReplay()
         {
             if (IsReplayStepping) return;
