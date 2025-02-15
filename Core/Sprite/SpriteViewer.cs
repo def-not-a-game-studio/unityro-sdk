@@ -196,13 +196,13 @@ namespace UnityRO.Core.Sprite {
             
             // We need this mesh collider in order to have the raycast to hit the sprite
             ColliderCache.TryGetValue(frame.id, out Mesh colliderMesh);
-            if (colliderMesh == null) {
+            if (colliderMesh is null) {
                 colliderMesh = SpriteMeshBuilder.BuildColliderMesh(frame, Sprites);
                 ColliderCache.Add(frame.id, colliderMesh);
             }
 
             MeshCache.TryGetValue(frame.id, out Mesh rendererMesh);
-            if (rendererMesh == null) {
+            if (rendererMesh is null) {
                 rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites);
                 MeshCache.Add(frame.id, rendererMesh);
             }

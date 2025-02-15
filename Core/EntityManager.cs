@@ -53,6 +53,8 @@ namespace UnityRO.Core {
             NetworkClient.UnhookPacket<ZC.NOTIFY_ACT>(ZC.NOTIFY_ACT.HEADER, OnEntityAct);
             NetworkClient.UnhookPacket<ZC.NOTIFY_ACT3>(ZC.NOTIFY_ACT3.HEADER, OnEntityAct3);
             NetworkClient.UnhookPacket<ZC.EMOTION>(ZC.EMOTION.HEADER, OnEntityEmotion);
+            NetworkClient.UnhookPacket<ZC.SPRITE_CHANGE2>(ZC.SPRITE_CHANGE2.HEADER, OnSpriteChange);
+            NetworkClient.UnhookPacket<ZC.NPCSPRITE_CHANGE>(ZC.NPCSPRITE_CHANGE.HEADER, OnNpcSpriteChange);
         }
 
         public CoreGameEntity Spawn(EntitySpawnData data, bool forceNorthDirection) {
