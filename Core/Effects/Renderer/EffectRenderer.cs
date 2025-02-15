@@ -7,6 +7,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityRO.Core;
+using UnityRO.Core.Audio;
 using UnityRO.Core.GameEntity;
 using UnityRO.Core.Sprite;
 
@@ -25,7 +26,6 @@ namespace Core.Effects
         [SerializeField] private Effect Effect;
         
         private EffectCache _effectCache;
-        private AudioSource _audioSource;
         private CoreSpriteGameEntity _entity;
 
         private List<EffectRendererPart> Parts = new();
@@ -34,7 +34,6 @@ namespace Core.Effects
         private void Start()
         {
             _effectCache = FindAnyObjectByType<EffectCache>();
-            _audioSource = FindAnyObjectByType<AudioSource>();
             _entity = GetComponentInParent<CoreSpriteGameEntity>();
             
             if (Effect != null)
@@ -131,8 +130,11 @@ namespace Core.Effects
 
         private void PlayPartAudioClip(AudioClip clip)
         {
-            _audioSource.clip = clip;
-            _audioSource.Play();
+            if (clip == null) return;
+            
+            SoundManager.Instance.CreateSoundBuilder()
+                .WithPosition(transform.position)
+                .Play(new SoundData { clip = clip, frequentSound = true });
         }
 
         public void Vanish()

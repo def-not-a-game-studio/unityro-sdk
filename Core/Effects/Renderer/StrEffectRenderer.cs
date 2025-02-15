@@ -23,7 +23,7 @@ namespace Core.Effects
             _effectRenderInfo = renderInfo;
             _isInit = true;
 
-            if (renderInfo.AudioClip is not null)
+            if (renderInfo.AudioClip != null)
             {
                 OnAudio?.Invoke(renderInfo.AudioClip);
             }
