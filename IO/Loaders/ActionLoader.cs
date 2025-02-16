@@ -105,22 +105,25 @@ namespace ROIO.Loaders {
             }
 
             var soundId = version >= 2.0 ? data.ReadInt() : -1;
-            Vector2Int[] pos = null;
+            ACT.Frame.AttachPoint[] pos = null;
 
             if (version >= 2.3) {
-                pos = new Vector2Int[data.ReadInt()];
-                for (int i = 0; i < pos.Length; i++) {
+                pos = new ACT.Frame.AttachPoint[data.ReadInt()];
+                for (int i = 0; i < pos.Length; i++)
+                {
+                    pos[i] = new ACT.Frame.AttachPoint();
                     data.Seek(4, System.IO.SeekOrigin.Current);
-                    pos[i] = new Vector2Int(data.ReadInt(), data.ReadInt());
-                    data.Seek(4, System.IO.SeekOrigin.Current);
+                    pos[i].pos = new Vector2Int(data.ReadInt(), data.ReadInt());
+                    pos[i].m_attr = data.ReadInt();
+                    // data.Seek(4, System.IO.SeekOrigin.Current);
                 }
             }
 
-            return new ACT.Frame() {
+            return new ACT.Frame {
                 id = UnityEngine.Random.Range(int.MinValue, int.MaxValue),
                 layers = layers.Where(t => t.index >= 0).ToArray(),
                 soundId = soundId,
-                pos = pos
+                attachPoints = pos
             };
         }
     }

@@ -112,7 +112,6 @@ public static class SpriteMeshBuilder
     public static Mesh BuildSpriteMesh(ACT.Frame frame, Sprite[] sprites, float alpha = 1)
     {
         meshBuildCount++;
-        //Debug.Log("Building new mesh, current mesh count: " + meshBuildCount);
 
         outNormals.Clear();
         outVertices.Clear();
@@ -124,12 +123,16 @@ public static class SpriteMeshBuilder
 
         var tIndex = 0;
 
+        var maxX = 0f;
+        var maxY = 0f;
+
         for (var i = 0; i < frame.layers.Length; i++)
         {
             var layer = frame.layers[i];
 
             if (layer.index < 0)
                 continue;
+            
             var sprite = sprites[layer.index];
             var verts = sprite.vertices;
             var uvs = sprite.uv;
@@ -138,12 +141,15 @@ public static class SpriteMeshBuilder
             var scale = new Vector3(layer.scale.x * (layer.isMirror ? -1 : 1), layer.scale.y, 1);
 
             var offsetX = (Mathf.RoundToInt(sprite.rect.width) % 2 == 1) ? 0.5f : 0f;
-            var offsetY = (Mathf.RoundToInt(sprite.rect.height) % 2 == 1) ? 1f : 0f;
+            var offsetY = (Mathf.RoundToInt(sprite.rect.height) % 2 == 1) ? 0.5f : 0f;
+
+            maxX = Mathf.Max(maxX, sprite.rect.width);
+            maxY = Mathf.Max(maxY, sprite.rect.height);
 
             for (var j = 0; j < verts.Length; j++)
             {
                 var v = rotation * (verts[j] * scale);
-                outVertices.Add(v + new Vector3(layer.pos.x, -(layer.pos.y)) / SPR.PIXELS_PER_UNIT);
+                outVertices.Add(v + new Vector3(layer.pos.x - offsetX, -(layer.pos.y) + offsetY) / SPR.PIXELS_PER_UNIT);
                 outUvs.Add(new Vector3(uvs[j].x, uvs[j].y, i));
 
                 var c = new Color(layer.color.r, layer.color.g, layer.color.b, layer.color.a * alpha);
@@ -174,6 +180,8 @@ public static class SpriteMeshBuilder
 
             tIndex += 4;
         }
+
+        mesh.bounds = new Bounds(Vector3.zero, new Vector3(maxX, maxY, Mathf.Max(maxX, maxY)));
 
         //Debug.Log($"{outVertices.Count} {outColors.Count}");
 

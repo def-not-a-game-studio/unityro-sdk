@@ -36,8 +36,15 @@ namespace ROIO.Models.FileTypes
         {
             public Layer[] layers;
             public int soundId;
-            public Vector2Int[] pos;
+            public AttachPoint[] attachPoints;
             public int id; // custom property
+
+            [Serializable]
+            public class AttachPoint
+            {
+                public Vector2Int pos;
+                public int m_attr;
+            }
         }
 
         [Serializable]

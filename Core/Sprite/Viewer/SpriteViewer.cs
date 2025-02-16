@@ -10,7 +10,7 @@ using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Sprite {
     [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
-    public class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer
+    public partial class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer
     {
 
         public bool IsReady { get; private set; } = false;
@@ -41,7 +41,7 @@ namespace UnityRO.Core.Sprite {
         private static readonly int PaletteTexProp = Shader.PropertyToID("_PaletteTex");
         private static readonly int AlphaProp = Shader.PropertyToID("_Alpha");
         private static readonly int ColorProp = Shader.PropertyToID("_Color");
-
+        
         public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity) {
             SpriteData = spriteData;
             Atlas = spriteData.atlas;
@@ -72,34 +72,7 @@ namespace UnityRO.Core.Sprite {
 
             UpdateFrames();
         }
-
-        private void UpdateFrames() {
-            var frame = UpdateFrame();
-            UpdateMesh(frame);
-            UpdateLocalPosition();
-        }
-
-        public void ChangeMotion(MotionRequest motionRequest) {
-            MeshRenderer.material.SetFloat(AlphaProp, 1f);
-
-            if (motionRequest.Motion == SpriteMotion.Attack) {
-                var isSecondAttack = WeaponTypeDatabase.IsSecondAttack(
-                    Entity.Status.Job,
-                    Entity.Status.IsMale ? 1 : 0,
-                    Entity.Status.Weapon,
-                    Entity.Status.Shield
-                );
-                var attackMotion = isSecondAttack ? SpriteMotion.Attack3 : SpriteMotion.Attack2;
-                motionRequest.Motion = attackMotion;
-            }
-
-            FramePaceCalculator.OnMotionChanged(motionRequest);
-
-            foreach (var child in Children) {
-                child.ChangeMotion(motionRequest);
-            }
-        }
-
+        
         public void UpdatePalette() {
             if (SpriteData.palettes.Length <= 0) return;
             var palette = ViewerType switch {
@@ -160,62 +133,10 @@ namespace UnityRO.Core.Sprite {
             IsReady = true;
         }
 
-        public Vector2 GetAnimationAnchor() {
-            var frame = UpdateFrame();
-
-            return frame.pos.Length > 0 ? frame.pos[0] : Vector2.zero;
-        }
-
-        private void UpdateLocalPosition() {
-            if (Parent == null || !Parent.IsReady)
-                return;
-
-            var parentAnchor = Parent.GetAnimationAnchor();
-            var ourAnchor = GetAnimationAnchor();
-
-            if (ourAnchor == Vector2.zero) {
-                MeshRenderer.material.SetVector(OffsetProp, Vector3.zero);
-                return;
-            }
-
-            var diff = parentAnchor - ourAnchor;
-            var localPosition = new Vector3(diff.x, -diff.y, 0) / SPR.PIXELS_PER_UNIT;
-            MeshRenderer.material.SetVector(OffsetProp, localPosition);
-        }
-
-        private ACT.Frame UpdateFrame()
-        {
-            FramePaceCalculator ??= new FramePaceCalculator(Entity, this, SpriteData.act, CharacterCamera);;
-            return FramePaceCalculator.GetCurrentFrame();
-        }
-
-        private int _currentFrameId;
-        private void UpdateMesh(ACT.Frame frame) {
-            if (frame.id == _currentFrameId) return;
-            _currentFrameId = frame.id;
-            
-            // We need this mesh collider in order to have the raycast to hit the sprite
-            ColliderCache.TryGetValue(frame.id, out Mesh colliderMesh);
-            if (colliderMesh is null) {
-                colliderMesh = SpriteMeshBuilder.BuildColliderMesh(frame, Sprites);
-                ColliderCache.Add(frame.id, colliderMesh);
-            }
-
-            MeshCache.TryGetValue(frame.id, out Mesh rendererMesh);
-            if (rendererMesh is null) {
-                rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites);
-                MeshCache.Add(frame.id, rendererMesh);
-            }
-
-            MeshFilter.sharedMesh = null;
-            MeshFilter.sharedMesh = rendererMesh;
-            MeshCollider.sharedMesh = colliderMesh;
-        }
-
         public SpriteViewer FindChild(ViewerType viewerType) {
             return Children.FirstOrDefault(it => it.ViewerType == viewerType);
         }
-
+        
         public void FadeOut(float delay = 2f, float timeout = 2f) {
             StartCoroutine(FadeOutRenderer(delay, timeout));
         }
@@ -269,8 +190,5 @@ namespace UnityRO.Core.Sprite {
 
             Entity.ChangeMotion(request);
         }
-
-        public float GetAttackDelay() => FramePaceCalculator.GetAttackDelay();
-        public float GetDelay() => FramePaceCalculator.GetDelay();
     }
 }

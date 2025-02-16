@@ -13,9 +13,9 @@ namespace UnityRO.Core.Sprite {
         private ISpriteViewer SpriteViewer;
         private CharacterCamera CharacterCamera;
 
-        private SpriteMotion CurrentSpriteMotion;
+        public SpriteMotion CurrentSpriteMotion { get; private set; }
 
-        private int CurrentFrame = 0;
+        public int CurrentFrame { get; private set; } = 0;
         private long AnimationStart = GameManager.Tick;
         private float CurrentDelay = 0f;
         private ACT CurrentACT;
@@ -26,26 +26,17 @@ namespace UnityRO.Core.Sprite {
         private float AttackMotion = 6f;
         private float MotionSpeed = 1f;
 
-        public FramePaceCalculator(
-            CoreSpriteGameEntity entity,
-            ISpriteViewer viewer,
-            ACT currentACT,
-            CharacterCamera characterCamera
-        ) {
+        public FramePaceCalculator(CoreSpriteGameEntity entity, ISpriteViewer viewer, ACT currentAct, CharacterCamera characterCamera) {
             Entity = entity;
             SpriteViewer = viewer;
-            CurrentACT = currentACT;
+            CurrentACT = currentAct;
             CharacterCamera = characterCamera;
         }
         
-        public FramePaceCalculator(
-            CoreSpriteGameEntity entity,
-            ISpriteViewer viewer,
-            ACT currentACT
-        ) {
+        public FramePaceCalculator(CoreSpriteGameEntity entity, ISpriteViewer viewer, ACT currentAct) {
             Entity = entity;
             SpriteViewer = viewer;
-            CurrentACT = currentACT;
+            CurrentACT = currentAct;
         }
 
         public int GetActionIndex() {

@@ -13,7 +13,10 @@ using UnityRO.Core.Database;
 using UnityRO.Core.Editor;
 using Random = UnityEngine.Random;
 
-public class SpriteUtility {
+public class SpriteUtility
+{
+    private const string GRF_PATH = "/Volumes/1TB/Projetos/UnityRO/";
+    
     private static string UTILS_DIR =
         Path.Combine(Directory.GetCurrentDirectory(), "Assets", "3rdparty", "unityro-sdk", "Core", "Editor", "Utils");
 
@@ -64,6 +67,7 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Emotions")]
     static void ExtractEmotions() {
+        FileManager.LoadGRF(GRF_PATH, new List<string> { "kro_data.grf" });
         try {
             var descriptors = DataUtility
                                      .FilterDescriptors(FileManager.GetFileDescriptors(), DEFAULT_EMOTION_DIR)
@@ -121,6 +125,7 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Body")]
     static void ExtractBodySprites() {
+        FileManager.LoadGRF(GRF_PATH, new List<string> { "kro_data.grf" });
         try {
             var i = 0;
             foreach (var (jobId, filename) in SpriteUtilityTables.m_newPcJobNameTable) {
@@ -231,7 +236,7 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Head")]
     static void ExtractHeadSprites() {
-        //FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
+        FileManager.LoadGRF(GRF_PATH, new List<string> { "kro_data.grf" });
         var Environment = InitUtilLua();
 
         try {
@@ -244,7 +249,7 @@ public class SpriteUtility {
             for (var i = 0; i < descriptors.Count; i++) {
                 var progress = i * 1f / descriptors.Count;
                 if (EditorUtility.DisplayCancelableProgressBar("UnityRO",
-                                                               $"Extracting effects {i} of {descriptors.Count}\t\t{progress * 100}%",
+                                                               $"Extracting head sprites {i} of {descriptors.Count}\t\t{progress * 100}%",
                                                                progress)) {
                     break;
                 }
@@ -268,8 +273,7 @@ public class SpriteUtility {
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Headgear")]
     static void ExtractHeadgearSprites() {
-        ////FileManager.LoadGRF("D:\\Projetos\\ragnarok\\test\\", new List<string> { "kro_data.grf" });
-        //FileManager.LoadGRF("/Users/dms11/Documents/Personal/ragnarok/", new List<string> { "data.grf" });
+        FileManager.LoadGRF(GRF_PATH, new List<string> { "kro_data.grf" });
 
         try {
             var descriptors = DataUtility

@@ -2,25 +2,31 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace UnityRO.Core {
-    public abstract class ManagedMonoBehaviour : MonoBehaviour {
-        private void OnEnable() {
+namespace UnityRO.Core
+{
+    public abstract class ManagedMonoBehaviour : MonoBehaviour
+    {
+        private void OnEnable()
+        {
             UpdateManager.Add(this);
         }
 
-        private void OnDisable() {
+        private void OnDisable()
+        {
             UpdateManager.Remove(this);
         }
 
         public abstract void ManagedUpdate();
     }
 
-    public static class UpdateManager {
+    public static class UpdateManager
+    {
         static HashSet<ManagedMonoBehaviour> _updateables = new();
-        static ManagedMonoBehaviour[] _copyUpdateables;
+        static HashSet<ManagedMonoBehaviour> _copyUpdateables;
         static UpdateManagerInnerMonoBehaviour _innerMonoBehaviour;
 
-        static UpdateManager() {
+        static UpdateManager()
+        {
             var gameObject = new GameObject();
             _innerMonoBehaviour = gameObject.AddComponent<UpdateManagerInnerMonoBehaviour>();
 
@@ -30,32 +36,30 @@ namespace UnityRO.Core {
 #endif
         }
 
-        public static void Add(ManagedMonoBehaviour managedMonoBehaviour) {
-            lock (_updateables) {
-                _updateables.Add(managedMonoBehaviour);
-                Array.Resize(ref _copyUpdateables, _updateables.Count);
-            }
+        public static void Add(ManagedMonoBehaviour managedMonoBehaviour)
+        {
+            _updateables.Add(managedMonoBehaviour);
         }
 
-        public static void Remove(ManagedMonoBehaviour managedMonoBehaviour) {
-            lock (_updateables) {
-                _updateables.Remove(managedMonoBehaviour);
-                Array.Resize(ref _copyUpdateables, _updateables.Count);
-            }
+        public static void Remove(ManagedMonoBehaviour managedMonoBehaviour)
+        {
+            _updateables.Remove(managedMonoBehaviour);
         }
 
-        class UpdateManagerInnerMonoBehaviour : MonoBehaviour {
-            private void Awake() {
+        class UpdateManagerInnerMonoBehaviour : MonoBehaviour
+        {
+            private void Awake()
+            {
                 DontDestroyOnLoad(this);
             }
 
-            private void Update() {
-                lock (_updateables) {
-                    _updateables.CopyTo(_copyUpdateables);
-                }
+            private void Update()
+            {
+                _copyUpdateables = _updateables;
 
-                for (int i = 0; i < _copyUpdateables.Length; i++) {
-                    _copyUpdateables[i]?.ManagedUpdate();
+                foreach (var updateable in _copyUpdateables)
+                {
+                    updateable.ManagedUpdate();
                 }
             }
         }
