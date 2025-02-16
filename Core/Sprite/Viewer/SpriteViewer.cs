@@ -10,9 +10,8 @@ using UnityRO.Core.GameEntity;
 
 namespace UnityRO.Core.Sprite {
     [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
-    public partial class SpriteViewer : ManagedMonoBehaviour, ISpriteViewer
+    public partial class SpriteViewer : MonoBehaviour, ISpriteViewer
     {
-
         public bool IsReady { get; private set; } = false;
         
         [field: SerializeField] public CoreSpriteGameEntity Entity { get; private set; }
@@ -67,7 +66,7 @@ namespace UnityRO.Core.Sprite {
             Children.Add(child);
         }
 
-        public override void ManagedUpdate() {
+        public void ManagedUpdate() {
             if (SpriteData == null) return;
 
             UpdateFrames();

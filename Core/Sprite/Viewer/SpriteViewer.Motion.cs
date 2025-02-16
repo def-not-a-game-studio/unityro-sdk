@@ -16,8 +16,13 @@ namespace UnityRO.Core.Sprite
             if (frame.id == _currentFrame?.id) return;
             _currentFrame = frame;
 
-            UpdateMesh(frame);
-            UpdateLocalPosition(frame);
+            foreach (var child in Children)
+            {
+                child.UpdateFrames();
+            }
+
+            UpdateMesh();
+            UpdateLocalPosition();
         }
 
         private ACT.Frame UpdateFrame()
@@ -26,21 +31,21 @@ namespace UnityRO.Core.Sprite
             return FramePaceCalculator.GetCurrentFrame();
         }
 
-        private void UpdateMesh(ACT.Frame frame)
+        private void UpdateMesh()
         {
             // We need this mesh collider in order to have the raycast to hit the sprite
-            ColliderCache.TryGetValue(frame.id, out var colliderMesh);
+            ColliderCache.TryGetValue(_currentFrame.id, out var colliderMesh);
             if (colliderMesh is null)
             {
-                colliderMesh = SpriteMeshBuilder.BuildColliderMesh(frame, Sprites);
-                ColliderCache.Add(frame.id, colliderMesh);
+                colliderMesh = SpriteMeshBuilder.BuildColliderMesh(_currentFrame, Sprites);
+                ColliderCache.Add(_currentFrame.id, colliderMesh);
             }
 
-            MeshCache.TryGetValue(frame.id, out var rendererMesh);
+            MeshCache.TryGetValue(_currentFrame.id, out var rendererMesh);
             if (rendererMesh is null)
             {
-                rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(frame, Sprites);
-                MeshCache.Add(frame.id, rendererMesh);
+                rendererMesh = SpriteMeshBuilder.BuildSpriteMesh(_currentFrame, Sprites);
+                MeshCache.Add(_currentFrame.id, rendererMesh);
             }
 
             MeshFilter.sharedMesh = null;
@@ -48,13 +53,13 @@ namespace UnityRO.Core.Sprite
             MeshCollider.sharedMesh = colliderMesh;
         }
 
-        private void UpdateLocalPosition(ACT.Frame frame)
+        private void UpdateLocalPosition()
         {
             if (Parent == null || !Parent.IsReady)
                 return;
             
-            var parentAnchor = Parent.GetAnimationAnchor(null);
-            var ourAnchor = GetAnimationAnchor(frame);
+            var parentAnchor = Parent.GetAnimationAnchor();
+            var ourAnchor = GetAnimationAnchor();
             
             if (ourAnchor == Vector2.zero) {
                 MeshRenderer.material.SetVector(OffsetProp, Vector3.zero);
@@ -66,11 +71,9 @@ namespace UnityRO.Core.Sprite
             MeshRenderer.material.SetVector(OffsetProp, localPosition);
         }
 
-        public Vector2 GetAnimationAnchor(ACT.Frame frame)
+        public Vector2 GetAnimationAnchor()
         {
-            frame ??= UpdateFrame();
-
-            return frame.attachPoints.Length > 0 ? frame.attachPoints[0].pos : Vector2.zero;
+            return _currentFrame.attachPoints.Length > 0 ? _currentFrame.attachPoints[0].pos : Vector2.zero;
         }
 
         public void ChangeMotion(MotionRequest motionRequest)
