@@ -63,11 +63,12 @@ namespace UnityRO.Core.Sprite {
                 CurrentFrame = Entity.HeadDirection;
             }
 
+            CurrentDelay = GetDelay();
             if (deltaSinceMotionStart >= CurrentDelay && CurrentFrame < maxFrame && !isIdle) {
                 FrameStart = GameManager.Tick;
                 CurrentFrame++;
             }
-
+            
             if (CurrentFrame >= maxFrame) {
                 if (AnimationHelper.IsLoopingMotion(CurrentSpriteMotion) && SpriteViewer.GetViewerType() != ViewerType.Emotion) {
                     CurrentFrame = 0;
