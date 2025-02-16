@@ -12,10 +12,7 @@ namespace UnityRO.Core.Sprite
 
         private void UpdateFrames()
         {
-            var frame = UpdateFrame();
-            if (frame.id == _currentFrame?.id) return;
-            _currentFrame = frame;
-
+            _currentFrame = UpdateFrame();
             foreach (var child in Children)
             {
                 child.UpdateFrames();

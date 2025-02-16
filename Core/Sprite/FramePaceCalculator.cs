@@ -1,4 +1,5 @@
 using ROIO.Models.FileTypes;
+using UnityEngine;
 using UnityRO.Core.Camera;
 using UnityRO.Core.Database;
 using UnityRO.Core.GameEntity;
@@ -16,7 +17,7 @@ namespace UnityRO.Core.Sprite {
         public SpriteMotion CurrentSpriteMotion { get; private set; }
 
         public int CurrentFrame { get; private set; } = 0;
-        private long AnimationStart = GameManager.Tick;
+        private long FrameStart = GameManager.Tick;
         private float CurrentDelay = 0f;
         private ACT CurrentACT;
         private ACT.Action CurrentAction;
@@ -55,21 +56,16 @@ namespace UnityRO.Core.Sprite {
 
             var isIdle = (Entity.Status.EntityType == EntityType.PC && CurrentSpriteMotion is SpriteMotion.Idle or SpriteMotion.Sit or SpriteMotion.Dead);
             var frameCount = CurrentAction.frames.Length;
-            var deltaSinceMotionStart = (GameManager.Tick - AnimationStart);
-
+            var deltaSinceMotionStart = (GameManager.Tick - FrameStart);
             var maxFrame = frameCount - 1;
 
             if (isIdle) {
                 CurrentFrame = Entity.HeadDirection;
             }
 
-            CurrentDelay = GetDelay();
-            if (deltaSinceMotionStart >= CurrentDelay) {
-                AnimationStart = GameManager.Tick;
-
-                if (CurrentFrame < maxFrame && !isIdle) {
-                    CurrentFrame++;
-                }
+            if (deltaSinceMotionStart >= CurrentDelay && CurrentFrame < maxFrame && !isIdle) {
+                FrameStart = GameManager.Tick;
+                CurrentFrame++;
             }
 
             if (CurrentFrame >= maxFrame) {
@@ -82,7 +78,7 @@ namespace UnityRO.Core.Sprite {
                     }
                 }
             }
-
+            
             return CurrentAction.frames[CurrentFrame];
         }
 
@@ -120,7 +116,7 @@ namespace UnityRO.Core.Sprite {
                 ProcessAttackMotion();
             }
 
-            AnimationStart = GameManager.Tick;
+            FrameStart = GameManager.Tick;
             CurrentFrame = 0;
             CurrentSpriteMotion = motionRequest.Motion;
             ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, CurrentSpriteMotion);
