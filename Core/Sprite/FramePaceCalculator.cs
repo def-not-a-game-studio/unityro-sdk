@@ -42,7 +42,7 @@ namespace UnityRO.Core.Sprite {
 
         public int GetActionIndex() {
             if (FixedActionIndex >= 0) {
-                return FixedActionIndex;
+                return FixedActionIndex % CurrentACT.actions.Length;
             }
 
             var cameraDirection = (int)(CharacterCamera?.Direction ?? 0);

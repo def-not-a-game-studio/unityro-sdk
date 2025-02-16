@@ -169,6 +169,7 @@ namespace Core.Effects
             part.OnEnd += OnPartEnd;
             part.Init(request, null, ViewerType.Emotion, _entity);
             part.SetActionIndex(emotionIndex);
+            Parts.Add(part);
         }
     }
 }
