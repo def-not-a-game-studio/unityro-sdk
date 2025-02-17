@@ -149,7 +149,7 @@ public static class SpriteMeshBuilder
             for (var j = 0; j < verts.Length; j++)
             {
                 var v = rotation * (verts[j] * scale);
-                outVertices.Add(v + new Vector3(layer.pos.x - offsetX, -(layer.pos.y) + offsetY) / SPR.PIXELS_PER_UNIT);
+                outVertices.Add(v + new Vector3(layer.pos.x, -layer.pos.y) / SPR.PIXELS_PER_UNIT);
                 outUvs.Add(new Vector3(uvs[j].x, uvs[j].y, i));
 
                 var c = new Color(layer.color.r, layer.color.g, layer.color.b, layer.color.a * alpha);
