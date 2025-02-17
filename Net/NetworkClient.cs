@@ -139,16 +139,16 @@ namespace UnityRO.Net
 
             if (IsPaused || !_client.Connected)
             {
-                if (!_client.Connected)
-                {
-                    Debug.LogError("Disconnected");
-#if UNITY_EDITOR
-                    if (_currentServerType == ServerType.Zone && Application.isPlaying)
-                    {
-                        EditorApplication.ExitPlaymode();
-                    }
-#endif
-                }
+//                 if (!_client.Connected)
+//                 {
+//                     Debug.LogError("Disconnected");
+// #if UNITY_EDITOR
+//                     if (_currentServerType == ServerType.Zone && Application.isPlaying)
+//                     {
+//                         EditorApplication.ExitPlaymode();
+//                     }
+// #endif
+//                 }
 
                 return;
             }

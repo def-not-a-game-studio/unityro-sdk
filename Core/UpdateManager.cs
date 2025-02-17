@@ -55,7 +55,7 @@ namespace UnityRO.Core
 
             private void Update()
             {
-                _copyUpdateables = _updateables;
+                _copyUpdateables = new HashSet<ManagedMonoBehaviour>(_updateables);
 
                 foreach (var updateable in _copyUpdateables)
                 {

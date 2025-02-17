@@ -14,8 +14,6 @@ public partial class HC {
             var seed = br.ReadInt();
             var accountId = br.ReadInt();
             var state = br.ReadShort();
-            
-            Debug.Log($"SECOND_PASSWD_LOGIN: seed={seed}, accountId={accountId}, state={state}");
         }
     }
 }
