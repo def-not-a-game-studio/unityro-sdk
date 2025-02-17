@@ -66,7 +66,7 @@ namespace Core.Effects
             _material = Resources.Load<Material>("Materials/SpriteEffects");
             _material.SetFloat(AlphaProp, 1f);
             _material.SetTexture(MainTexProp, Atlas);
-            _material.SetVector(OffsetProp, new Vector3(0, 3, 0));
+            _material.SetVector(OffsetProp, new Vector3(0, ViewerType == ViewerType.Emotion ? 3 : 0, 0));
             _renderParams = new RenderParams(_material)
             {
                 receiveShadows = false,
