@@ -39,6 +39,7 @@ namespace UnityRO.Core.Sprite {
         private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
         private static readonly int PaletteTexProp = Shader.PropertyToID("_PaletteTex");
         private static readonly int AlphaProp = Shader.PropertyToID("_Alpha");
+        private static readonly int AttenuateAmbientProp = Shader.PropertyToID("_AttenuateAmbient");
         private static readonly int ColorProp = Shader.PropertyToID("_Color");
         
         public void Init(SpriteData spriteData, ViewerType viewerType, CoreSpriteGameEntity entity) {
@@ -127,6 +128,11 @@ namespace UnityRO.Core.Sprite {
             {
                 Atlas.filterMode = FilterMode.Trilinear;
                 MeshRenderer.material.SetTexture(MainTexProp, Atlas);
+            }
+
+            if (Entity.GetEntityType() != (int)EntityType.PC)
+            {
+                MeshRenderer.material.SetFloat(AttenuateAmbientProp, 1);
             }
             
             IsReady = true;

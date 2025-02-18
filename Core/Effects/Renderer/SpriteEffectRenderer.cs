@@ -63,7 +63,7 @@ namespace Core.Effects
 
             Sprites = SpriteData.GetSprites();
             FramePaceCalculator = new FramePaceCalculator(Entity, this, SpriteData.act);
-            _material = Resources.Load<Material>("Materials/SpriteEffects");
+            _material = new Material(Shader.Find("UnityRO/SpriteEffectShader"));
             _material.SetFloat(AlphaProp, 1f);
             _material.SetTexture(MainTexProp, Atlas);
             _material.SetVector(OffsetProp, new Vector3(0, ViewerType == ViewerType.Emotion ? 3 : 0, 0));
