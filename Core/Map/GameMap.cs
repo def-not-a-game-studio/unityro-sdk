@@ -12,7 +12,11 @@ public class GameMap : MonoBehaviour
     public Vector2Int Size => _size;
 
     [SerializeField] [HideInInspector] public Light DirectionalLight;
-    [field:SerializeField] [HideInInspector] public Altitude Altitude { get; private set; }
+
+    [field: SerializeField]
+    [HideInInspector]
+    public Altitude Altitude { get; private set; }
+
     [SerializeField] [HideInInspector] private List<MapSound> Sounds;
     [SerializeField] private RSW.LightInfo LightInfo;
     [SerializeField] private Color Ambient;
@@ -40,8 +44,8 @@ public class GameMap : MonoBehaviour
             var worldLightGameObject = new GameObject("Light");
             worldLightGameObject.transform.SetParent(gameObject.transform);
             DirectionalLight = worldLightGameObject.GetOrAddComponent<Light>();
+            SetupWorldLight();
         }
-        SetupWorldLight();
     }
 
     private void SetupWorldLight()
@@ -50,7 +54,7 @@ public class GameMap : MonoBehaviour
         {
             return;
         }
-        
+
         GraphicsSettings.lightsUseColorTemperature = true;
         GraphicsSettings.lightsUseLinearIntensity = true;
 
@@ -75,17 +79,18 @@ public class GameMap : MonoBehaviour
         {
             diffuse = new Color(LightInfo.diffuse[0], LightInfo.diffuse[1], LightInfo.diffuse[2]);
         }
-        
+
         RenderSettings.ambientMode = AmbientMode.Flat;
         RenderSettings.ambientIntensity = 1f;
-        var color = new Color(ambient.r + diffuse.r * LightInfo.intensity, ambient.g + diffuse.g * LightInfo.intensity, ambient.b + diffuse.b * LightInfo.intensity, ambient.a);
+        var color = new Color(ambient.r + diffuse.r * LightInfo.intensity, ambient.g + diffuse.g * LightInfo.intensity,
+            ambient.b + diffuse.b * LightInfo.intensity, ambient.a);
         RenderSettings.ambientLight = color;
         DirectionalLight.color = diffuse;
         DirectionalLight.intensity = LightInfo.intensity;
 
         Ambient = ambient;
         Diffuse = diffuse;
-        
+
         Shader.SetGlobalColor("_RoAmbientColor", Ambient);
         Shader.SetGlobalColor("_RoDiffuseColor", Diffuse);
     }
@@ -103,8 +108,6 @@ public class GameMap : MonoBehaviour
         {
             InitWorldLight();
         }
-
-        SetupWorldLight();
     }
 
     public void SetMapAltitude(Altitude altitude)
