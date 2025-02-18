@@ -65,8 +65,7 @@ namespace UnityRO.Core.Sprite {
 
             if (SpriteViewer.GetViewerType() == ViewerType.Body && CurrentSpriteMotion == SpriteMotion.Walk)
             {
-                currentDistance += Entity.GetDistance() / 10f;
-                CurrentFrame = (int)(currentDistance * 0.37f * 4.0f / (CurrentAction.delay / 25f)) % frameCount;
+                CurrentFrame = (int)(Entity.GetDistance() * 0.37f * 4.0f / (CurrentAction.delay / 25)) % frameCount;
                 return CurrentAction.frames[CurrentFrame];
             }
 
@@ -90,20 +89,8 @@ namespace UnityRO.Core.Sprite {
             return CurrentAction.frames[CurrentFrame];
         }
 
-        private float currentDistance = 0f;
         public float GetDelay() {
             CurrentAction ??= CurrentACT.actions[GetActionIndex()];
-            
-            if (SpriteViewer.GetViewerType() == ViewerType.Body && CurrentSpriteMotion == SpriteMotion.Walk) {
-                currentDistance += Entity.GetDistance() / 10f;
-                var value = currentDistance * 0.37f * 4.0f / (CurrentAction.delay / 25f);
-                if ((EntityType)Entity.GetEntityType() == EntityType.PC)
-                { 
-                    Debug.Log($"distance: {currentDistance} - result: {value}");
-                }
-                return value;
-                // return CurrentAction.delay / 150 * Entity.Status.MoveSpeed;
-            }
 
             var delayTime = CurrentSpriteMotion switch
             {
@@ -136,7 +123,6 @@ namespace UnityRO.Core.Sprite {
             CurrentFrame = 0;
             CurrentSpriteMotion = motionRequest.Motion;
             ActionId = AnimationHelper.GetMotionIdForSprite(Entity.Status.EntityType, CurrentSpriteMotion);
-            currentDistance = 0f;
 
             CurrentDelay = GetDelay();
         }
