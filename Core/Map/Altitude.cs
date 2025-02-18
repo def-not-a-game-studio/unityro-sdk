@@ -40,6 +40,7 @@ public class Altitude {
     /// <param name="y">y position</param>
     /// <returns>cell data</returns>
     public GAT.Cell GetCell(double x, double y) {
+        if (gat.cells.Length == 0) return default;
         uint index = (uint) (Math.Floor(x) + Math.Floor(y) * gat.width);
 
         return gat.cells[index];
