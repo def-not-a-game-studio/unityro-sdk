@@ -247,8 +247,7 @@ public class ROMapExtractor : EditorWindow
     {
         var ground = mapObject.transform.FindRecursive("_Ground");
 
-        ExtractGroundTextures(mapName, ground, out var lightmapTexture, out var tintmapTexture, out var mainTexture,
-            out var material);
+        ExtractGroundTextures(mapName, ground, out var lightmapTexture, out var tintmapTexture, out var mainTexture, out var material);
 
         void ExtractGroundInner(Transform mesh)
         {
@@ -259,9 +258,7 @@ public class ROMapExtractor : EditorWindow
             var filter = mesh.GetComponent<MeshFilter>();
             mesh.GetComponent<MeshRenderer>().material = material;
 
-            var partPath =
-                AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
-                    $"{filter.gameObject.name.SanitizeForAddressables()}.asset"));
+            var partPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath, $"{filter.gameObject.name.SanitizeForAddressables()}.asset"));
             AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
 
             var prefabPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,

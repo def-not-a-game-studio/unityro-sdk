@@ -52,6 +52,7 @@ public class Ground {
         mr.sharedMaterial.mainTexture = atlas;
         mr.sharedMaterial.SetTexture("_Tintmap", tintmap);
         mr.sharedMaterial.SetTexture("_Lightmap", lightmap);
+        mr.shadowCastingMode = ShadowCastingMode.Off;
 
         // Vector3 scale = gameObject.transform.localScale;
         // scale.Set(1f, 1f, 1f);
