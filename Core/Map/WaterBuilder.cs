@@ -88,12 +88,16 @@ public class WaterBuilder {
             waterRenderer.SetWaterInfo(info);
             gameObject.transform.parent = water.transform;
             gameObject.layer = 4;
+            gameObject.isStatic = true;
             var mf = gameObject.AddComponent<MeshFilter>();
             mf.mesh = mesh;
             var mr = gameObject.AddComponent<MeshRenderer>();
             renderers[i] = mr;
             mr.sharedMaterial = material;
             mr.sharedMaterial.mainTexture = textures[0];
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.lightProbeUsage = LightProbeUsage.Off;
+            mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
 
             Vector3 scale = gameObject.transform.localScale;
             scale.Set(1f, -1f, 1f);
