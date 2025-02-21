@@ -163,6 +163,25 @@ namespace UnityRO.Core.Sprite {
             }
         }
 
+        public IEnumerator FadeInRenderer(float delay, float timeout)
+        {
+            MeshRenderer?.material.SetFloat(AlphaProp, 0f);
+            yield return new WaitForSeconds(delay);
+            var currentTime = 0f;
+            var currentAlpha = 0f;
+
+            while (currentTime <= timeout && currentAlpha < 1f) {
+                currentTime += Time.deltaTime;
+                currentAlpha = Mathf.Lerp(currentAlpha, 1f, currentTime / timeout);
+                SetAlpha(currentAlpha);
+                foreach (var child in Children) {
+                    child.SetAlpha(currentAlpha);
+                }
+
+                yield return null;
+            }
+        }
+
         public void SetAlpha(float alpha) {
             MeshRenderer.material.SetFloat(AlphaProp, alpha);
         }
