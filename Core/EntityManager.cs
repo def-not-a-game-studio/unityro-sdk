@@ -37,6 +37,8 @@ namespace UnityRO.Core {
             NetworkClient.HookPacket<ZC.EMOTION>(ZC.EMOTION.HEADER, OnEntityEmotion);
             NetworkClient.HookPacket<ZC.SPRITE_CHANGE2>(ZC.SPRITE_CHANGE2.HEADER, OnSpriteChange);
             NetworkClient.HookPacket<ZC.NPCSPRITE_CHANGE>(ZC.NPCSPRITE_CHANGE.HEADER, OnNpcSpriteChange);
+            NetworkClient.HookPacket<ZC.NOTIFY_EFFECT2>(ZC.NOTIFY_EFFECT2.HEADER, OnEffect2);
+            NetworkClient.HookPacket<ZC.NOTIFY_EFFECT>(ZC.NOTIFY_EFFECT.HEADER, OnEffect);
         }
 
         private void Start() {
@@ -55,6 +57,8 @@ namespace UnityRO.Core {
             NetworkClient.UnhookPacket<ZC.EMOTION>(ZC.EMOTION.HEADER, OnEntityEmotion);
             NetworkClient.UnhookPacket<ZC.SPRITE_CHANGE2>(ZC.SPRITE_CHANGE2.HEADER, OnSpriteChange);
             NetworkClient.UnhookPacket<ZC.NPCSPRITE_CHANGE>(ZC.NPCSPRITE_CHANGE.HEADER, OnNpcSpriteChange);
+            NetworkClient.UnhookPacket<ZC.NOTIFY_EFFECT2>(ZC.NOTIFY_EFFECT2.HEADER, OnEffect2);
+            NetworkClient.UnhookPacket<ZC.NOTIFY_EFFECT>(ZC.NOTIFY_EFFECT.HEADER, OnEffect);
         }
 
         public CoreGameEntity Spawn(EntitySpawnData data, bool forceNorthDirection) {
@@ -245,6 +249,18 @@ namespace UnityRO.Core {
             }
 
             entity.ChangeLook(LookType.LOOK_BASE, (short)packet.value, 0);
+        }
+        
+        private void OnEffect2(ushort cmd, int size, ZC.NOTIFY_EFFECT2 packet)
+        {
+            var entity = GetEntity(packet.GID);
+            entity.ShowEffect(packet.EffectId);
+        }
+        
+        private void OnEffect(ushort cmd, int size, ZC.NOTIFY_EFFECT packet)
+        {
+            var entity = GetEntity((uint)packet.GID);
+            entity.ShowEffect(packet.EffectId);
         }
 
         public override void ManagedUpdate() { }

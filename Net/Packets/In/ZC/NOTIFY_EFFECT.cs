@@ -9,7 +9,7 @@ public partial class ZC {
 
         public PacketHeader Header => HEADER;
 
-        public int sourceAID;
+        public int GID;
 
         /// effect id:
         ///     0 = base level up
@@ -22,11 +22,11 @@ public partial class ZC {
         ///     7 = base level up (super novice)
         ///     8 = job level up (super novice)
         ///     9 = base level up (taekwon)
-        public int effectID;
+        public int EffectId;
 
         public void Read(MemoryStreamReader br, int size) {
-            sourceAID = br.ReadInt();
-            effectID = br.ReadInt();
+            GID = br.ReadInt();
+            EffectId = br.ReadInt();
         }
     }
 }

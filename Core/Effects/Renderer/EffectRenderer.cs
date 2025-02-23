@@ -162,6 +162,14 @@ namespace Core.Effects
             InitEffects(effect);
         }
 
+        public void SetEffect(int effectId)
+        {
+            if (_effectCache.Effects.TryGetValue(effectId, out var effect))
+            {
+                InitEffects(effect);
+            }
+        }
+
         public async UniTask SetEmotion(int emotionIndex)
         {
             var request = await Resources.LoadAsync("Sprites/emotions") as SpriteData;

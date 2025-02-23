@@ -17,6 +17,8 @@ namespace UnityRO.Core
         }
 
         public abstract void ManagedUpdate();
+
+        public virtual void ManagedLateUpdate() {}
     }
 
     public static class UpdateManager
@@ -60,6 +62,16 @@ namespace UnityRO.Core
                 foreach (var updateable in _copyUpdateables)
                 {
                     updateable.ManagedUpdate();
+                }
+            }
+
+            private void LateUpdate()
+            {
+                _copyUpdateables = new HashSet<ManagedMonoBehaviour>(_updateables);
+
+                foreach (var updateable in _copyUpdateables)
+                {
+                    updateable.ManagedLateUpdate();
                 }
             }
         }

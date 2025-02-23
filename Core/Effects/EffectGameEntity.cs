@@ -66,6 +66,10 @@ namespace _3rdparty.unityro_sdk.Core.Effects
         {
         }
 
+        public override void ShowEffect(int effectId)
+        {
+        }
+
         public override void ChangeLook(LookType lookType, short packetValue, short packetValue2)
         {
         }
