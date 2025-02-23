@@ -15,7 +15,8 @@ using Random = UnityEngine.Random;
 
 public class SpriteUtility
 {
-    private const string GRF_PATH = "/Volumes/1TB/Projetos/UnityRO/";
+    // private const string GRF_PATH = "/Volumes/1TB/Projetos/UnityRO/";
+    private const string GRF_PATH = "D:\\Projetos\\Personal\\Rag\\Ragnarok\\Unity\\";
 
     private static string UTILS_DIR =
         Path.Combine(Directory.GetCurrentDirectory(), "Assets", "3rdparty", "unityro-sdk", "Core", "Editor", "Utils");
@@ -32,7 +33,7 @@ public class SpriteUtility
     private static string GENERATED_WEAPON_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Weapon");
     private static string GENERATED_SHIELD_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Shield");
     private static string GENERATED_HEADGEAR_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Headgear");
-    private static string GENERATED_INTERFACE_PATH = Path.Combine(GENERATED_RESOURCES_PATH, "Interface");
+    private static string GENERATED_INTERFACE_PATH = Path.Combine("Assets", "3rdparty", "unityro-resources", "Resources", "Interface");
 
     private static string DEFAULT_HEAD_DIR =
         Path.Combine("data", "sprite", "ÀÎ°£Á·", "¸Ó¸®Åë") + Path.DirectorySeparatorChar;
@@ -66,7 +67,7 @@ public class SpriteUtility
 
     private static string DEFAULT_EMOTION_DIR = Path.Combine("data", "sprite", "ÀÌÆÑÆ®") + Path.DirectorySeparatorChar;
 
-    public static string INTERFACE_PATH = Path.Combine("data", "texture", "À¯ÀúÀÎÅÍÆäÀÌ½º", "basic_interface") + Path.DirectorySeparatorChar;
+    public static string INTERFACE_PATH = Path.Combine("data", "texture", "À¯ÀúÀÎÅÍÆäÀÌ½º") + Path.DirectorySeparatorChar;
 
     [MenuItem("UnityRO/Utils/Extract/Sprites/Emotions")]
     static void ExtractEmotions()
@@ -428,6 +429,8 @@ public class SpriteUtility
 
             var descriptors = DataUtility
                 .FilterDescriptors(FileManager.GetFileDescriptors(), INTERFACE_PATH)
+                .Where(it => !it.Contains(Path.Combine("data", "texture", "À¯ÀúÀÎÅÍÆäÀÌ½º", "collection")) &&
+                             !it.Contains(Path.Combine("data", "texture", "À¯ÀúÀÎÅÍÆäÀÌ½º", "item")))
                 .ToList();
 
             for (var i = 0; i < descriptors.Count; i++)
