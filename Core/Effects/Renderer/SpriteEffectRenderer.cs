@@ -1,13 +1,7 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using _3rdparty.unityro_sdk.Core.Effects;
 using ROIO.Models.FileTypes;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityRO.Core;
-using UnityRO.Core.Camera;
 using UnityRO.Core.GameEntity;
 using UnityRO.Core.Sprite;
 
