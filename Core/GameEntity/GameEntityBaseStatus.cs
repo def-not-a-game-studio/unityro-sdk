@@ -31,4 +31,32 @@ public class GameEntityBaseStatus {
     public long MaxSP;
     public long Money;
     public int Level;
+    
+    public short StatusPoints;
+    public int Str;
+    public int Agi;
+    public int Vit;
+    public int Int;
+    public int Dex;
+    public int Luk;
+    public int NeedStr;
+    public int NeedAgi;
+    public int NeedVit;
+    public int NeedInt;
+    public int NeedDex;
+    public int NeedLuk;
+    public short Atk;
+    public short Atk2;
+    public short MatkMin;
+    public short MatkMax;
+    public short Def;
+    public short Def2;
+    public short Mdef;
+    public short Mdef2;
+    public short Hit;
+    public short Flee;
+    public short Flee2;
+    public short Crit;
+    public short Aspd;
+    public short Aspd2;
 }
