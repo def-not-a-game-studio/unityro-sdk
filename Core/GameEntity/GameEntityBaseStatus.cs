@@ -31,7 +31,8 @@ public class GameEntityBaseStatus {
     public long MaxSP;
     public long Money;
     public int Level;
-    
+
+    public short SkillPoints;
     public short StatusPoints;
     public int Str;
     public int Agi;
@@ -59,4 +60,23 @@ public class GameEntityBaseStatus {
     public short Crit;
     public short Aspd;
     public short Aspd2;
+    
+    // 4th jobs
+    public short Patk;
+    public short Smatk;
+    public short Res;
+    public short Mres;
+    public short Hplus;
+    public short Crate;
+    public short TraitPoints;
+    public short Ap;
+    public short MaxAp;
+
+    public long BaseExp;
+    public long NextBaseExp;
+    public long JobExp;
+    public long NextJobExp;
+
+    public long Weight;
+    public long MaxWeight;
 }
