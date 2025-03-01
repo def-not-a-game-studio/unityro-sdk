@@ -45,7 +45,7 @@ namespace UnityRO.Net.Editor {
         }
 
         private void OnPacketReceived(NetworkPacket packet, bool isHandled) {
-            if (_networkPackets.Count > 50) {
+            if (_networkPackets.Count > 300) {
                 _networkPackets.RemoveAt(0);
             }
 
