@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Serialization;
 
 [Serializable]
 public class GameEntityBaseStatus {
@@ -30,7 +31,8 @@ public class GameEntityBaseStatus {
     public long SP;
     public long MaxSP;
     public long Money;
-    public int Level;
+    public int BaseLevel;
+    public int JobLevel;
 
     public short SkillPoints;
     public short StatusPoints;
