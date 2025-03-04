@@ -177,20 +177,22 @@ namespace UnityRO.Core {
 
             source.SetAttackSpeed(actionRequest.sourceSpeed);
             source.SetAction(actionRequest, true);
+            var actionDelay = source.GetActionDelay(actionRequest);
 
             if (actionRequest.IsAttackAction() && destination != null) {
                 FloatingTextPool.Get(out var floatingText);
                 floatingText.transform.SetParent(target.transform, false);
+                
                 switch (actionRequest.action) {
                     case ActionRequestType.ATTACK_MULTIPLE_NOMOTION:
                     case ActionRequestType.ATTACK:
-                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release, actionDelay);
                         //target.Damage(pkt.damage, GameManager.Tick + pkt.sourceSpeed);
                         break;
 
                     // double attack
                     case ActionRequestType.ATTACK_MULTIPLE:
-                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        floatingText.SetText($"{actionRequest.damage}", Color.grey, FloatingTextPool.Release, actionDelay);
                         // Display combo only if entity is mob and the attack don't miss
                         // if (dstEntity.Type == EntityType.MOB && pkt.damage > 0) {
                         //     dstEntity.Damage(pkt.damage / 2, GameManager.Tick + pkt.sourceSpeed * 1, DamageType.COMBO);
@@ -203,13 +205,13 @@ namespace UnityRO.Core {
 
                     // TODO: critical damage
                     case ActionRequestType.ATTACK_CRITICAL:
-                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        floatingText.SetText($"{actionRequest.damage}", Color.red, FloatingTextPool.Release, actionDelay);
                         // target.Damage(pkt.damage, GameManager.Tick + pkt.sourceSpeed);
                         break;
 
                     // TODO: lucky miss
                     case ActionRequestType.ATTACK_LUCKY:
-                        floatingText.SetText($"{actionRequest.damage}", Color.white, FloatingTextPool.Release);
+                        floatingText.SetText($"{actionRequest.damage}", Color.yellow, FloatingTextPool.Release, actionDelay);
                         // target.Damage(0, GameManager.Tick + pkt.sourceSpeed);
                         break;
                 }
