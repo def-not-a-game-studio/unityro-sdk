@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 
 namespace ROIO.Utils {
     /// <summary>
@@ -24,14 +25,7 @@ namespace ROIO.Utils {
         /// <param name="length">num of bytes to read</param>
         /// <returns>string</returns>
         public string ReadBinaryString(int length) {
-            char[] strBytes = new char[length];
-
-            for (int i = 0; i < length; i++) {
-                strBytes[i] = (char)base.ReadByte();
-            }
-
-            //string krEncoded = Encoding.GetEncoding(949).GetString(strBytes);
-            string str = new string(strBytes);
+            string str = Encoding.GetEncoding(1252).GetString(ReadBytes(length));
             //.net strings are not zero-terminated
             int terminator = str.IndexOf('\0');
             if (terminator != -1) {

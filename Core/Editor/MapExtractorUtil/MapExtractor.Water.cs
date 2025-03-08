@@ -21,13 +21,6 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                 var meshPath = Path.Combine(ROMapExtractor.GetBasePath(), mapName, "water", $"_{i}");
                 Directory.CreateDirectory(meshPath);
 
-                var progress = i * 1f / waterMeshes.transform.childCount;
-                if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving water meshes - {progress * 100}%",
-                        progress))
-                {
-                    break;
-                }
-
                 var filters = mesh.GetComponentsInChildren<MeshFilter>();
                 var renderers = mesh.GetComponentsInChildren<MeshRenderer>();
                 for (int k = 0; k < filters.Length; k++)

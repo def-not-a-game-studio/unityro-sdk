@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ROIO;
 using UnityEditor;
 using UnityEngine;
@@ -9,79 +10,7 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
 {
     public partial class MapExtractor
     {
-        // TODO explore this one
-        // public void AdvancedMerge()
-        // {
-        //     // All our children (and us)
-        //     MeshFilter[] filters = GetComponentsInChildren(false);
-        //
-        //     // All the meshes in our children (just a big list)
-        //     List materials = new List();
-        //     MeshRenderer[] renderers = GetComponentsInChildren(false); // <-- you can optimize this
-        //     foreach (MeshRenderer renderer in renderers)
-        //     {
-        //         if (renderer.transform == transform)
-        //             continue;
-        //         Material[] localMats = renderer.sharedMaterials;
-        //         foreach (Material localMat in localMats)
-        //             if (!materials.Contains(localMat))
-        //                 materials.Add(localMat);
-        //     }
-        //
-        //     // Each material will have a mesh for it.
-        //     List submeshes = new List();
-        //     foreach (Material material in materials)
-        //     {
-        //         // Make a combiner for each (sub)mesh that is mapped to the right material.
-        //         List combiners = new List();
-        //         foreach (MeshFilter filter in filters)
-        //         {
-        //             if (filter.transform == transform) continue;
-        //             // The filter doesn't know what materials are involved, get the renderer.
-        //             MeshRenderer renderer = filter.GetComponent(); // <-- (Easy optimization is possible here, give it a try!)
-        //             if (renderer == null)
-        //             {
-        //                 Debug.LogError(filter.name + " has no MeshRenderer");
-        //                 continue;
-        //             }
-        //
-        //             // Let's see if their materials are the one we want right now.
-        //             Material[] localMaterials = renderer.sharedMaterials;
-        //             for (int materialIndex = 0; materialIndex < localMaterials.Length; materialIndex++)
-        //             {
-        //                 if (localMaterials[materialIndex] != material)
-        //                     continue;
-        //                 // This submesh is the material we're looking for right now.
-        //                 CombineInstance ci = new CombineInstance();
-        //                 ci.mesh = filter.sharedMesh;
-        //                 ci.subMeshIndex = materialIndex;
-        //                 ci.transform = Matrix4x4.identity;
-        //                 combiners.Add(ci);
-        //             }
-        //         }
-        //
-        //         // Flatten into a single mesh.
-        //         Mesh mesh = new Mesh();
-        //         mesh.CombineMeshes(combiners.ToArray(), true);
-        //         submeshes.Add(mesh);
-        //     }
-        //
-        //     // The final mesh: combine all the material-specific meshes as independent submeshes.
-        //     List finalCombiners = new List();
-        //     foreach (Mesh mesh in submeshes)
-        //     {
-        //         CombineInstance ci = new CombineInstance();
-        //         ci.mesh = mesh;
-        //         ci.subMeshIndex = 0;
-        //         ci.transform = Matrix4x4.identity;
-        //         finalCombiners.Add(ci);
-        //     }
-        //
-        //     Mesh finalMesh = new Mesh();
-        //     finalMesh.CombineMeshes(finalCombiners.ToArray(), false);
-        //     myMeshFilter.sharedMesh = finalMesh;
-        //     Debug.Log("Final mesh has " + submeshes.Count + " materials.");
-        // }
+        private const string LOADED_TEXTURE_PREFIX = "data/texture/maptexture@";
 
         private static List<string> ExtractOriginalModels(GameObject mapObject, string overridePath = null)
         {
@@ -96,12 +25,11 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
             var i = 0;
             foreach (var mesh in children)
             {
-                var progress = i * 1f / originalMeshes.transform.childCount;
-                if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving model meshes - {progress * 100}%",
-                        progress))
-                {
-                    break;
-                }
+                // var progress = i * 1f / originalMeshes.transform.childCount;
+                // if (EditorUtility.DisplayCancelableProgressBar("UnityRO", $"Saving model meshes - {progress * 100}%", progress))
+                // {
+                //     break;
+                // }
 
                 mesh.gameObject.SetActive(true);
 
@@ -112,7 +40,7 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError(e);
+                    Debug.LogException(e);
                     Debug.LogError($"Error extracting model {mesh.gameObject.name}");
                 }
                 finally
@@ -121,21 +49,22 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                 }
             }
 
-            EditorUtility.ClearProgressBar();
+            // EditorUtility.ClearProgressBar();
             return texturePaths;
         }
 
         private static void ExtractClonedModels(GameObject mapObject, string overridePath = null)
         {
-            var models = mapObject.transform.FindRecursive("_Models");
-            var clonedMeshes = mapObject.transform.FindRecursive("_Copies");
-            var originalMeshes = mapObject.transform.FindRecursive("_Originals");
+            var modelsParent = mapObject.transform.FindRecursive("_Models");
+            var copiesParent = mapObject.transform.FindRecursive("_Copies");
+            var originalsParents = mapObject.transform.FindRecursive("_Originals");
+
             var originalPrefabs = new Dictionary<string, GameObject>();
 
             // Query for the original prefabs
-            for (int i = 0; i < originalMeshes.transform.childCount; i++)
+            for (var i = 0; i < originalsParents.transform.childCount; i++)
             {
-                var mesh = originalMeshes.transform.GetChild(i);
+                var mesh = originalsParents.transform.GetChild(i);
                 string meshPathWithoutExtension;
                 if (Path.GetExtension(mesh.name) == "")
                 {
@@ -156,6 +85,9 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                     meshPath = Path.Combine(ROMapExtractor.GetBasePath(), "data", "model", meshPathWithoutExtension);
                 }
 
+                meshPathWithoutExtension = meshPathWithoutExtension.Replace('\\', Path.DirectorySeparatorChar);
+                meshPath = meshPath.Replace('\\', Path.DirectorySeparatorChar);
+
                 var prefab = AssetDatabase.LoadAssetAtPath(meshPath + ".prefab", typeof(GameObject)) as GameObject;
                 if (!originalPrefabs.ContainsKey(meshPathWithoutExtension))
                 {
@@ -164,27 +96,59 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
             }
 
             var cloned = new GameObject("_Cloned");
-            cloned.transform.SetParent(models.transform);
+            cloned.transform.SetParent(modelsParent.transform);
 
-            for (int i = 0; i < clonedMeshes.transform.childCount; i++)
+            for (var i = 0; i < copiesParent.transform.childCount; i++)
             {
-                var mesh = clonedMeshes.transform.GetChild(i);
-                var originalMeshName = mesh.name.Substring(0, mesh.name.IndexOf("(Clone)"));
-                var meshPathWithoutExtension =
-                    mesh.name.Substring(0, originalMeshName.IndexOf(Path.GetExtension(originalMeshName)));
+                var mesh = copiesParent.transform.GetChild(i);
+                var originalMeshName = mesh.name.Substring(0, mesh.name.IndexOf("(Clone)")).Replace('\\', Path.DirectorySeparatorChar);
+                var originalMeshExtension = Path.GetExtension(originalMeshName);
+                var meshPathWithoutExtension = mesh.name.Substring(0, originalMeshName.IndexOf(originalMeshExtension))
+                    .Replace('\\', Path.DirectorySeparatorChar);
 
-                var prefab =
-                    PrefabUtility.InstantiatePrefab(originalPrefabs[meshPathWithoutExtension], cloned.transform)
-                        as GameObject;
-                prefab.transform.SetPositionAndRotation(mesh.transform.position, mesh.transform.rotation);
-                prefab.transform.localScale = mesh.transform.localScale;
+                if (originalPrefabs.TryGetValue(meshPathWithoutExtension, out GameObject original))
+                {
+                    var prefab = PrefabUtility.InstantiatePrefab(original, cloned.transform) as GameObject;
+                    prefab.transform.SetPositionAndRotation(mesh.transform.position, mesh.transform.rotation);
+                    prefab.transform.localScale = mesh.transform.localScale;
+                }
+                else
+                {
+                    Debug.LogError($"Couldn't find original model {meshPathWithoutExtension}");
+                }
             }
 
-            GameObject.DestroyImmediate(clonedMeshes.gameObject);
-            //GameObject.DestroyImmediate(originalMeshes.gameObject);
+            GameObject.DestroyImmediate(copiesParent.gameObject);
+            GameObject.DestroyImmediate(mapObject.transform.FindRecursive("_Original").gameObject);
         }
 
-        public static List<string> ExtractModelMesh(GameObject mesh, Transform overrideParent = null, string overridePath = null)
+        private static void GroupModels(GameObject mapObject)
+        {
+            var modelsParent = mapObject.transform.FindRecursive("_Models");
+            var originals =  mapObject.transform.FindRecursive("_Originals");
+            var clones =  mapObject.transform.FindRecursive("_Cloned");
+            var models = originals.GetChildren().Concat(clones.GetChildren());
+            
+            var staticParent = new GameObject("_Static");
+            staticParent.transform.SetParent(modelsParent.transform);
+            var dynamicParent = new GameObject("_Dynamic");
+            dynamicParent.transform.SetParent(modelsParent.transform);
+
+            foreach (var model in models)
+            {
+                model.transform.SetParent(model.childCount > 0 ? dynamicParent.transform : staticParent.transform, true);
+            }
+
+            foreach (var model in staticParent.transform.GetChildren())
+            {
+                model.gameObject.isStatic = true;
+            }
+            
+            GameObject.DestroyImmediate(originals.gameObject);
+            GameObject.DestroyImmediate(clones.gameObject);
+        }
+
+        private static List<string> ExtractModelMesh(GameObject mesh, Transform overrideParent = null, string overridePath = null)
         {
             var nodeTexturesPath = new List<string>();
             string meshPathWithoutExtension;
@@ -212,6 +176,8 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                 meshPath = Path.Combine(overridePath, meshPathWithoutExtension);
             }
 
+            meshPath = meshPath.Replace('\\', Path.DirectorySeparatorChar);
+
             Directory.CreateDirectory(meshPath);
 
             if (File.Exists(meshPath + ".prefab"))
@@ -235,46 +201,76 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                     }
 
                     var nodes = mesh.GetComponentsInChildren<NodeProperties>();
-                    foreach (var node in nodes)
+                    if (nodes.Length > 0)
                     {
-                        if (!node.TryGetComponent<NodeAnimation>(out var anim))
+                        foreach (var node in nodes)
                         {
-                            //GameObjectUtility.SetStaticEditorFlags(node.gameObject, StaticEditorFlags.BatchingStatic);
-                            node.gameObject.isStatic = true;
+                            if (!node.TryGetComponent<NodeAnimation>(out var anim))
+                            {
+                                //GameObjectUtility.SetStaticEditorFlags(node.gameObject, StaticEditorFlags.BatchingStatic);
+                                node.gameObject.isStatic = true;
+                            }
+
+                            var filter = node.GetComponent<MeshFilter>();
+                            var material = node.GetComponent<MeshRenderer>().material;
+
+                            var nodeName = node.mainName.Length == 0 ? "node" : node.mainName;
+                            var nodePath = Path.Combine(meshPath, $"{nodeName}_{node.nodeId}").Replace('\\', Path.DirectorySeparatorChar);
+                            var partPath = AssetDatabase.GenerateUniqueAssetPath($"{nodePath}.asset");
+                            var materialPath = AssetDatabase.GenerateUniqueAssetPath($"{nodePath}.mat");
+
+                            var texture = FileManager.Load($"data/texture/{node.textureName}") as Texture2D;
+                            if (texture != null)
+                            {
+                                var texturePath = $"{nodePath}.png";
+                                nodeTexturesPath.Add(texturePath);
+                                File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+                            }
+                            else
+                            {
+                                Debug.LogError($"Texture data/texture/{node.textureName} not found");
+                            }
+
+                            AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
+                            AssetDatabase.CreateAsset(material, materialPath);
                         }
+                    }
+                    else
+                    {
+                        var filter = mesh.GetComponent<MeshFilter>();
+                        var materials = mesh.GetComponent<MeshRenderer>().materials;
 
-                        var filter = node.GetComponent<MeshFilter>();
-                        var material = node.GetComponent<MeshRenderer>().material;
-
-                        var nodeName = node.mainName.Length == 0 ? "node" : node.mainName;
-                        var partPath =
-                            AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath,
-                                $"{nodeName}_{node.nodeId}.asset"));
-                        var materialPath =
-                            AssetDatabase.GenerateUniqueAssetPath(Path.Combine(meshPath, $"{nodeName}_{node.nodeId}.mat"));
-
-                        var texture = FileManager.Load($"data/texture/{node.textureName}") as Texture2D;
-                        if (texture is not null)
+                        var partPath = AssetDatabase.GenerateUniqueAssetPath($"{meshPath}.asset");
+                        for (var index = 0; index < materials.Length; index++)
                         {
-                            var texturePath = Path.Combine(meshPath, $"{nodeName}_{node.nodeId}.png");
-                            nodeTexturesPath.Add(texturePath);
-                            File.WriteAllBytes(texturePath, texture.EncodeToPNG());
-                        }
-                        else
-                        {
-                            Debug.LogError($"Texture data/texture/{node.textureName} not found");
+                            var material = materials[index];
+                            var texture = FileManager.Load($"data/texture/{material.mainTexture.name[LOADED_TEXTURE_PREFIX.Length..]}") as Texture2D;
+                            var materialPath = AssetDatabase.GenerateUniqueAssetPath($"{meshPath}_mat_{index}.mat");
+
+                            if (texture != null)
+                            {
+                                var texturePath = $"{meshPath}_mat_{index}.png";
+                                nodeTexturesPath.Add(texturePath);
+                                File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+                            }
+                            else
+                            {
+                                Debug.LogError($"Texture data/texture/{material.mainTexture.name} not found");
+                            }
+
+                            AssetDatabase.CreateAsset(material, materialPath);
                         }
 
                         AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
-                        AssetDatabase.CreateAsset(material, materialPath);
                     }
 
                     meshPath = AssetDatabase.GenerateUniqueAssetPath(meshPath + ".prefab");
                     PrefabUtility.SaveAsPrefabAssetAndConnect(mesh, meshPath, InteractionMode.AutomatedAction);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     Debug.LogError($"Failed extracting model {mesh.name}");
+                    Debug.LogError(e);
                 }
             }
 

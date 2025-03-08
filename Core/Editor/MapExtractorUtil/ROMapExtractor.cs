@@ -39,7 +39,7 @@ public class ROMapExtractor : EditorWindow
     }
 
     public static string GetBasePath() => "Assets/3rdparty/unityro-resources/Resources/Maps/";
-    
+
     public async void ExportGroundObj()
     {
         await LoadMap(false);
@@ -117,7 +117,14 @@ public class ROMapExtractor : EditorWindow
 
         if (GUILayout.Button("Save Map") && CurrentGameMap != null)
         {
-            MapExtractor.SaveMap(CurrentGameMap.gameObject);
+            try
+            {
+                MapExtractor.SaveMap(CurrentGameMap.gameObject);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         if (GUILayout.Button("Export ground obj"))

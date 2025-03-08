@@ -24,33 +24,8 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
             {
                 AssetDatabase.StartAssetEditing();
                 texturePaths = ExtractOriginalModels(mapObject, Path.Combine(ROMapExtractor.GetBasePath(), mapName, "models"));
-            }
-            finally
-            {
                 AssetDatabase.StopAssetEditing();
-            }
-
-            AssetDatabase.Refresh();
-
-            foreach (var texture in texturePaths)
-            {
-                var importer = AssetImporter.GetAtPath(texture) as TextureImporter;
-                if  (importer == null) continue;
-                
-                importer.alphaIsTransparency = true;
-                importer.wrapMode = TextureWrapMode.Repeat;
-                importer.filterMode = FilterMode.Bilinear;
-                importer.mipmapEnabled = true;
-                importer.mipMapBias = 0.5f;
-                var textureSettings = new TextureImporterSettings();
-                importer.ReadTextureSettings(textureSettings);
-
-                importer.SetTextureSettings(textureSettings);
-                importer.SaveAndReimport();
-            }
-
-            try
-            {
+                AssetDatabase.Refresh();
                 AssetDatabase.StartAssetEditing();
                 ExtractClonedModels(mapObject, Path.Combine(ROMapExtractor.GetBasePath(), mapName, "models"));
                 AssetDatabase.StopAssetEditing();
@@ -58,6 +33,22 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                 ExtractGround(mapObject, mapName);
                 ExtractWater(mapObject, mapName);
 
+                AssetDatabase.Refresh();
+                
+                foreach (var importer in texturePaths.Select(AssetImporter.GetAtPath).OfType<TextureImporter>())
+                {
+                    importer.alphaIsTransparency = true;
+                    importer.wrapMode = TextureWrapMode.Repeat;
+                    importer.filterMode = FilterMode.Bilinear;
+                    importer.mipmapEnabled = true;
+                    importer.mipMapBias = 0.5f;
+                    var textureSettings = new TextureImporterSettings();
+                    importer.ReadTextureSettings(textureSettings);
+
+                    importer.SetTextureSettings(textureSettings);
+                    importer.SaveAndReimport();
+                }
+                
                 AssetDatabase.Refresh();
 
                 var meshesPathes = DataUtility
@@ -72,26 +63,8 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
 
                     material.SetTexture("_MainTex", texture);
                 }
-
-                var models = mapObject.transform.Find("_Models");
-                var originals = models.transform.Find("_Originals");
-                var cloned = models.transform.Find("_Cloned");
-
-                foreach (var child in originals.transform.GetComponentsInChildren<Transform>())
-                {
-                    if (child.transform.GetComponent(typeof(NodeAnimation)) == null)
-                    {
-                        child.gameObject.isStatic = true;
-                    }
-                }
-
-                foreach (var child in cloned.transform.GetComponentsInChildren<Transform>())
-                {
-                    if (child.transform.GetComponent(typeof(NodeAnimation)) == null)
-                    {
-                        child.gameObject.isStatic = true;
-                    }
-                }
+                
+                GroupModels(mapObject);
 
                 AssetDatabase.Refresh();
 
@@ -114,9 +87,9 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
 
                 StaticOcclusionCulling.Compute();
                 Lightmapping.Bake();
-
+                
                 EditorSceneManager.SaveOpenScenes();
-
+                
                 var original = EditorBuildSettings.scenes;
                 var newSettings = new EditorBuildSettingsScene[original.Length + 1];
                 Array.Copy(original, newSettings, original.Length);
