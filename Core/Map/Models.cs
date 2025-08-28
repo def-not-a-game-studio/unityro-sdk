@@ -9,10 +9,16 @@ using ROIO.Models.FileTypes;
 using ROIO.Utils.Extensions;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Rendering;
 
 public class Models
 {
     private List<RSM.CompiledModel> models;
+    
+    private Material shadowOnlyMaterial;
+    private Material doubleSidedMaterial;
+    private Material transparentMaterial;
+    private Material defaultMaterial;
 
     public Models(List<RSM.CompiledModel> models)
     {
@@ -28,6 +34,11 @@ public class Models
         modelsParent.transform.SetParent(GameObject.FindObjectOfType<GameMap>().transform);
         originals.transform.SetParent(modelsParent.transform);
         copies.transform.SetParent(modelsParent.transform);
+        
+        shadowOnlyMaterial = Resources.Load<Material>("Materials/ShadowOnlyMaterial");
+        doubleSidedMaterial = Resources.Load<Material>("Materials/ModelMaterial2Sided");
+        transparentMaterial = Resources.Load<Material>("Materials/ModelMaterialTransparent");
+        defaultMaterial = Resources.Load<Material>("Materials/ModelMaterial");
 
         int nodeId = 0;
 
@@ -38,7 +49,8 @@ public class Models
             {
                 var filenameWithoutExtension = model.rsm.filename.Substring(0, model.rsm.filename.IndexOf(".rsm"));
                 tasks.Add(Addressables
-                    .LoadAssetAsync<GameObject>(Path.Combine("data", "model", $"{filenameWithoutExtension}.prefab").SanitizeForAddressables()).Task);
+                    .LoadAssetAsync<GameObject>(Path.Combine("data", "model", $"{filenameWithoutExtension}.prefab")
+                        .SanitizeForAddressables()).Task);
             }
 
             var prefabs = await Task.WhenAll(tasks);
@@ -105,7 +117,8 @@ public class Models
                 // float zRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
                 float xRandom = 0f, yRandom = 0f, zRandom = 0f;
 
-                Vector3 position = new Vector3(descriptor.position[0] + xRandom, descriptor.position[1] + yRandom, descriptor.position[2] + zRandom);
+                Vector3 position = new Vector3(descriptor.position[0] + xRandom, descriptor.position[1] + yRandom,
+                    descriptor.position[2] + zRandom);
                 position.x += mapSize.x;
                 position.y *= -1;
                 position.z += mapSize.y;
@@ -147,7 +160,8 @@ public class Models
                 RSM.CompiledModel model = models[index];
                 var filenameWithoutExtension = model.rsm.filename.Substring(0, model.rsm.filename.IndexOf(".rsm"));
                 var prefabRequest =
-                    Addressables.LoadAssetAsync<GameObject>(Path.Combine("data", "model", $"{filenameWithoutExtension}.prefab")
+                    Addressables.LoadAssetAsync<GameObject>(Path
+                        .Combine("data", "model", $"{filenameWithoutExtension}.prefab")
                         .SanitizeForAddressables());
                 while (!prefabRequest.IsDone)
                 {
@@ -211,7 +225,8 @@ public class Models
                 float yRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
                 float zRandom = UnityEngine.Random.Range(-0.002f, 0.002f);
 
-                Vector3 position = new Vector3(descriptor.position[0] + xRandom, descriptor.position[1] + yRandom, descriptor.position[2] + zRandom);
+                Vector3 position = new Vector3(descriptor.position[0] + xRandom, descriptor.position[1] + yRandom,
+                    descriptor.position[2] + zRandom);
                 position.x += mapSize.x;
                 position.y *= -1;
                 position.z += mapSize.y;
@@ -280,21 +295,21 @@ public class Models
                 var meshFilter = nodeObj.AddComponent<MeshFilter>();
                 meshFilter.mesh = mesh;
                 var meshRenderer = nodeObj.AddComponent<MeshRenderer>();
-                
+
                 if (meshData.twoSided)
                 {
-                    meshRenderer.material = Resources.Load<Material>("Materials/ModelMaterial2Sided");
+                    meshRenderer.material = doubleSidedMaterial;
                 }
                 else if (model.rsm.alpha < 1f)
                 {
-                    meshRenderer.material = Resources.Load<Material>("Materials/ModelMaterialTransparent");
+                    meshRenderer.material = transparentMaterial;
                     meshRenderer.material.SetFloat("_Alpha", model.rsm.alpha);
                 }
                 else
                 {
-                    meshRenderer.material = Resources.Load<Material>("Materials/ModelMaterial");
+                    meshRenderer.material = defaultMaterial;
                 }
-                
+
                 var texture = FileManager.Load($"data/texture/{textureFile}") as Texture2D;
                 meshRenderer.material.mainTexture = texture;
 
@@ -424,11 +439,26 @@ public class Models
                 GameObject.DestroyImmediate(child.gameObject);
             }
 
+            var combinersArray = finalCombiners.ToArray();
             var finalMesh = new Mesh();
-            finalMesh.CombineMeshes(finalCombiners.ToArray(), false);
-            
+            finalMesh.CombineMeshes(combinersArray, false);
+
             modelObjFilter.sharedMesh = finalMesh;
             modelObjRenderer.materials = materials.ToArray();
+            modelObjRenderer.shadowCastingMode = ShadowCastingMode.Off;
+
+            var shadowObj = new GameObject($"{modelObj.name}_ShadowProxy");
+            shadowObj.transform.SetParent(modelObj.transform, false);
+            
+            var shadowFilter = shadowObj.AddComponent<MeshFilter>();
+            var shadowRenderer = shadowObj.AddComponent<MeshRenderer>();
+            
+            var shadowMesh = new Mesh();
+            shadowMesh.CombineMeshes(combinersArray, true);
+            shadowFilter.sharedMesh = shadowMesh;
+            shadowRenderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+            shadowRenderer.receiveShadows = false;
+            shadowRenderer.material = shadowOnlyMaterial;
         }
 
         return nodeId;

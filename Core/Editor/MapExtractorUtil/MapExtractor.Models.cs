@@ -136,12 +136,20 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
 
             foreach (var model in models)
             {
-                model.transform.SetParent(model.childCount > 0 ? dynamicParent.transform : staticParent.transform, true);
+                if (model.transform.childCount == 1 && model.transform.GetChild(0).name.EndsWith("ShadowProxy"))
+                {
+                    model.transform.SetParent(staticParent.transform, true);
+                }
+                else
+                {
+                    model.transform.SetParent(model.childCount > 0 ? dynamicParent.transform : staticParent.transform, true);
+                }
             }
 
             foreach (var model in staticParent.transform.GetChildren())
             {
                 model.gameObject.isStatic = true;
+                model.transform.GetChildren().ForEach(t => t.gameObject.isStatic = true);
             }
             
             GameObject.DestroyImmediate(originals.gameObject);
@@ -213,6 +221,7 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
 
                             var filter = node.GetComponent<MeshFilter>();
                             var material = node.GetComponent<MeshRenderer>().material;
+                            material.enableInstancing = true;
 
                             var nodeName = node.mainName.Length == 0 ? "node" : node.mainName;
                             var nodePath = Path.Combine(meshPath, $"{nodeName}_{node.nodeId}").Replace('\\', Path.DirectorySeparatorChar);
@@ -257,11 +266,20 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                             {
                                 Debug.LogError($"Texture data/texture/{material.mainTexture.name} not found");
                             }
-
+                            
+                            material.enableInstancing = true;
                             AssetDatabase.CreateAsset(material, materialPath);
                         }
 
                         AssetDatabase.CreateAsset(filter.sharedMesh, partPath);
+
+                        if (mesh.transform.childCount > 0 && mesh.transform.GetChild(0).name.EndsWith("ShadowProxy"))
+                        {
+                            var shadowProxy = mesh.transform.GetChild(0).gameObject;
+                            var proxyFilter = shadowProxy.GetComponent<MeshFilter>();
+                            var proxyPath = AssetDatabase.GenerateUniqueAssetPath($"{meshPath}_ShadowProxy.asset");
+                            AssetDatabase.CreateAsset(proxyFilter.sharedMesh, proxyPath);
+                        } 
                     }
 
                     meshPath = AssetDatabase.GenerateUniqueAssetPath(meshPath + ".prefab");

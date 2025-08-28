@@ -72,7 +72,7 @@ public class Ground {
             var meshSplitController = gameObject.AddComponent<MeshSplitController>();
             meshSplitController.Parameters = new MeshSplitParameters {
                 GenerateColliders = true,
-                GridSize = 16,
+                GridSize = 64,
                 SplitAxes = new bool3(true, false, true),
                 UseParentLayer = true,
             };

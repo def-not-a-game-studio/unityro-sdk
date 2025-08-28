@@ -85,19 +85,19 @@ namespace UnityRO.Core.Editor.MapExtractorUtil
                 EditorSceneManager.SaveScene(mapScene, $"Assets/3rdparty/unityro-resources/Scenes/{mapName}.unity");
                 EditorSceneManager.CloseScene(defaultScene, true);
 
-                StaticOcclusionCulling.Compute();
-                Lightmapping.Bake();
+                // StaticOcclusionCulling.Compute();
+                // Lightmapping.Bake();
                 
-                EditorSceneManager.SaveOpenScenes();
-                
-                var original = EditorBuildSettings.scenes;
-                var newSettings = new EditorBuildSettingsScene[original.Length + 1];
-                Array.Copy(original, newSettings, original.Length);
-                var sceneToAdd = new EditorBuildSettingsScene(mapScene.path, true);
-                newSettings[newSettings.Length - 1] = sceneToAdd;
-                EditorBuildSettings.scenes = newSettings;
-
-                EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
+                // EditorSceneManager.SaveOpenScenes();
+                //
+                // var original = EditorBuildSettings.scenes;
+                // var newSettings = new EditorBuildSettingsScene[original.Length + 1];
+                // Array.Copy(original, newSettings, original.Length);
+                // var sceneToAdd = new EditorBuildSettingsScene(mapScene.path, true);
+                // newSettings[newSettings.Length - 1] = sceneToAdd;
+                // EditorBuildSettings.scenes = newSettings;
+                //
+                // EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity");
 
                 //ImportAssetAndApplyAddressableGroup(localPath, typeof(GameObject));
             }
